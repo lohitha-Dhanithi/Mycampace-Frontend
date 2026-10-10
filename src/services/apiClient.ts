@@ -1,8 +1,28 @@
 // frontend/src/services/apiClient.ts
 // Centralized HTTP client for MyCampace Platform
 
-export const API_BASE_URL: string = (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000/api'
-export const API_DOCS_URL: string = (import.meta as any).env?.VITE_API_DOCS_URL || 'http://localhost:4000/api/docs'
+function readApiBaseUrl() {
+  if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL
+  }
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) {
+    return (import.meta as any).env.VITE_API_URL
+  }
+  return 'http://localhost:4000/api'
+}
+
+function readApiDocsUrl() {
+  if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_DOCS_URL) {
+    return process.env.NEXT_PUBLIC_API_DOCS_URL
+  }
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_DOCS_URL) {
+    return (import.meta as any).env.VITE_API_DOCS_URL
+  }
+  return 'http://localhost:4000/api/docs'
+}
+
+export const API_BASE_URL: string = readApiBaseUrl()
+export const API_DOCS_URL: string = readApiDocsUrl()
 
 export class ApiError extends Error {
   status: number
@@ -61,7 +81,12 @@ async function request<T = any>(endpoint: string, options: RequestOptions = {}):
     } catch {
       errorData = { message: response.statusText }
     }
-    throw new ApiError(errorData.message || 'API request failed', response.status, errorData)
+    const message =
+      errorData.message ||
+      (Array.isArray(errorData.message) ? errorData.message.join(', ') : null) ||
+      errorData.error ||
+      'API request failed'
+    throw new ApiError(message, response.status, errorData)
   }
 
   if (response.status === 204) {

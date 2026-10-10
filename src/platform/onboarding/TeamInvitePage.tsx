@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { Users2, Mail, Shield, Check, Plus, Trash2, ArrowRight } from 'lucide-react'
 import { productService } from '@/services/productService'
 import { organizationService } from '@/services/organizationService'
+import { onboardingService, usePlatformApi } from '@/services/onboardingService'
 
 export function TeamInvitePage() {
   const navigate = useNavigate()
@@ -35,8 +36,11 @@ export function TeamInvitePage() {
     setTeamMembers(teamMembers.filter((m) => m.id !== id))
   }
 
-  const continueWith = (members) => {
+  const continueWith = async (members) => {
     organizationService.saveTeamInvites(members)
+    if (usePlatformApi()) {
+      await onboardingService.saveTeamInvites(members)
+    }
     navigate('/onboarding/products/confirmation')
   }
 

@@ -24,6 +24,7 @@ import {
   Layers,
 } from 'lucide-react'
 import { productService, PRODUCT_CATEGORIES } from '@/services/productService'
+import { onboardingService, usePlatformApi } from '@/services/onboardingService'
 
 const ICON_MAP = {
   GraduationCap,
@@ -58,9 +59,19 @@ export function ProductSelectionPage() {
     }
   }
 
-  const handleContinue = () => {
-    productService.setInitialSelectedProducts(selectedProductIds)
-    navigate('/onboarding/team')
+  const [saving, setSaving] = useState(false)
+
+  const handleContinue = async () => {
+    setSaving(true)
+    try {
+      productService.setInitialSelectedProducts(selectedProductIds)
+      if (usePlatformApi()) {
+        await onboardingService.saveProducts(selectedProductIds)
+      }
+      navigate('/onboarding/team')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const filteredProducts = allProducts.filter((p) => {

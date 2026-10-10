@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Building2, MapPin, ArrowRight, Plus, Trash2 } from 'lucide-react'
 import { organizationService } from '@/services/organizationService'
+import { onboardingService, usePlatformApi } from '@/services/onboardingService'
 
 const INSTITUTION_TYPES = [
   'K-12 School',
@@ -126,14 +127,27 @@ export function InstitutionsSetupPage() {
     })
   }
 
-  const handleContinue = () => {
+  const [saving, setSaving] = useState(false)
+
+  const handleContinue = async () => {
     if (institutions.length === 0 || campuses.length === 0) {
       setError('Add at least one institution and one campus to continue.')
       return
     }
-    organizationService.saveInstitutions(institutions)
-    organizationService.saveCampuses(campuses)
-    navigate('/onboarding/products')
+    setSaving(true)
+    setError('')
+    try {
+      organizationService.saveInstitutions(institutions)
+      organizationService.saveCampuses(campuses)
+      if (usePlatformApi()) {
+        await onboardingService.saveInstitutions(institutions, campuses)
+      }
+      navigate('/onboarding/products')
+    } catch (err) {
+      setError(err.message || 'Could not save institutions and campuses.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (

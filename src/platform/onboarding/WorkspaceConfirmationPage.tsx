@@ -14,6 +14,8 @@ import {
 } from 'lucide-react'
 import { productService } from '@/services/productService'
 import { organizationService } from '@/services/organizationService'
+import { onboardingService, usePlatformApi } from '@/services/onboardingService'
+import { authService } from '@/services/authService'
 
 const ICON_MAP = {
   academics: GraduationCap,
@@ -30,8 +32,15 @@ export function WorkspaceConfirmationPage() {
   const invites = organizationService.getTeamInvites()
   const activeProducts = productService.getOrganizationProducts()
 
-  const handleEnterWorkspace = () => {
-    // Clear pending onboarding flag
+  const handleEnterWorkspace = async () => {
+    try {
+      if (usePlatformApi()) {
+        await onboardingService.complete()
+        await authService.refreshProfile()
+      }
+    } catch {
+      // Allow entry with local workspace if API is temporarily unavailable.
+    }
     localStorage.removeItem('mycampace_pending_onboarding')
     navigate('/app')
   }

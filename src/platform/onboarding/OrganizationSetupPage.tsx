@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Building2, Globe, ArrowRight, Check } from 'lucide-react'
 import { organizationService } from '@/services/organizationService'
+import { onboardingService, usePlatformApi } from '@/services/onboardingService'
 import { useAuth } from '@/store/AuthContext'
 import { INDIAN_LOCATIONS, INDIAN_STATES } from '@/platform/onboarding/indianLocations'
 
@@ -47,8 +48,13 @@ export function OrganizationSetupPage() {
     'Other',
   ]
 
-  const handleSubmit = (e) => {
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
+    setError('')
+    setSaving(true)
     const code = formData.name
       .trim()
       .split(/\s+/)
@@ -57,7 +63,7 @@ export function OrganizationSetupPage() {
       .slice(0, 6)
       .toUpperCase() || 'ORG'
     const emailDomain = formData.primaryContactEmail.split('@')[1]
-    organizationService.updateOrganization({
+    const payload = {
       name: formData.name.trim(),
       legalName: formData.legalName.trim(),
       type: formData.type,
@@ -81,9 +87,19 @@ export function OrganizationSetupPage() {
         phone: formData.primaryContactPhone.trim(),
         designation: 'Organization Admin',
       },
-    })
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(formData))
-    navigate('/onboarding/institutions')
+    }
+    try {
+      organizationService.updateOrganization(payload)
+      if (usePlatformApi()) {
+        await onboardingService.saveOrganization(payload)
+      }
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(formData))
+      navigate('/onboarding/institutions')
+    } catch (err) {
+      setError(err.message || 'Could not save organization profile.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (

@@ -1,6 +1,7 @@
 // src/store/AuthContext.tsx
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService } from '../services/authService';
+import { usePlatformApi } from '../services/onboardingService';
 import type { AuthUser, LoginCredentials } from '../types/auth';
 
 export interface AuthContextType {
@@ -39,6 +40,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(current);
     return current;
   };
+
+  useEffect(() => {
+    if (!usePlatformApi()) return;
+    let active = true;
+    authService.refreshProfile().then((profile) => {
+      if (active && profile) setUser(profile);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const value: AuthContextType = {
     user,

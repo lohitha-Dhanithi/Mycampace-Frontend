@@ -7,7 +7,7 @@ import { useAuth } from '@/store/AuthContext'
 
 export function PlatformSignUpPage() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { adoptSession } = useAuth()
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -32,9 +32,8 @@ export function PlatformSignUpPage() {
 
     setLoading(true)
     try {
-      const newUser = await authService.signUpWithEmail({ name, email, password })
-      if (login) await login({ email })
-      // Navigate to Step 1: Organization Setup
+      await authService.signUpWithEmail({ name, email, password })
+      adoptSession()
       navigate('/onboarding/organization')
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.')
@@ -48,7 +47,7 @@ export function PlatformSignUpPage() {
     setGoogleLoading(true)
     try {
       const user = await authService.signInWithGoogle()
-      if (login) await login({ email: user.email })
+      adoptSession()
       navigate('/onboarding/organization')
     } catch (err) {
       setError('Google Sign-Up failed.')

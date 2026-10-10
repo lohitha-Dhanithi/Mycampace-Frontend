@@ -1,5 +1,6 @@
 // src/services/authService.js
 import { apiClient } from './apiClient'
+import { usePlatformApi } from './onboardingService'
 
 const DEFAULT_USER = {
   id: 'usr-1',
@@ -20,94 +21,135 @@ const DEFAULT_USER = {
   },
 }
 
+function persistAuthSession(session: {
+  user: Record<string, unknown>
+  accessToken: string
+  refreshToken?: string
+  expiresIn?: number
+}) {
+  const user = {
+    ...session.user,
+    token: session.accessToken,
+    avatar: session.user.avatar || session.user.avatarUrl,
+  }
+  localStorage.setItem('mycampace_user', JSON.stringify(user))
+  localStorage.setItem(
+    'mycampace_session',
+    JSON.stringify({
+      token: session.accessToken,
+      refreshToken: session.refreshToken,
+      provider: user.authProvider || 'email',
+      expiresIn: session.expiresIn || 900,
+      expiresAt: Date.now() + (session.expiresIn || 900) * 1000,
+    }),
+  )
+  const onboarding = user.onboarding as { required?: boolean } | undefined
+  if (onboarding?.required) {
+    localStorage.setItem('mycampace_pending_onboarding', 'true')
+  } else {
+    localStorage.removeItem('mycampace_pending_onboarding')
+  }
+  return user
+}
+
+function normalizeSessionResponse(apiResponse: Record<string, unknown>) {
+  if (apiResponse.accessToken) return apiResponse
+  return {
+    user: apiResponse,
+    accessToken: apiResponse.token,
+    refreshToken: undefined,
+    expiresIn: 86400,
+  }
+}
+
 export const authService = {
-  // OAuth Google authentication abstraction
   signInWithGoogle: async () => {
+    if (usePlatformApi()) {
+      const session = normalizeSessionResponse(
+        await apiClient.post('/auth/signin/google', {
+          idToken: 'google-oauth-mock-token-' + Date.now(),
+          email: 'vikram.aditya@abcschool.edu.in',
+        }),
+      )
+      return persistAuthSession(session as any)
+    }
+
     try {
       const apiUser = await apiClient.post('/auth/signin/google', {
         idToken: 'google-oauth-mock-token-' + Date.now(),
         email: 'vikram.aditya@abcschool.edu.in',
       })
-      const user = {
-        ...DEFAULT_USER,
-        ...apiUser,
-        name: apiUser.name || 'Vikram Aditya (Google SSO)',
-        avatar: apiUser.avatarUrl || DEFAULT_USER.avatar,
-        authProvider: 'google',
-      }
-      localStorage.setItem('mycampace_user', JSON.stringify(user))
-      localStorage.setItem('mycampace_session', JSON.stringify({
-        token: user.token || ('oauth-google-' + Date.now()),
-        provider: 'google',
-        expiresAt: Date.now() + 86400000,
-      }))
-      return user
-    } catch (err) {
-      // Fallback to local mock if backend is offline
+      const session = normalizeSessionResponse(apiUser)
+      return persistAuthSession(session as any)
+    } catch {
       const googleUser = {
         ...DEFAULT_USER,
         name: 'Vikram Aditya (Google SSO)',
         authProvider: 'google',
       }
       localStorage.setItem('mycampace_user', JSON.stringify(googleUser))
-      localStorage.setItem('mycampace_session', JSON.stringify({
-        token: 'oauth-google-' + Date.now(),
-        provider: 'google',
-        expiresAt: Date.now() + 86400000,
-      }))
+      localStorage.setItem(
+        'mycampace_session',
+        JSON.stringify({
+          token: 'oauth-google-' + Date.now(),
+          provider: 'google',
+          expiresAt: Date.now() + 86400000,
+        }),
+      )
       return googleUser
     }
   },
 
-  // Email/password authentication abstraction
-  signInWithEmail: async (email, password) => {
+  signInWithEmail: async (email: string, password?: string) => {
     if (!email) throw new Error('Email is required')
+
+    if (usePlatformApi()) {
+      const session = normalizeSessionResponse(
+        await apiClient.post('/auth/signin/email', {
+          email,
+          password: password || '',
+        }),
+      )
+      return persistAuthSession(session as any)
+    }
 
     try {
       const apiUser = await apiClient.post('/auth/signin/email', {
         email,
         password: password || 'SecurePassword123!',
       })
+      const session = normalizeSessionResponse(apiUser)
+      return persistAuthSession(session as any)
+    } catch {
       const user = {
         ...DEFAULT_USER,
-        ...apiUser,
         email,
-        name: apiUser.name || email.split('@')[0].replace('.', ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase()),
-        avatar: apiUser.avatarUrl || DEFAULT_USER.avatar,
+        name: email.split('@')[0].replace('.', ' ').replace(/(^\w|\s\w)/g, (m) => m.toUpperCase()),
         authProvider: 'email',
       }
       localStorage.setItem('mycampace_user', JSON.stringify(user))
-      localStorage.setItem('mycampace_session', JSON.stringify({
-        token: user.token || ('jwt-email-' + Date.now()),
-        provider: 'email',
-        expiresAt: Date.now() + 86400000,
-      }))
-      return user
-    } catch (err) {
-      // Fallback to local mock if backend is offline
-      const user = {
-        ...DEFAULT_USER,
-        email: email,
-        name: email.split('@')[0].replace('.', ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase()),
-        authProvider: 'email',
-      }
-      localStorage.setItem('mycampace_user', JSON.stringify(user))
-      localStorage.setItem('mycampace_session', JSON.stringify({
-        token: 'jwt-email-' + Date.now(),
-        provider: 'email',
-        expiresAt: Date.now() + 86400000,
-      }))
+      localStorage.setItem(
+        'mycampace_session',
+        JSON.stringify({
+          token: 'jwt-email-' + Date.now(),
+          provider: 'email',
+          expiresAt: Date.now() + 86400000,
+        }),
+      )
       return user
     }
   },
 
-  // Backward compatibility alias for existing code
-  login: async (credentials) => {
+  login: async (credentials: { email: string; password?: string }) => {
     return authService.signInWithEmail(credentials.email, credentials.password)
   },
 
-  // Sign up abstraction
-  signUpWithEmail: async (userData) => {
+  signUpWithEmail: async (userData: { name?: string; email: string; password: string }) => {
+    if (usePlatformApi()) {
+      const session = normalizeSessionResponse(await apiClient.post('/auth/signup', userData))
+      return persistAuthSession(session as any)
+    }
+
     await new Promise((resolve) => setTimeout(resolve, 400))
     const newUser = {
       id: `usr-${Date.now()}`,
@@ -129,17 +171,46 @@ export const authService = {
     return newUser
   },
 
-  // Sign out abstraction
   signOut: async () => {
-    await new Promise((resolve) => setTimeout(resolve, 200))
+    const sessionRaw = localStorage.getItem('mycampace_session')
+    let refreshToken: string | undefined
+    if (sessionRaw) {
+      try {
+        refreshToken = JSON.parse(sessionRaw).refreshToken
+      } catch {
+        refreshToken = undefined
+      }
+    }
+    if (usePlatformApi() && refreshToken) {
+      try {
+        await apiClient.post('/auth/logout', { refreshToken })
+      } catch {
+        // ignore network errors on logout
+      }
+    }
     localStorage.removeItem('mycampace_user')
     localStorage.removeItem('mycampace_session')
     return true
   },
 
-  // Backward compatibility alias
-  logout: async () => {
-    return authService.signOut()
+  logout: async () => authService.signOut(),
+
+  refreshProfile: async () => {
+    if (!usePlatformApi()) return authService.getCurrentUser()
+    try {
+      const user = await apiClient.get('/auth/me')
+      const sessionRaw = localStorage.getItem('mycampace_session')
+      const session = sessionRaw ? JSON.parse(sessionRaw) : {}
+      persistAuthSession({
+        user,
+        accessToken: session.token,
+        refreshToken: session.refreshToken,
+        expiresIn: session.expiresIn,
+      })
+      return authService.getCurrentUser()
+    } catch {
+      return authService.getCurrentUser()
+    }
   },
 
   getCurrentUser: () => {
@@ -147,11 +218,11 @@ export const authService = {
     if (userStr) {
       try {
         return JSON.parse(userStr)
-      } catch (e) {
-        return DEFAULT_USER
+      } catch {
+        return usePlatformApi() ? null : DEFAULT_USER
       }
     }
-    return DEFAULT_USER
+    return usePlatformApi() ? null : DEFAULT_USER
   },
 
   getSession: () => {
@@ -159,23 +230,19 @@ export const authService = {
     if (sessionStr) {
       try {
         return JSON.parse(sessionStr)
-      } catch (e) {
+      } catch {
         return null
       }
     }
-    return {
-      token: 'default-session-token',
-      provider: 'default',
-      expiresAt: Date.now() + 86400000,
-    }
+    return null
   },
 
-  requestPasswordReset: async (email) => {
+  requestPasswordReset: async (email: string) => {
     await new Promise((resolve) => setTimeout(resolve, 300))
     return { success: true, message: `Password reset instructions sent to ${email}` }
   },
 
-  resetPassword: async (token, newPassword) => {
+  resetPassword: async (_token: string, _newPassword: string) => {
     await new Promise((resolve) => setTimeout(resolve, 300))
     return { success: true, message: 'Password has been updated successfully.' }
   },
