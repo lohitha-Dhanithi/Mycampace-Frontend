@@ -578,12 +578,7 @@ export const MOCK_ACADEMIC_DATA = {
     { id: 'prog-3', name: 'Primary Foundation', code: 'PROG-PRI', level: 'Primary (Grades 1-5)', duration: '5 Years', status: 'Active' },
     { id: 'prog-4', name: 'Early Childhood Education', code: 'PROG-ECE', level: 'Pre-Primary (Nursery, LKG, UKG)', duration: '3 Years', status: 'Active' },
   ],
-  courses: [
-    { id: 'crs-1', programId: 'prog-1', name: 'Science Stream (PCM / PCB)', code: 'SCI-11-12', department: 'Science', credits: '40', status: 'Active' },
-    { id: 'crs-2', programId: 'prog-1', name: 'Commerce with Applied Mathematics', code: 'COMM-11-12', department: 'Commerce', credits: '38', status: 'Active' },
-    { id: 'crs-3', programId: 'prog-1', name: 'Humanities & Social Sciences', code: 'HUM-11-12', department: 'Humanities', credits: '36', status: 'Active' },
-    { id: 'crs-4', programId: 'prog-2', name: 'CBSE General Academic Curriculum', code: 'CBSE-GEN-10', department: 'General Academics', credits: '50', status: 'Active' },
-  ],
+  courses: [],
   classes: [
     { id: 'cls-12', name: 'Class 12', code: 'GR-12', program: 'Senior Secondary Education', sectionsCount: 4, totalStudents: 320, campus: 'Hyderabad Main Campus', status: 'Active' },
     { id: 'cls-11', name: 'Class 11', code: 'GR-11', program: 'Senior Secondary Education', sectionsCount: 4, totalStudents: 345, campus: 'Hyderabad Main Campus', status: 'Active' },

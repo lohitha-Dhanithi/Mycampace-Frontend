@@ -58,8 +58,8 @@ export function SectionAcademicTable({ sections = [], loading = false }) {
       header: 'Student Capacity',
       accessor: 'currentStrength',
       cell: (r) => {
-        const current = r.currentStrength || 38
-        const max = r.capacity || 40
+        const current = r.currentStrength ?? 0
+        const max = r.capacity ?? 40
         const percentage = Math.round((current / max) * 100)
         return (
           <div className="space-y-1 w-28">

@@ -8,6 +8,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   login: (credentials: LoginCredentials) => Promise<AuthUser>;
   logout: () => Promise<void>;
+  adoptSession: () => AuthUser;
   loading: boolean;
 }
 
@@ -33,11 +34,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
   };
 
+  const adoptSession = (): AuthUser => {
+    const current = authService.getCurrentUser();
+    setUser(current);
+    return current;
+  };
+
   const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
     login,
     logout,
+    adoptSession,
     loading,
   };
 

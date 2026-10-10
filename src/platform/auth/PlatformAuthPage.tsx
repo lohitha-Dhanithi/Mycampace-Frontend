@@ -39,7 +39,7 @@ import { useAuth } from '@/store/AuthContext'
 export function PlatformAuthPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { login } = useAuth()
+  const { login, adoptSession } = useAuth()
 
   // Mode: 'signin' | 'signup' | '2fa'
   const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : searchParams.get('mode') === '2fa' ? '2fa' : 'signin'
@@ -95,7 +95,7 @@ export function PlatformAuthPage() {
 
       const user = await authService.signInWithEmail(email, password)
       if (login) await login({ email, password })
-      navigate('/app')
+      navigate(localStorage.getItem('mycampace_pending_onboarding') === 'true' ? '/onboarding/organization' : '/app')
     } catch (err) {
       setError(err.message || 'Authentication failed. Please verify credentials.')
     } finally {
@@ -118,18 +118,20 @@ export function PlatformAuthPage() {
       setError('Please agree to the Terms of Service & Privacy Policy.')
       return
     }
+    if (!signupName.trim()) {
+      setError('Enter your full name to continue.')
+      return
+    }
 
     setLoading(true)
     try {
       await authService.signUpWithEmail({
+        name: signupName.trim(),
         email: signupEmail,
         password: signupPassword,
       })
-      // Pre-fill email so signin will work normally using the same email
-      setEmail(signupEmail)
-      setPassword(signupPassword)
-      // Transition smoothly to success confirmation screen
-      setMode('signup-success')
+      adoptSession()
+      navigate('/onboarding/organization')
     } catch (err) {
       setError(err.message || 'Registration failed.')
     } finally {
@@ -143,8 +145,9 @@ export function PlatformAuthPage() {
     try {
       const user = await authService.signInWithGoogle()
       if (isSignup) {
-        setEmail(user.email)
-        setMode('signup-success')
+        localStorage.setItem('mycampace_pending_onboarding', 'true')
+        adoptSession()
+        navigate('/onboarding/organization')
       } else {
         if (login) await login({ email: user.email })
         navigate('/app')
@@ -631,6 +634,23 @@ export function PlatformAuthPage() {
                   </div>
 
                   <form onSubmit={handleSignUp} className="space-y-2.5">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
+                        Full Name
+                      </label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                        <input
+                          type="text"
+                          required
+                          value={signupName}
+                          onChange={(e) => setSignupName(e.target.value)}
+                          placeholder="Your name"
+                          className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        />
+                      </div>
+                    </div>
+
                     <div>
                       <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
                         Work Email

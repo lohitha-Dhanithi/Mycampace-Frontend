@@ -43,7 +43,7 @@ export function ClassAcademicTable({ classes = [], loading = false }) {
       accessor: 'sectionsCount',
       cell: (r) => (
         <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200">
-          {r.sectionsCount || 4} Sections
+          {r.sectionsCount ?? 0} Sections
         </span>
       ),
     },

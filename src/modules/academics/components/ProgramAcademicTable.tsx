@@ -55,14 +55,14 @@ export function ProgramAcademicTable({ programs = [], loading = false }) {
       accessor: 'coursesCount',
       cell: (r) => (
         <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
-          {r.coursesCount || 3} Courses
+          {r.coursesCount ?? 3} Courses
         </span>
       ),
     },
     {
       header: 'Total Students',
       accessor: 'studentCount',
-      cell: (r) => <span className="text-xs font-mono font-bold text-slate-800">{r.studentCount || 665}</span>,
+      cell: (r) => <span className="text-xs font-mono font-bold text-slate-800">{r.studentCount ?? 665}</span>,
     },
     {
       header: 'Status',

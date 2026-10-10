@@ -9,12 +9,13 @@ import {
   Bookmark,
   Users,
   UserCheck,
-  CalendarCheck,
   CheckCircle,
   ArrowLeft,
   ArrowRightLeft,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { TimetableBoard } from './TimetableBoard'
+import { classroomService } from '../services/classroomService'
 
 export interface SectionAcademicProfileProps {
   section: any
@@ -33,6 +34,14 @@ export function SectionAcademicProfile({
 }: SectionAcademicProfileProps) {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overview')
+  const [room, setRoom] = useState(section?.room || '')
+  const [classrooms, setClassrooms] = useState<string[]>([])
+
+  React.useEffect(() => {
+    if (!section) return
+    setRoom(section.room || '')
+    setClassrooms(classroomService.ensureClassrooms([section.room].filter(Boolean)))
+  }, [section])
 
   if (!section) return null
 
@@ -55,7 +64,7 @@ export function SectionAcademicProfile({
               <StatusBadge status={section.status || 'Active'} />
             </div>
             <div className="text-xs text-slate-500 font-mono mt-0.5">
-              Class: {section.className} • Class Teacher: {section.classTeacher} • Room: {section.room} • Capacity: {section.currentStrength || 38} / {section.capacity || 40}
+              Class: {section.className} • Class Teacher: {section.classTeacher} • Room: {room || 'Unassigned'} • Capacity: {section.currentStrength || 38} / {section.capacity || 40}
             </div>
           </div>
         </div>
@@ -87,8 +96,21 @@ export function SectionAcademicProfile({
             </CardHeader>
             <CardContent className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <span className="text-slate-400 font-bold uppercase text-[10px]">Homeroom Room No</span>
-                <p className="text-slate-900 font-bold mt-1">{section.room || 'Room 301, Block C'}</p>
+                <span className="text-slate-400 font-bold uppercase text-[10px]">Homeroom classroom</span>
+                <select
+                  value={room}
+                  onChange={async (event) => {
+                    const nextRoom = event.target.value
+                    setRoom(nextRoom)
+                    const updated = await classroomService.assignHomeroom(section.id, nextRoom)
+                    const current = updated.find((item) => item.id === section.id)
+                    if (current && onChangeSection) onChangeSection(current)
+                  }}
+                  className="mt-2 h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-900"
+                >
+                  <option value="">Unassigned</option>
+                  {classrooms.map((item) => <option key={item}>{item}</option>)}
+                </select>
               </div>
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
                 <span className="text-slate-400 font-bold uppercase text-[10px]">Assigned Class Teacher</span>
@@ -168,17 +190,7 @@ export function SectionAcademicProfile({
         </TabsContent>
 
         <TabsContent value="timetable">
-          <Card className="border-slate-200 shadow-xs">
-            <CardContent className="py-12 text-center space-y-3">
-              <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto">
-                <CalendarCheck className="w-6 h-6" />
-              </div>
-              <h3 className="text-sm font-bold text-slate-800">Weekly Class Period Schedule</h3>
-              <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Detailed Monday–Saturday period allocations will be configured in the forthcoming <strong>Timetable Module</strong>.
-              </p>
-            </CardContent>
-          </Card>
+          <TimetableBoard sectionId={section.id} />
         </TabsContent>
 
         <TabsContent value="attendance">

@@ -10,13 +10,13 @@ import {
   Bookmark,
   Users,
   UserCheck,
-  CalendarCheck,
   CheckCircle,
   ArrowLeft,
   Clock,
   Sparkles,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { TimetableBoard } from './TimetableBoard'
 
 export function ClassAcademicProfile({
   academicClass,
@@ -187,17 +187,7 @@ export function ClassAcademicProfile({
         </TabsContent>
 
         <TabsContent value="timetable">
-          <Card className="border-slate-200 shadow-xs">
-            <CardContent className="py-12 text-center space-y-3">
-              <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto">
-                <CalendarCheck className="w-6 h-6" />
-              </div>
-              <h3 className="text-sm font-bold text-slate-800">Class Timetable Integration Module</h3>
-              <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Automated period scheduling, classroom matrix, and faculty slot collision detection will link here directly in the upcoming <strong>Timetable Module</strong>.
-              </p>
-            </CardContent>
-          </Card>
+          <TimetableBoard classId={academicClass.id} />
         </TabsContent>
 
         <TabsContent value="attendance">

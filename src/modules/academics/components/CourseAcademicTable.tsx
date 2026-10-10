@@ -47,21 +47,21 @@ export function CourseAcademicTable({ courses = [], loading = false }) {
     {
       header: 'Classes',
       accessor: 'classesCount',
-      cell: (r) => <span className="text-xs font-semibold text-slate-700">{r.classesCount || 2} Classes</span>,
+      cell: (r) => <span className="text-xs font-semibold text-slate-700">{r.classesCount ?? 2} Classes</span>,
     },
     {
       header: 'Subjects',
       accessor: 'subjectsCount',
       cell: (r) => (
         <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-          {r.subjectsCount || 5} Subjects
+          {r.subjectsCount ?? 5} Subjects
         </span>
       ),
     },
     {
       header: 'Students',
       accessor: 'studentsCount',
-      cell: (r) => <span className="text-xs font-mono font-bold text-slate-800">{r.studentsCount || 345}</span>,
+      cell: (r) => <span className="text-xs font-mono font-bold text-slate-800">{r.studentsCount ?? 345}</span>,
     },
     {
       header: 'Status',

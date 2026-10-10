@@ -112,6 +112,13 @@ export const academicService = {
     return list.find((s) => s.id === id) || null
   },
 
+  createAcademicProgram: (data) => coreAcademicService.addProgram(data),
+  createAcademicCourse: (data) => coreAcademicService.addCourse(data),
+  createAcademicClass: (data) => coreAcademicService.addClass(data),
+  createAcademicSection: (data) => coreAcademicService.addSection(data),
+  updateAcademicSection: (id, data) => coreAcademicService.updateSection(id, data),
+  createAcademicSubject: (data) => coreAcademicService.addSubject(data),
+
   // Facade delegation for specialized services
   ...facultyAssignmentService,
   ...subjectAssignmentService,

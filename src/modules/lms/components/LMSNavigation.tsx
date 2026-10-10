@@ -32,7 +32,7 @@ export function LMSNavigation() {
   }
 
   return (
-    <div className="bg-white border-b border-slate-200 shadow-sm -mt-2 -mx-4 md:-mx-8 px-4 md:px-8 mb-6 sticky top-16 z-30">
+    <div className="bg-white border-b border-slate-200 shadow-sm -mt-2 -mx-4 md:-mx-8 px-4 md:px-8 mb-6 sticky top-16 z-20">
       <div className="flex items-center justify-between overflow-x-auto py-2.5 scrollbar-none gap-2">
         <div className="flex items-center gap-1.5 min-w-max">
           <div className="hidden lg:flex items-center gap-2 pr-3 mr-2 border-r border-slate-200">

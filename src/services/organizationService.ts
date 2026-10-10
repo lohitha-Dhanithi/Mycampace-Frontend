@@ -64,12 +64,50 @@ class OrganizationService {
     return merged
   }
 
+  institutionsKey = 'mycampace_institutions'
+  campusesKey = 'mycampace_campuses'
+  teamKey = 'mycampace_team_invites'
+
+  readList(key, fallback) {
+    const raw = localStorage.getItem(key)
+    if (!raw) return fallback
+    try {
+      const parsed = JSON.parse(raw)
+      return Array.isArray(parsed) ? parsed : fallback
+    } catch (e) {
+      return fallback
+    }
+  }
+
+  hasCustomDirectory() {
+    return localStorage.getItem(this.institutionsKey) !== null
+  }
+
   getInstitutions() {
-    return MOCK_INSTITUTIONS
+    return this.readList(this.institutionsKey, MOCK_INSTITUTIONS)
   }
 
   getCampuses() {
-    return MOCK_CAMPUSES
+    return this.readList(this.campusesKey, MOCK_CAMPUSES)
+  }
+
+  saveInstitutions(institutions) {
+    localStorage.setItem(this.institutionsKey, JSON.stringify(institutions))
+    return institutions
+  }
+
+  saveCampuses(campuses) {
+    localStorage.setItem(this.campusesKey, JSON.stringify(campuses))
+    return campuses
+  }
+
+  getTeamInvites() {
+    return this.readList(this.teamKey, [])
+  }
+
+  saveTeamInvites(invites) {
+    localStorage.setItem(this.teamKey, JSON.stringify(invites))
+    return invites
   }
 }
 

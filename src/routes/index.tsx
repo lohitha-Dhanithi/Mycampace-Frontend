@@ -1,6 +1,6 @@
 // src/routes/index.jsx
 import React from 'react'
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter, Navigate, useParams } from 'react-router-dom'
 
 // Platform Shells
 import { PlatformHubShell } from '@/platform/shell/PlatformHubShell'
@@ -13,6 +13,7 @@ import { ForgotPasswordPage } from '@/modules/auth/ForgotPasswordPage'
 import { ResetPasswordPage } from '@/modules/auth/ResetPasswordPage'
 
 import { OrganizationSetupPage } from '@/platform/onboarding/OrganizationSetupPage'
+import { InstitutionsSetupPage } from '@/platform/onboarding/InstitutionsSetupPage'
 import { ProductSelectionPage } from '@/platform/onboarding/ProductSelectionPage'
 import { TeamInvitePage } from '@/platform/onboarding/TeamInvitePage'
 import { WorkspaceConfirmationPage } from '@/platform/onboarding/WorkspaceConfirmationPage'
@@ -34,6 +35,7 @@ import { ProgramDetailPage } from '@/modules/academics/pages/ProgramDetailPage'
 import { CoursesAcademicPage } from '@/modules/academics/pages/CoursesAcademicPage'
 import { CourseDetailPage } from '@/modules/academics/pages/CourseDetailPage'
 import { ClassesAcademicPage } from '@/modules/academics/pages/ClassesAcademicPage'
+import { ClassroomsPage } from '@/modules/academics/pages/ClassroomsPage'
 import { ClassDetailPage } from '@/modules/academics/pages/ClassDetailPage'
 import { SectionsAcademicPage } from '@/modules/academics/pages/SectionsAcademicPage'
 import { SectionDetailPage } from '@/modules/academics/pages/SectionDetailPage'
@@ -47,6 +49,7 @@ import { StudentEnrolmentsPage } from '@/modules/academics/pages/StudentEnrolmen
 import { AcademicCalendarPage } from '@/modules/academics/pages/AcademicCalendarPage'
 import { AcademicEventCreatePage } from '@/modules/academics/pages/AcademicEventCreatePage'
 import { FacultyWorkloadPage } from '@/modules/academics/pages/FacultyWorkloadPage'
+import { TimetablePage } from '@/modules/academics/pages/TimetablePage'
 
 // LMS Product Pages
 import {
@@ -109,6 +112,27 @@ import { ApplicationCreatePage } from '@/modules/admissions/pages/ApplicationCre
 import { ApplicationDetailPage } from '@/modules/admissions/pages/ApplicationDetailPage'
 import { ApplicationReviewPage } from '@/modules/admissions/pages/ApplicationReviewPage'
 
+// HRMS Product Pages
+import {
+  HrmsDashboardPage,
+  StaffListPage,
+  StaffFormPage,
+  StaffDetailPage,
+  LeaveListPage,
+  LeaveFormPage,
+  LeaveDetailPage,
+  AppraisalListPage,
+  AppraisalDetailPage,
+  AttendancePage,
+  HrmsSetupPage,
+  MyPortalHome,
+  MyProfilePage,
+  MyLeavePage,
+  MyLeaveApplyPage,
+  MyLeaveDetailPage,
+  MyAttendancePage,
+} from '@/modules/hrms/pages'
+
 // Students SIS Pages
 import { StudentsListPage } from '@/modules/students/StudentsListPage'
 import { StudentCreatePage } from '@/modules/students/pages/StudentCreatePage'
@@ -118,6 +142,16 @@ import { StudentTransfersPage } from '@/modules/students/pages/StudentTransfersP
 import { StudentPromotionsPage } from '@/modules/students/pages/StudentPromotionsPage'
 import { StudentExitsPage } from '@/modules/students/pages/StudentExitsPage'
 import { StudentImportPage } from '@/modules/students/pages/StudentImportPage'
+
+function AcademicsLegacyRedirect() {
+  const rest = useParams()['*']
+  return <Navigate to={rest ? `/app/academics/${rest}` : '/app/academics'} replace />
+}
+
+function AdmissionsLegacyRedirect() {
+  const rest = useParams()['*']
+  return <Navigate to={rest ? `/app/admissions/${rest}` : '/app/admissions'} replace />
+}
 
 export const router = createBrowserRouter([
   // 1. Authentication Experience
@@ -146,6 +180,10 @@ export const router = createBrowserRouter([
   {
     path: '/onboarding/organization',
     element: <OrganizationSetupPage />,
+  },
+  {
+    path: '/onboarding/institutions',
+    element: <InstitutionsSetupPage />,
   },
   {
     path: '/onboarding/products',
@@ -187,6 +225,7 @@ export const router = createBrowserRouter([
       { path: 'courses', element: <CoursesAcademicPage /> },
       { path: 'courses/:id', element: <CourseDetailPage /> },
       { path: 'classes', element: <ClassesAcademicPage /> },
+      { path: 'classrooms', element: <ClassroomsPage /> },
       { path: 'classes/:id', element: <ClassDetailPage /> },
       { path: 'sections', element: <SectionsAcademicPage /> },
       { path: 'sections/:id', element: <SectionDetailPage /> },
@@ -198,6 +237,7 @@ export const router = createBrowserRouter([
       { path: 'class-teachers', element: <ClassTeachersPage /> },
       { path: 'enrolments', element: <StudentEnrolmentsPage /> },
       { path: 'academic-calendar', element: <AcademicCalendarPage /> },
+      { path: 'timetable', element: <TimetablePage /> },
       { path: 'academic-calendar/new', element: <AcademicEventCreatePage /> },
       { path: 'workload', element: <FacultyWorkloadPage /> },
       { path: 'academic-years', element: <AcademicConfigPage defaultTab="years" /> },
@@ -320,7 +360,33 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // 4F. Other Products (Dynamic Entitlement / Unlock Screen)
+  // 4F. MyCampace HRMS
+  {
+    path: '/app/hrms',
+    element: <ProductShell productId="hrms" />,
+    children: [
+      { index: true, element: <HrmsDashboardPage /> },
+      { path: 'me', element: <MyPortalHome /> },
+      { path: 'me/profile', element: <MyProfilePage /> },
+      { path: 'me/leave', element: <MyLeavePage /> },
+      { path: 'me/leave/new', element: <MyLeaveApplyPage /> },
+      { path: 'me/leave/:id', element: <MyLeaveDetailPage /> },
+      { path: 'me/attendance', element: <MyAttendancePage /> },
+      { path: 'staff', element: <StaffListPage /> },
+      { path: 'setup', element: <HrmsSetupPage /> },
+      { path: 'staff/new', element: <StaffFormPage /> },
+      { path: 'staff/:id', element: <StaffDetailPage /> },
+      { path: 'staff/:id/edit', element: <StaffFormPage /> },
+      { path: 'leaves', element: <LeaveListPage /> },
+      { path: 'leaves/new', element: <LeaveFormPage /> },
+      { path: 'leaves/:id', element: <LeaveDetailPage /> },
+      { path: 'appraisals', element: <AppraisalListPage /> },
+      { path: 'appraisals/:id', element: <AppraisalDetailPage /> },
+      { path: 'attendance', element: <AttendancePage /> },
+    ],
+  },
+
+  // 4G. Other Products (Dynamic Entitlement / Unlock Screen)
   {
     path: '/app/:productId/*',
     element: <ProductShell productId="hrms" />,
@@ -329,11 +395,12 @@ export const router = createBrowserRouter([
   // 5. Backwards Compatibility & Permalinks
   { path: '/', element: <Navigate to="/app" replace /> },
   { path: '/dashboard', element: <Navigate to="/app" replace /> },
-  { path: '/academics/*', element: <Navigate to="/app/academics" replace /> },
+  { path: '/academics/*', element: <AcademicsLegacyRedirect /> },
   { path: '/lms/*', element: <Navigate to="/app/lms" replace /> },
   { path: '/finance/*', element: <Navigate to="/app/finance" replace /> },
-  { path: '/admissions/*', element: <Navigate to="/app/admissions" replace /> },
+  { path: '/admissions/*', element: <AdmissionsLegacyRedirect /> },
   { path: '/students/*', element: <Navigate to="/app/students" replace /> },
+  { path: '/hrms/*', element: <Navigate to="/app/hrms" replace /> },
   { path: '/institution/*', element: <Navigate to="/app/organization" replace /> },
   { path: '/users/*', element: <Navigate to="/app/users" replace /> },
   { path: '/roles/*', element: <Navigate to="/app/users" replace /> },

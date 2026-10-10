@@ -11,6 +11,7 @@ import {
   GraduationCap,
   BookOpen,
   Layers,
+  DoorOpen,
   Users2,
   Bookmark,
   UserCheck,
@@ -37,6 +38,9 @@ import {
   Lock,
   ArrowRight,
   Sparkles,
+  Clock,
+  User,
+  ArrowLeftRight,
 } from 'lucide-react'
 import { ProductSwitcher } from '@/components/layout/ProductSwitcher'
 import { ProductLauncherMenu } from '@/components/layout/ProductLauncherMenu'
@@ -46,6 +50,7 @@ import { productService } from '@/services/productService'
 import { entitlementService } from '@/services/entitlementService'
 import { notificationService } from '@/services/notificationService'
 import { useAuth } from '@/store/AuthContext'
+import { getHrmsPortalMode, hasHrmsAdminAccess, setHrmsPortalMode } from '@/modules/hrms/portalMode'
 
 // Product-specific navigation configurations
 const PRODUCT_NAV_CONFIG = {
@@ -61,6 +66,7 @@ const PRODUCT_NAV_CONFIG = {
           { label: 'Programs', path: '/app/academics/programs', icon: GraduationCap },
           { label: 'Courses', path: '/app/academics/courses', icon: BookOpen },
           { label: 'Classes', path: '/app/academics/classes', icon: Layers },
+          { label: 'Classrooms', path: '/app/academics/classrooms', icon: DoorOpen },
           { label: 'Sections', path: '/app/academics/sections', icon: Users2 },
           { label: 'Subjects', path: '/app/academics/subjects', icon: Bookmark },
         ],
@@ -79,6 +85,7 @@ const PRODUCT_NAV_CONFIG = {
         items: [
           { label: 'Student Enrolments', path: '/app/academics/enrolments', icon: Users },
           { label: 'Academic Calendar', path: '/app/academics/academic-calendar', icon: CalendarDays },
+          { label: 'Timetable', path: '/app/academics/timetable', icon: CalendarCheck },
           { label: 'Academic Years', path: '/app/academics/academic-years', icon: CalendarDays },
         ],
       },
@@ -186,7 +193,44 @@ const PRODUCT_NAV_CONFIG = {
       },
     ],
   },
+  hrms: {
+    name: 'HRMS',
+    tagline: 'Staff, Leave & Attendance',
+    color: 'indigo',
+    sections: [
+      {
+        title: 'Overview',
+        items: [{ label: 'Dashboard', path: '/app/hrms', icon: LayoutDashboard, end: true }],
+      },
+      {
+        title: 'People',
+        items: [
+          { label: 'Staff Directory', path: '/app/hrms/staff', icon: Users2 },
+          { label: 'Categories & Departments', path: '/app/hrms/setup', icon: Layers },
+        ],
+      },
+      {
+        title: 'Time & Attendance',
+        items: [
+          { label: 'Leave Requests', path: '/app/hrms/leaves', icon: CalendarCheck },
+          { label: 'Shifts & Attendance', path: '/app/hrms/attendance', icon: Clock },
+        ],
+      },
+    ],
+  },
 }
+
+const MY_PORTAL_SECTIONS = [
+  {
+    title: 'My Portal',
+    items: [
+      { label: 'Home', path: '/app/hrms/me', icon: LayoutDashboard, end: true },
+      { label: 'My Profile', path: '/app/hrms/me/profile', icon: User },
+      { label: 'My Leave', path: '/app/hrms/me/leave', icon: CalendarCheck },
+      { label: 'My Attendance', path: '/app/hrms/me/attendance', icon: Clock },
+    ],
+  },
+]
 
 export function ProductShell({ productId }) {
   const location = useLocation()
@@ -194,6 +238,20 @@ export function ProductShell({ productId }) {
   const { user, logout } = useAuth()
 
   const [collapsed, setCollapsed] = useState(false)
+  const [portalMode, setPortalMode] = useState<'admin' | 'self'>(() => (
+    productId === 'hrms' ? getHrmsPortalMode(user) : 'admin'
+  ))
+  const adminAccess = productId === 'hrms' && hasHrmsAdminAccess(user)
+
+  useEffect(() => {
+    if (productId !== 'hrms') return
+    const mode = getHrmsPortalMode(user)
+    setPortalMode(mode)
+    const onSelf = location.pathname === '/app/hrms/me' || location.pathname.startsWith('/app/hrms/me/')
+    if (mode === 'self' && !onSelf) navigate('/app/hrms/me', { replace: true })
+    if (mode === 'admin' && onSelf) navigate('/app/hrms', { replace: true })
+  }, [productId, user, location.pathname, navigate])
+
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showSearchModal, setShowSearchModal] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
@@ -202,7 +260,7 @@ export function ProductShell({ productId }) {
 
   // Check product access & entitlements
   const accessCheck = productService.checkProductAccess(productId)
-  const currentNav = PRODUCT_NAV_CONFIG[productId] || {
+  const baseNav = PRODUCT_NAV_CONFIG[productId] || {
     name: productId.charAt(0).toUpperCase() + productId.slice(1),
     tagline: 'Educational Module',
     color: 'blue',
@@ -213,6 +271,20 @@ export function ProductShell({ productId }) {
       },
     ],
   }
+  const currentNav = productId === 'hrms' && portalMode === 'self'
+    ? { ...baseNav, name: 'My Portal', tagline: 'Leave, attendance, and profile', sections: MY_PORTAL_SECTIONS }
+    : baseNav
+
+  const switchPortal = () => {
+    const next = portalMode === 'self' ? 'admin' : 'self'
+    if (next === 'admin' && !adminAccess) return
+    setHrmsPortalMode(next)
+    setPortalMode(next)
+    setMobileOpen(false)
+    navigate(next === 'self' ? '/app/hrms/me' : '/app/hrms')
+  }
+  const showPortalSwitch = productId === 'hrms' && (portalMode === 'admin' || adminAccess)
+  const portalSwitchLabel = portalMode === 'self' ? 'Switch to Admin Portal' : 'Switch to My Portal'
 
   // Close mobile drawer on route change
   useEffect(() => {
@@ -357,6 +429,7 @@ export function ProductShell({ productId }) {
                   <NavLink
                     key={item.path}
                     to={item.path}
+                    end={Boolean(item.end)}
                     className={({ isActive }) =>
                       `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                         isActive
@@ -375,8 +448,21 @@ export function ProductShell({ productId }) {
           ))}
         </div>
 
-        {/* Sidebar Footer Link to Product Hub */}
-        <div className="p-3 border-t border-slate-200 shrink-0">
+        {/* Sidebar Footer */}
+        <div className="p-3 border-t border-slate-200 shrink-0 space-y-1">
+          {showPortalSwitch && (
+            <button
+              type="button"
+              onClick={switchPortal}
+              title={portalSwitchLabel}
+              className={`flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-2 text-left text-xs font-semibold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 ${
+                collapsed ? 'justify-center' : ''
+              }`}
+            >
+              <ArrowLeftRight className="h-4 w-4 shrink-0 text-blue-600" />
+              {!collapsed && <span>{portalSwitchLabel}</span>}
+            </button>
+          )}
           <Link
             to="/app"
             className={`flex items-center gap-2.5 p-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors ${
@@ -391,7 +477,7 @@ export function ProductShell({ productId }) {
 
       {/* Product-Specific Mobile Drawer */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform lg:hidden transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white border-r border-slate-200 transform lg:hidden transition-transform duration-300 ease-in-out ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -410,7 +496,7 @@ export function ProductShell({ productId }) {
             ✕
           </button>
         </div>
-        <div className="p-3 space-y-4 overflow-y-auto max-h-[calc(100vh-4rem)]">
+        <div className="flex-1 p-3 space-y-4 overflow-y-auto">
           {currentNav.sections.map((section, sIdx) => (
             <div key={sIdx} className="space-y-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-1">
@@ -422,6 +508,7 @@ export function ProductShell({ productId }) {
                   <NavLink
                     key={item.path}
                     to={item.path}
+                    end={Boolean(item.end)}
                     onClick={() => setMobileOpen(false)}
                     className={({ isActive }) =>
                       `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold ${
@@ -437,6 +524,18 @@ export function ProductShell({ productId }) {
             </div>
           ))}
         </div>
+        {showPortalSwitch && (
+          <div className="p-3 border-t border-slate-200">
+            <button
+              type="button"
+              onClick={switchPortal}
+              className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-2 text-left text-xs font-semibold text-slate-700"
+            >
+              <ArrowLeftRight className="h-4 w-4 shrink-0 text-blue-600" />
+              <span>{portalSwitchLabel}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Main Content Area */}
