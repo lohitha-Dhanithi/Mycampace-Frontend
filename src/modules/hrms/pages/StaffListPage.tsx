@@ -39,7 +39,7 @@ export function StaffListPage() {
         actions={
           <Link
             to="/app/hrms/staff/new"
-            className="inline-flex h-8 items-center rounded-md bg-slate-900 px-3 text-xs font-semibold text-white hover:bg-indigo-600"
+            className="inline-flex h-8 items-center rounded-xl bg-slate-900 px-3.5 text-xs font-semibold text-white shadow-2xs hover:bg-indigo-600 transition-colors"
           >
             + Add staff
           </Link>
@@ -76,7 +76,23 @@ export function StaffListPage() {
         {loading ? (
           <LoadingState message="Loading staff records..." />
         ) : staff.length === 0 ? (
-          <EmptyState message="No staff match these filters." />
+          <div className="py-10 text-center space-y-2">
+            <EmptyState message="No staff match these filters." />
+            {(search || category !== 'all' || status !== 'all' || campus !== 'all') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('')
+                  setCategory('all')
+                  setStatus('all')
+                  setCampus('all')
+                }}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+              >
+                Reset all filters
+              </button>
+            )}
+          </div>
         ) : (
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">

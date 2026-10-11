@@ -56,6 +56,15 @@ export function LeaveFormPage() {
 
   return (
     <div className="space-y-5">
+      <div>
+        <Link
+          to="/app/hrms/leaves"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors"
+        >
+          &larr; Back to Leave Requests
+        </Link>
+      </div>
+
       <PageHeader
         title="New leave request"
         description="The request is assigned to the staff member's reporting manager, then moves up that chain until HR."

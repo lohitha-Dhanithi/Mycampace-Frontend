@@ -27,7 +27,7 @@ export function LeaveListPage() {
         title="Leave requests"
         description="Each request follows the staff reporting chain, then HR gives the final decision."
         actions={
-          <Link to="/app/hrms/leaves/new" className="inline-flex h-8 items-center rounded-md bg-slate-900 px-3 text-xs font-semibold text-white hover:bg-indigo-600">
+          <Link to="/app/hrms/leaves/new" className="inline-flex h-8 items-center rounded-xl bg-slate-900 px-3.5 text-xs font-semibold text-white shadow-2xs hover:bg-indigo-600 transition-colors">
             + New request
           </Link>
         }
@@ -47,7 +47,18 @@ export function LeaveListPage() {
         {loading ? (
           <LoadingState message="Loading leave requests..." />
         ) : leaves.length === 0 ? (
-          <EmptyState message="No leave requests at this stage." />
+          <div className="py-10 text-center space-y-2">
+            <EmptyState message="No leave requests at this stage." />
+            {status !== 'all' && (
+              <button
+                type="button"
+                onClick={() => setStatus('all')}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+              >
+                Show all stages
+              </button>
+            )}
+          </div>
         ) : (
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">

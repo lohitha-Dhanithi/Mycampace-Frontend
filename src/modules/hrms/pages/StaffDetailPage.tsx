@@ -82,16 +82,25 @@ export function StaffDetailPage() {
 
   return (
     <div className="space-y-5">
+      <div>
+        <Link
+          to="/app/hrms/staff"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors"
+        >
+          &larr; Back to Staff Directory
+        </Link>
+      </div>
+
       <PageHeader
         title={staff.fullName}
         description={`${staff.employeeCode} · ${staff.designation}`}
         badge={<StatusBadge value={staff.employmentStatus} />}
         actions={
           <div className="flex gap-2">
-            <Link to={`/app/hrms/leaves/new?staffId=${staff.id}`} className="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+            <Link to={`/app/hrms/leaves/new?staffId=${staff.id}`} className="inline-flex h-8 items-center rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors">
               Apply leave
             </Link>
-            <Link to={`/app/hrms/staff/${staff.id}/edit`} className="inline-flex h-8 items-center rounded-md bg-slate-900 px-3 text-xs font-semibold text-white hover:bg-indigo-600">
+            <Link to={`/app/hrms/staff/${staff.id}/edit`} className="inline-flex h-8 items-center rounded-xl bg-slate-900 px-3.5 text-xs font-semibold text-white shadow-2xs hover:bg-indigo-600 transition-colors">
               Edit profile
             </Link>
           </div>
@@ -103,17 +112,34 @@ export function StaffDetailPage() {
         <span className="text-xs text-slate-500">{staff.department} · {staff.campus}</span>
       </div>
 
-      <div className="flex gap-1 border-b border-slate-200">
-        {TABS.map((item) => (
-          <button
-            key={item}
-            type="button"
-            onClick={() => setTab(item)}
-            className={`px-3 py-2 text-xs font-semibold ${tab === item ? 'border-b-2 border-indigo-600 text-indigo-700' : 'text-slate-500'}`}
-          >
-            {item}
-          </button>
-        ))}
+      <div className="flex gap-2 border-b border-slate-200">
+        {TABS.map((item) => {
+          let count: number | null = null
+          if (item === 'Document Vault') count = profile.documents.length
+          if (item === 'Service History') count = profile.serviceEvents.length
+          if (item === 'Certifications') count = profile.certifications.length
+          return (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setTab(item)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition-colors ${
+                tab === item ? 'border-b-2 border-indigo-600 text-indigo-700 font-bold' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <span>{item}</span>
+              {count !== null && (
+                <span
+                  className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                    tab === item ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
 
       {notice && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">{notice}</p>}

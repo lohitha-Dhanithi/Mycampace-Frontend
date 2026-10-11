@@ -74,6 +74,15 @@ export function AppraisalDetailPage() {
 
   return (
     <div className="space-y-5">
+      <div>
+        <Link
+          to="/app/hrms/appraisals"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors"
+        >
+          &larr; Back to Faculty Appraisals
+        </Link>
+      </div>
+
       <PageHeader
         title={review.staffName}
         description={`${review.designation} · ${review.cycle}`}

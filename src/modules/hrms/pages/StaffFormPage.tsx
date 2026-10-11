@@ -77,6 +77,15 @@ export function StaffFormPage() {
 
   return (
     <div className="space-y-5">
+      <div>
+        <Link
+          to={isEdit && id ? `/app/hrms/staff/${id}` : '/app/hrms/staff'}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors"
+        >
+          &larr; {isEdit ? 'Back to Staff Profile' : 'Back to Staff Directory'}
+        </Link>
+      </div>
+
       <PageHeader
         title={isEdit ? 'Edit staff profile' : 'Add staff'}
         description="Creates the personnel record, leave balances, service history, and an open appraisal for this cycle."

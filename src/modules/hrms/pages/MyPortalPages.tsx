@@ -306,6 +306,15 @@ export function MyLeaveApplyPage() {
 
   return (
     <div className="space-y-5">
+      <div>
+        <Link
+          to="/app/hrms/me/leave"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors"
+        >
+          &larr; Back to My Leave
+        </Link>
+      </div>
+
       <PageHeader title="Apply for leave" description={`${staff.fullName} · first approver is ${firstApprover || staff.reportingManager}. It then follows the reporting chain and ends with HR.`} />
       <form onSubmit={submit} className="max-w-xl space-y-4 rounded-xl border border-slate-200 bg-white p-5">
         <Field label="Leave type">
@@ -384,6 +393,15 @@ export function MyLeaveDetailPage() {
 
   return (
     <div className="space-y-5">
+      <div>
+        <Link
+          to="/app/hrms/me/leave"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors"
+        >
+          &larr; Back to My Leave
+        </Link>
+      </div>
+
       <PageHeader
         title={mine ? leave.type : `${leave.staffName} · ${leave.type}`}
         description={`${leave.days} day(s) · ${formatDisplayDate(leave.from)} to ${formatDisplayDate(leave.to)} · currently with ${leaveAwaitingLabel(leave)}`}

@@ -22,15 +22,16 @@ const DEFAULT_USER = {
 }
 
 function persistAuthSession(session: {
-  user: Record<string, unknown>
+  user: Record<string, any>
   accessToken: string
   refreshToken?: string
   expiresIn?: number
 }) {
-  const user = {
+  const user: any = {
+    ...DEFAULT_USER,
     ...session.user,
     token: session.accessToken,
-    avatar: session.user.avatar || session.user.avatarUrl,
+    avatar: session.user.avatar || session.user.avatarUrl || DEFAULT_USER.avatar,
   }
   localStorage.setItem('mycampace_user', JSON.stringify(user))
   localStorage.setItem(

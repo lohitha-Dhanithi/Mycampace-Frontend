@@ -51,7 +51,7 @@ export function HrmsSetupPage() {
               placeholder="New category"
               className="text-xs"
             />
-            <button type="submit" className="h-9 shrink-0 rounded-md bg-slate-900 px-3 text-xs font-semibold text-white hover:bg-indigo-600">
+            <button type="submit" className="h-9 shrink-0 rounded-xl bg-slate-900 px-3.5 text-xs font-semibold text-white shadow-2xs hover:bg-indigo-600 transition-colors">
               Add category
             </button>
           </form>
@@ -69,7 +69,7 @@ export function HrmsSetupPage() {
               placeholder="New department"
               className="text-xs"
             />
-            <button type="submit" className="h-9 shrink-0 rounded-md bg-slate-900 px-3 text-xs font-semibold text-white hover:bg-indigo-600">
+            <button type="submit" className="h-9 shrink-0 rounded-xl bg-slate-900 px-3.5 text-xs font-semibold text-white shadow-2xs hover:bg-indigo-600 transition-colors">
               Add department
             </button>
           </form>

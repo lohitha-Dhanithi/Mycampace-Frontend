@@ -41,6 +41,7 @@ import {
   Clock,
   User,
   ArrowLeftRight,
+  Award,
 } from 'lucide-react'
 import { ProductSwitcher } from '@/components/layout/ProductSwitcher'
 import { ProductLauncherMenu } from '@/components/layout/ProductLauncherMenu'
@@ -214,6 +215,12 @@ const PRODUCT_NAV_CONFIG = {
         items: [
           { label: 'Leave Requests', path: '/app/hrms/leaves', icon: CalendarCheck },
           { label: 'Shifts & Attendance', path: '/app/hrms/attendance', icon: Clock },
+        ],
+      },
+      {
+        title: 'Performance & Reviews',
+        items: [
+          { label: 'Faculty Appraisals', path: '/app/hrms/appraisals', icon: Award },
         ],
       },
     ],
@@ -682,6 +689,23 @@ export function ProductShell({ productId }) {
 
         {/* Main Product View */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+          {productId === 'hrms' && portalMode === 'self' && adminAccess && (
+            <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50/80 px-4 py-2.5 text-xs text-indigo-900 shadow-2xs">
+              <div className="flex items-center gap-2">
+                <span className="flex h-2 w-2 rounded-full bg-indigo-600 animate-pulse" />
+                <span>
+                  <strong>Employee Self-Service Mode:</strong> Viewing your personal employee portal.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={switchPortal}
+                className="font-bold text-indigo-700 hover:text-indigo-900 hover:underline shrink-0"
+              >
+                Switch to HR Admin &rarr;
+              </button>
+            </div>
+          )}
           <Outlet />
         </main>
       </div>

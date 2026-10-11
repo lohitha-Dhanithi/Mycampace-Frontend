@@ -40,7 +40,18 @@ export function AppraisalListPage() {
         {loading ? (
           <LoadingState message="Loading appraisal cycle..." />
         ) : reviews.length === 0 ? (
-          <EmptyState message="No reviews at this stage." />
+          <div className="py-10 text-center space-y-2">
+            <EmptyState message="No reviews at this stage." />
+            {stage !== 'all' && (
+              <button
+                type="button"
+                onClick={() => setStage('all')}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+              >
+                Show all stages
+              </button>
+            )}
+          </div>
         ) : (
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
