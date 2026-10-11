@@ -589,15 +589,6 @@ export function GlobalUsersPage() {
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>
-
-              {/* Manage Roles Button (matches blue button on right of toolbar) */}
-              <button
-                type="button"
-                onClick={() => setIsManageProductsOpen(true)}
-                className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-              >
-                <span>Manage Roles</span>
-              </button>
             </div>
           </div>
 
