@@ -69,6 +69,7 @@ export function GlobalUsersPage() {
     name: '',
     email: '',
     mobile: '',
+    institution: 'ABC International School',
     platformRole: 'Member' as UserRecord['platformRole'],
     productRoles: {} as Record<string, string>,
     status: 'Active' as UserRecord['status'],
@@ -187,6 +188,7 @@ export function GlobalUsersPage() {
       name: '',
       email: '',
       mobile: '',
+      institution: 'ABC International School',
       platformRole: 'Member',
       productRoles: initialRoles,
       status: 'Active',
@@ -208,6 +210,7 @@ export function GlobalUsersPage() {
         email: newUserForm.email,
         mobile: newUserForm.mobile,
         organizationId: selectedOrgId,
+        institution: newUserForm.institution,
         platformRole: newUserForm.platformRole,
         productRoles: newUserForm.productRoles,
         status: newUserForm.status,
@@ -455,24 +458,7 @@ export function GlobalUsersPage() {
         </div>
 
         {/* Top Right Header Actions */}
-        <div className="flex items-center gap-3">
-          {/* Subtle organization switcher */}
-          <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-2xs">
-            <Building2 className="h-3.5 w-3.5 text-slate-400" />
-            <select
-              aria-label="Active Organization"
-              value={selectedOrgId}
-              onChange={(e) => setSelectedOrgId(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
-            >
-              {MOCK_ORGANIZATIONS.map((org) => (
-                <option key={org.id} value={org.id}>
-                  {org.name} ({org.code})
-                </option>
-              ))}
-            </select>
-          </div>
-
+        <div>
           <button
             type="button"
             onClick={handleOpenAddUser}
@@ -1021,6 +1007,30 @@ export function GlobalUsersPage() {
                     className="w-full h-10 px-3 rounded-xl border border-slate-200 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+              </div>
+
+              {/* Institution / Campus Assignment */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Institution / Campus Assignment <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={newUserForm.institution}
+                  onChange={(e) =>
+                    setNewUserForm({
+                      ...newUserForm,
+                      institution: e.target.value,
+                    })
+                  }
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="ABC International School">ABC International School (K-12 Campus)</option>
+                  <option value="Apex Institute of Technology & Management">Apex Institute of Technology & Management (Higher Ed Campus)</option>
+                  <option value="Apex Global Education Foundation">Central Foundation / All Campuses (Apex Global)</option>
+                </select>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Assign this user identity to a specific institution campus or central management.
+                </p>
               </div>
 
               {/* Platform Role */}

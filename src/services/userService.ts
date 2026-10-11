@@ -184,6 +184,7 @@ export const userService = {
     email: string
     mobile?: string
     organizationId: string
+    institution?: string
     platformRole?: 'Organization Admin' | 'Member' | 'Campus Admin'
     productRoles?: Record<string, string>
     status?: 'Active' | 'Inactive'
@@ -201,6 +202,7 @@ export const userService = {
       email: userData.email.toLowerCase().trim(),
       mobile: userData.mobile?.trim() || '',
       organizationId: userData.organizationId || 'org-1',
+      institution: userData.institution || 'Apex Global Education Foundation',
       platformRole: userData.platformRole || 'Member',
       status: userData.status || 'Active',
       lastLogin: 'Never',
