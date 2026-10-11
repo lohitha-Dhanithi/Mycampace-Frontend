@@ -32,7 +32,7 @@ import { roleService, ProductRole } from '@/services/roleService'
 import { permissionService, Permission } from '@/services/permissionService'
 import { productService } from '@/services/productService'
 import { entitlementService } from '@/services/entitlementService'
-import { MOCK_ORGANIZATIONS } from '@/services/mockData'
+import { MOCK_ORGANIZATIONS, MOCK_CAMPUSES } from '@/services/mockData'
 
 export function GlobalUsersPage() {
   // --- Active Organization Context ---
@@ -63,6 +63,7 @@ export function GlobalUsersPage() {
   const [selectedUserForRoles, setSelectedUserForRoles] = useState<UserRecord | null>(null)
   const [userRoleDraft, setUserRoleDraft] = useState<Record<string, string>>({})
   const [userPlatformRoleDraft, setUserPlatformRoleDraft] = useState<UserRecord['platformRole']>('Member')
+  const [userAssignedCampusDraft, setUserAssignedCampusDraft] = useState<string[]>([])
 
   // --- Add User Form State ---
   const [newUserForm, setNewUserForm] = useState({
@@ -71,6 +72,7 @@ export function GlobalUsersPage() {
     mobile: '',
     institution: 'ABC International School',
     platformRole: 'Member' as UserRecord['platformRole'],
+    assignedCampusIds: [] as string[],
     productRoles: {} as Record<string, string>,
     status: 'Active' as UserRecord['status'],
   })
@@ -190,6 +192,7 @@ export function GlobalUsersPage() {
       mobile: '',
       institution: 'ABC International School',
       platformRole: 'Member',
+      assignedCampusIds: [],
       productRoles: initialRoles,
       status: 'Active',
     })
@@ -204,6 +207,11 @@ export function GlobalUsersPage() {
       return
     }
 
+    if (newUserForm.platformRole === 'Campus Admin' && (!newUserForm.assignedCampusIds || newUserForm.assignedCampusIds.length === 0)) {
+      setAddUserError('Campus Admin requires selecting at least one assigned campus scope.')
+      return
+    }
+
     try {
       await userService.createUser({
         name: newUserForm.name,
@@ -212,6 +220,7 @@ export function GlobalUsersPage() {
         organizationId: selectedOrgId,
         institution: newUserForm.institution,
         platformRole: newUserForm.platformRole,
+        assignedCampusIds: newUserForm.assignedCampusIds,
         productRoles: newUserForm.productRoles,
         status: newUserForm.status,
       })
@@ -227,17 +236,23 @@ export function GlobalUsersPage() {
   const handleOpenManageRoles = (user: UserRecord) => {
     setSelectedUserForRoles(user)
     setUserPlatformRoleDraft(user.platformRole)
+    setUserAssignedCampusDraft(user.assignedCampusIds || [])
     setUserRoleDraft({ ...(user.productRoles || {}) })
     setIsManageRolesOpen(true)
   }
 
   const handleSaveUserProductRoles = async () => {
     if (!selectedUserForRoles) return
+    if (userPlatformRoleDraft === 'Campus Admin' && userAssignedCampusDraft.length === 0) {
+      showToast('Campus Admin requires selecting at least one assigned campus scope', 'error')
+      return
+    }
     try {
       await userService.updateUserProductRoles(
         selectedUserForRoles.id,
         userRoleDraft,
-        userPlatformRoleDraft
+        userPlatformRoleDraft,
+        userAssignedCampusDraft
       )
       setIsManageRolesOpen(false)
       showToast(`Roles updated for ${selectedUserForRoles.name}`)
@@ -572,9 +587,10 @@ export function GlobalUsersPage() {
                   className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
                   <option value="all">Role</option>
+                  <option value="Super Admin">Super Admin</option>
                   <option value="Organization Admin">Organization Admin</option>
-                  <option value="Member">Member</option>
                   <option value="Campus Admin">Campus Admin</option>
+                  <option value="Member">Member</option>
                 </select>
               </div>
 
@@ -661,10 +677,34 @@ export function GlobalUsersPage() {
 
                           {/* PLATFORM AUTHORITY */}
                           <td className="py-4 px-4 whitespace-nowrap">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                              <Shield className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                              <span>{u.platformRole || 'Member'}</span>
-                            </span>
+                            {u.platformRole === 'Super Admin' ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                                <Sparkles className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                                <span>Super Admin</span>
+                              </span>
+                            ) : u.platformRole === 'Organization Admin' ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                <Shield className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                                <span>Organization Admin</span>
+                              </span>
+                            ) : u.platformRole === 'Campus Admin' ? (
+                              <div className="flex flex-col gap-0.5">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 w-fit">
+                                  <Building2 className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                                  <span>Campus Admin</span>
+                                </span>
+                                {u.assignedCampusIds && u.assignedCampusIds.length > 0 && (
+                                  <span className="text-[10px] text-slate-500 pl-1 font-medium">
+                                    {u.assignedCampusIds.length} campus{u.assignedCampusIds.length > 1 ? 'es' : ''} assigned
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                <Users2 className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                                <span>Member</span>
+                              </span>
+                            )}
                           </td>
 
                           {/* PRODUCT ROLES */}
@@ -1040,62 +1080,142 @@ export function GlobalUsersPage() {
                   className="w-full h-10 px-3 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 >
                   <option value="Member">Member (Product-Specific Permissions Only)</option>
-                  <option value="Organization Admin">Organization Admin (Full Tenant Control)</option>
                   <option value="Campus Admin">Campus Admin (Branch / Campus Authority)</option>
+                  <option value="Organization Admin">Organization Admin (Full Tenant Control)</option>
+                  <option value="Super Admin">Super Admin (Platform Operator Authority)</option>
                 </select>
               </div>
 
-              {/* Product Role Assignments */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs font-bold text-slate-700">
-                    Product-Specific RBAC Role Assignments
-                  </label>
-                  <span className="text-[10px] text-slate-400">
-                    {enabledProducts.length} Products Active in Org
-                  </span>
+              {/* Conditional Authority Scopes */}
+              {newUserForm.platformRole === 'Super Admin' && (
+                <div className="p-3.5 rounded-xl bg-purple-50 border border-purple-200 text-xs text-purple-900 space-y-1.5">
+                  <div className="flex items-center gap-1.5 font-bold text-purple-800">
+                    <Sparkles className="h-4 w-4 text-purple-600 shrink-0" />
+                    <span>Super Admin — Platform Authority Scope</span>
+                  </div>
+                  <p className="text-[11px] text-purple-700 leading-relaxed">
+                    Authorized MyCampace platform operators. Grants unrestricted access across all platform institutions, global product catalogues, and privileged system settings. Protected by explicit backend authorization checks.
+                  </p>
                 </div>
+              )}
 
-                <div className="space-y-2 border border-slate-200 rounded-xl p-3 bg-slate-50/50 max-h-52 overflow-y-auto">
-                  {enabledProducts.map((prod) => {
-                    const availableRoles = roleService.getRolesByProduct(prod.id, selectedOrgId)
-                    return (
-                      <div
-                        key={prod.id}
-                        className="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200/80"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-slate-800">{prod.name}</span>
-                          <span className="text-[10px] text-slate-400">({prod.categoryName})</span>
-                        </div>
+              {newUserForm.platformRole === 'Organization Admin' && (
+                <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-blue-800">
+                    <Shield className="h-4 w-4 text-blue-600 shrink-0" />
+                    <span>Organization Admin — Tenant Authority Scope</span>
+                  </div>
+                  <p className="text-[11px] text-blue-700 leading-relaxed">
+                    Administrative authority within <strong>{currentOrg.name}</strong>. Manages organization settings, campuses, and user product roles. Cannot access or modify other institutions' data.
+                  </p>
+                </div>
+              )}
 
-                        <select
-                          value={newUserForm.productRoles[prod.id] || 'No Access'}
-                          onChange={(e) =>
-                            setNewUserForm({
-                              ...newUserForm,
-                              productRoles: {
-                                ...newUserForm.productRoles,
-                                [prod.id]: e.target.value,
-                              },
-                            })
-                          }
-                          className="h-8 px-2 rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[180px]"
+              {newUserForm.platformRole === 'Campus Admin' && (
+                <div className="space-y-2 p-3.5 rounded-xl bg-amber-50/70 border border-amber-200">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-amber-900">
+                      Assigned Campus Scopes <span className="text-red-500">*</span>
+                    </label>
+                    <span className="text-[10px] text-amber-700 font-semibold">
+                      {newUserForm.assignedCampusIds.length} selected
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-700">
+                    Authority is restricted strictly to assigned campus scopes. Select 1 or more campuses:
+                  </p>
+                  <div className="grid grid-cols-1 gap-1.5 pt-1 max-h-40 overflow-y-auto">
+                    {MOCK_CAMPUSES.map((camp) => {
+                      const checked = newUserForm.assignedCampusIds.includes(camp.id)
+                      return (
+                        <label
+                          key={camp.id}
+                          className={`flex items-center gap-2.5 p-2 rounded-lg border text-xs cursor-pointer transition-colors ${
+                            checked
+                              ? 'bg-amber-100/70 border-amber-300 text-amber-900 font-bold'
+                              : 'bg-white border-slate-200 text-slate-700 font-medium hover:bg-slate-50'
+                          }`}
                         >
-                          <option value="No Access">No Access</option>
-                          {availableRoles
-                            .filter((r) => r.status === 'Active')
-                            .map((r) => (
-                              <option key={r.id} value={r.name}>
-                                {r.name} {r.isSystem ? '' : '(Custom)'}
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-                    )
-                  })}
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              const updated = e.target.checked
+                                ? [...newUserForm.assignedCampusIds, camp.id]
+                                : newUserForm.assignedCampusIds.filter((id) => id !== camp.id)
+                              setNewUserForm({ ...newUserForm, assignedCampusIds: updated })
+                            }}
+                            className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                          />
+                          <span className="flex-1">{camp.name} ({camp.code})</span>
+                          <span className="text-[10px] text-slate-400 font-normal">{camp.city}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Product Role Assignments (Enabled for Member, Campus Admin, Org Admin) */}
+              {newUserForm.platformRole !== 'Super Admin' && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700">
+                        Product-Specific RBAC Role Assignments
+                      </label>
+                      {newUserForm.platformRole === 'Member' && (
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          Members receive permissions solely through assigned product roles within authorized scope.
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                      {enabledProducts.length} Products Active in Org
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 border border-slate-200 rounded-xl p-3 bg-slate-50/50 max-h-52 overflow-y-auto">
+                    {enabledProducts.map((prod) => {
+                      const availableRoles = roleService.getRolesByProduct(prod.id, selectedOrgId)
+                      return (
+                        <div
+                          key={prod.id}
+                          className="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200/80"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-xs text-slate-800">{prod.name}</span>
+                            <span className="text-[10px] text-slate-400">({prod.categoryName})</span>
+                          </div>
+
+                          <select
+                            value={newUserForm.productRoles[prod.id] || 'No Access'}
+                            onChange={(e) =>
+                              setNewUserForm({
+                                ...newUserForm,
+                                productRoles: {
+                                  ...newUserForm.productRoles,
+                                  [prod.id]: e.target.value,
+                                },
+                              })
+                            }
+                            className="h-8 px-2 rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[180px]"
+                          >
+                            <option value="No Access">No Access</option>
+                            {availableRoles
+                              .filter((r) => r.status === 'Active')
+                              .map((r) => (
+                                <option key={r.id} value={r.name}>
+                                  {r.name} {r.isSystem ? '' : '(Custom)'}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Modal Buttons */}
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
@@ -1159,22 +1279,101 @@ export function GlobalUsersPage() {
                   }
                   className="w-full h-10 px-3 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 >
-                  <option value="Organization Admin">Organization Admin (Full Tenant Control)</option>
                   <option value="Member">Member (Product-Specific Access Only)</option>
                   <option value="Campus Admin">Campus Admin (Branch / Campus Authority)</option>
+                  <option value="Organization Admin">Organization Admin (Full Tenant Control)</option>
+                  <option value="Super Admin">Super Admin (Platform Operator Authority)</option>
                 </select>
               </div>
 
-              {/* Dynamic Product Roles */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs font-bold text-slate-700">
-                    Active Product Role Entitlements
-                  </label>
-                  <span className="text-[10px] text-slate-400">
-                    Showing products enabled for {currentOrg.code}
-                  </span>
+              {/* Conditional Authority Scopes */}
+              {userPlatformRoleDraft === 'Super Admin' && (
+                <div className="p-3.5 rounded-xl bg-purple-50 border border-purple-200 text-xs text-purple-900 space-y-1.5">
+                  <div className="flex items-center gap-1.5 font-bold text-purple-800">
+                    <Sparkles className="h-4 w-4 text-purple-600 shrink-0" />
+                    <span>Super Admin — Platform Authority Scope</span>
+                  </div>
+                  <p className="text-[11px] text-purple-700 leading-relaxed">
+                    Privileged platform operator status. Grants unrestricted access across all platform institutions and configuration. Protected by backend authorization guards.
+                  </p>
                 </div>
+              )}
+
+              {userPlatformRoleDraft === 'Organization Admin' && (
+                <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-blue-800">
+                    <Shield className="h-4 w-4 text-blue-600 shrink-0" />
+                    <span>Organization Admin — Tenant Authority Scope</span>
+                  </div>
+                  <p className="text-[11px] text-blue-700 leading-relaxed">
+                    Administrative authority within <strong>{currentOrg.name}</strong>. Enforces tenant isolation.
+                  </p>
+                </div>
+              )}
+
+              {userPlatformRoleDraft === 'Campus Admin' && (
+                <div className="space-y-2 p-3.5 rounded-xl bg-amber-50/70 border border-amber-200">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-amber-900">
+                      Assigned Campus Scopes <span className="text-red-500">*</span>
+                    </label>
+                    <span className="text-[10px] text-amber-700 font-semibold">
+                      {userAssignedCampusDraft.length} selected
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-700">
+                    Select the branch or campus scopes where this administrator is authorized:
+                  </p>
+                  <div className="grid grid-cols-1 gap-1.5 pt-1 max-h-36 overflow-y-auto">
+                    {MOCK_CAMPUSES.map((camp) => {
+                      const checked = userAssignedCampusDraft.includes(camp.id)
+                      return (
+                        <label
+                          key={camp.id}
+                          className={`flex items-center gap-2.5 p-2 rounded-lg border text-xs cursor-pointer transition-colors ${
+                            checked
+                              ? 'bg-amber-100/70 border-amber-300 text-amber-900 font-bold'
+                              : 'bg-white border-slate-200 text-slate-700 font-medium hover:bg-slate-50'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              const updated = e.target.checked
+                                ? [...userAssignedCampusDraft, camp.id]
+                                : userAssignedCampusDraft.filter((id) => id !== camp.id)
+                              setUserAssignedCampusDraft(updated)
+                            }}
+                            className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                          />
+                          <span className="flex-1">{camp.name} ({camp.code})</span>
+                          <span className="text-[10px] text-slate-400 font-normal">{camp.city}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Dynamic Product Roles */}
+              {userPlatformRoleDraft !== 'Super Admin' && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700">
+                        Active Product Role Entitlements
+                      </label>
+                      {userPlatformRoleDraft === 'Member' && (
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          Member permissions are scoped strictly to selected product roles.
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                      Showing products enabled for {currentOrg.code}
+                    </span>
+                  </div>
 
                 <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
                   {enabledProducts.map((prod) => {
@@ -1226,6 +1425,7 @@ export function GlobalUsersPage() {
                   })}
                 </div>
               </div>
+              )}
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">

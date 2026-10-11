@@ -8,11 +8,12 @@ export interface UserRecord {
   mobile?: string
   organizationId: string
   institution?: string
-  platformRole: 'Organization Admin' | 'Member' | 'Campus Admin'
+  platformRole: 'Super Admin' | 'Organization Admin' | 'Member' | 'Campus Admin'
   status: 'Active' | 'Inactive'
   lastLogin?: string
   productRoles: Record<string, string> // e.g. { academics: 'Academic Director', finance: 'No Access' }
   campusId?: string
+  assignedCampusIds?: string[]
 }
 
 const STORAGE_KEY = 'mycampace_users_directory_v2'
@@ -183,9 +184,10 @@ export const userService = {
     name: string
     email: string
     mobile?: string
-    organizationId: string
+    organizationId?: string
     institution?: string
-    platformRole?: 'Organization Admin' | 'Member' | 'Campus Admin'
+    platformRole?: UserRecord['platformRole']
+    assignedCampusIds?: string[]
     productRoles?: Record<string, string>
     status?: 'Active' | 'Inactive'
   }): Promise<UserRecord> => {
@@ -204,6 +206,7 @@ export const userService = {
       organizationId: userData.organizationId || 'org-1',
       institution: userData.institution || 'Apex Global Education Foundation',
       platformRole: userData.platformRole || 'Member',
+      assignedCampusIds: userData.assignedCampusIds || [],
       status: userData.status || 'Active',
       lastLogin: 'Never',
       productRoles: userData.productRoles || {},
@@ -235,7 +238,8 @@ export const userService = {
   updateUserProductRoles: async (
     userId: string,
     productRoles: Record<string, string>,
-    platformRole?: 'Organization Admin' | 'Member' | 'Campus Admin'
+    platformRole?: UserRecord['platformRole'],
+    assignedCampusIds?: string[]
   ): Promise<UserRecord> => {
     await new Promise((r) => setTimeout(r, 80))
     const list = loadUsers()
@@ -246,6 +250,7 @@ export const userService = {
     const updated: UserRecord = {
       ...user,
       platformRole: platformRole || user.platformRole,
+      assignedCampusIds: assignedCampusIds !== undefined ? assignedCampusIds : user.assignedCampusIds,
       productRoles: { ...user.productRoles, ...productRoles },
     }
     list[index] = updated
