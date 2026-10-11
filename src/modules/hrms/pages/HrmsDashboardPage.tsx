@@ -27,12 +27,12 @@ export function HrmsDashboardPage() {
           <div>
             <h1 className="text-xl font-bold tracking-tight text-slate-900">HRMS</h1>
             <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-600">
-              Unified personnel management for teaching and non-teaching staff. Track certifications, service history, leaves, and the annual appraisal cycle.
+              Unified personnel management for teaching and non-teaching staff. Track certifications, service history, leaves, and daily attendance rosters.
             </p>
           </div>
           <Link
             to="/app/hrms/staff/new"
-            className="inline-flex h-9 items-center justify-center rounded-xl bg-slate-900 px-4 text-xs font-semibold text-white hover:bg-indigo-600"
+            className="inline-flex h-9 items-center justify-center rounded-xl bg-slate-900 px-4 text-xs font-semibold text-white shadow-2xs hover:bg-indigo-600 transition-colors"
           >
             + Add staff
           </Link>
@@ -42,7 +42,7 @@ export function HrmsDashboardPage() {
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard label="Active staff" value={data.totalStaff} hint={`${data.teaching} teaching · ${data.nonTeaching} non-teaching`} />
         <KpiCard label="Leave approvals" value={data.pendingLeaves} hint="Waiting on manager or HR" />
-        <KpiCard label="Appraisal cycle" value={`${data.appraisalsClosed}/${data.appraisalsClosed + data.appraisalsOpen}`} hint={`${data.appraisalsOpen} reviews still open`} />
+        <KpiCard label="Departments" value={data.departmentCounts.length} hint={`${data.departmentCounts.reduce((acc, d) => acc + d.count, 0)} total assigned staff`} />
         <KpiCard label="Attendance today" value={`${attendanceRate}%`} hint={`${data.presentToday} of ${data.attendanceTotal} marked in`} />
       </div>
 
@@ -119,26 +119,37 @@ export function HrmsDashboardPage() {
           </div>
         </Panel>
 
-        <Panel
-          title="Annual appraisal ratings"
-          action={
-            <Link to="/app/hrms/appraisals" className="text-[11px] font-semibold text-blue-600 hover:underline">
-              Open cycle
+        <Panel title="Quick actions & management">
+          <div className="grid grid-cols-2 gap-3">
+            <Link
+              to="/app/hrms/staff/new"
+              className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 hover:border-indigo-200 hover:bg-indigo-50/40 transition-colors"
+            >
+              <span className="text-xs font-bold text-slate-900">+ Add New Staff</span>
+              <span className="text-[11px] text-slate-500">Create personnel file & record</span>
             </Link>
-          }
-        >
-          {data.ratingCounts.length === 0 ? (
-            <EmptyState message="Ratings appear after HR closes a review." />
-          ) : (
-            <div className="space-y-3">
-              {data.ratingCounts.map((row) => (
-                <div key={row.rating} className="flex items-center justify-between">
-                  <StatusBadge value={row.rating} />
-                  <span className="text-sm font-bold text-slate-900">{row.count}</span>
-                </div>
-              ))}
-            </div>
-          )}
+            <Link
+              to="/app/hrms/leaves/new"
+              className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 hover:border-indigo-200 hover:bg-indigo-50/40 transition-colors"
+            >
+              <span className="text-xs font-bold text-slate-900">+ Submit Leave</span>
+              <span className="text-[11px] text-slate-500">File leave request on behalf</span>
+            </Link>
+            <Link
+              to="/app/hrms/attendance"
+              className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 hover:border-indigo-200 hover:bg-indigo-50/40 transition-colors"
+            >
+              <span className="text-xs font-bold text-slate-900">Mark Attendance</span>
+              <span className="text-[11px] text-slate-500">Update today's shift roster</span>
+            </Link>
+            <Link
+              to="/app/hrms/setup"
+              className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 hover:border-indigo-200 hover:bg-indigo-50/40 transition-colors"
+            >
+              <span className="text-xs font-bold text-slate-900">Setup Departments</span>
+              <span className="text-[11px] text-slate-500">Manage categories & units</span>
+            </Link>
+          </div>
         </Panel>
       </div>
     </div>

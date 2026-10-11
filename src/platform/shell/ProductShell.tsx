@@ -41,7 +41,6 @@ import {
   Clock,
   User,
   ArrowLeftRight,
-  Award,
 } from 'lucide-react'
 import { ProductSwitcher } from '@/components/layout/ProductSwitcher'
 import { ProductLauncherMenu } from '@/components/layout/ProductLauncherMenu'
@@ -215,12 +214,6 @@ const PRODUCT_NAV_CONFIG = {
         items: [
           { label: 'Leave Requests', path: '/app/hrms/leaves', icon: CalendarCheck },
           { label: 'Shifts & Attendance', path: '/app/hrms/attendance', icon: Clock },
-        ],
-      },
-      {
-        title: 'Performance & Reviews',
-        items: [
-          { label: 'Faculty Appraisals', path: '/app/hrms/appraisals', icon: Award },
         ],
       },
     ],
