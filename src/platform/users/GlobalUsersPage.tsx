@@ -98,6 +98,15 @@ export function GlobalUsersPage() {
   // --- Notification Toast ---
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
+  // --- Collapsible User Product Roles State ---
+  const [expandedUserRoles, setExpandedUserRoles] = useState<Record<string, boolean>>({})
+  const toggleExpandUserRoles = (userId: string) => {
+    setExpandedUserRoles((prev) => ({
+      ...prev,
+      [userId]: !prev[userId],
+    }))
+  }
+
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToastMessage({ type, text })
     setTimeout(() => setToastMessage(null), 3500)
@@ -434,96 +443,77 @@ export function GlobalUsersPage() {
         </div>
       )}
 
-      {/* Top Header & Tenant Selector */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-200">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-600 mb-1">
-            <Shield className="h-4 w-4" />
-            <span>Platform Identity & Access</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-            <span>Global User Management & Product RBAC</span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Global User Management & Product RBAC
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-slate-500">
-            One global identity per user across MyCampace with independent, extensible product roles and tenant entitlement controls.
+            Manage user identities, global platform authority, and extensible product-specific roles across your entire tenant.
           </p>
         </div>
 
-        {/* Tenant Switcher & Global Actions */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 shadow-2xs">
-            <Building2 className="h-4 w-4 text-slate-400" />
-            <div className="flex flex-col">
-              <span className="text-[10px] uppercase font-bold text-slate-400 leading-none">
-                Active Organization
-              </span>
-              <select
-                aria-label="Active Organization"
-                value={selectedOrgId}
-                onChange={(e) => setSelectedOrgId(e.target.value)}
-                className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-2 pt-0.5"
-              >
-                {MOCK_ORGANIZATIONS.map((org) => (
-                  <option key={org.id} value={org.id}>
-                    {org.name} ({org.code})
-                  </option>
-                ))}
-              </select>
-            </div>
+        {/* Top Right Header Actions */}
+        <div className="flex items-center gap-3">
+          {/* Subtle organization switcher */}
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-2xs">
+            <Building2 className="h-3.5 w-3.5 text-slate-400" />
+            <select
+              aria-label="Active Organization"
+              value={selectedOrgId}
+              onChange={(e) => setSelectedOrgId(e.target.value)}
+              className="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
+            >
+              {MOCK_ORGANIZATIONS.map((org) => (
+                <option key={org.id} value={org.id}>
+                  {org.name} ({org.code})
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Manage Org Products Button */}
-          <button
-            type="button"
-            onClick={() => setIsManageProductsOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-all"
-          >
-            <Layers className="h-4 w-4 text-blue-600" />
-            <span>Manage Products ({orgEntitlements.length})</span>
-          </button>
-
-          {/* Primary Action: + Add User */}
           <button
             type="button"
             onClick={handleOpenAddUser}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold shadow-xs hover:shadow transition-all"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold shadow-xs hover:shadow transition-all shrink-0 cursor-pointer"
           >
             <UserPlus className="h-4 w-4" />
-            <span>+ Add User</span>
+            <span>Add User</span>
           </button>
         </div>
       </div>
 
       {/* Tenant Metrics Banner */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Users</p>
-          <p className="text-2xl font-extrabold text-slate-900 mt-1">{users.length}</p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Assigned to {currentOrg.code}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">TOTAL USERS</p>
+          <p className="text-3xl font-extrabold text-slate-900 mt-2">{users.length}</p>
+          <p className="text-xs text-slate-400 mt-1">Assigned to {currentOrg.code}</p>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Active Products</p>
-          <p className="text-2xl font-extrabold text-blue-600 mt-1">{orgEntitlements.length}</p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Enabled for this tenant</p>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">ACTIVE PRODUCTS</p>
+          <p className="text-3xl font-extrabold text-blue-600 mt-2">{orgEntitlements.length}</p>
+          <p className="text-xs text-slate-400 mt-1">Enabled for this tenant</p>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Configured Roles</p>
-          <p className="text-2xl font-extrabold text-purple-600 mt-1">{roles.length}</p>
-          <p className="text-[11px] text-slate-500 mt-0.5">System templates & custom</p>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">CONFIGURED ROLES</p>
+          <p className="text-3xl font-extrabold text-purple-600 mt-2">{roles.length}</p>
+          <p className="text-xs text-slate-400 mt-1">System templates & custom</p>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Platform Admins</p>
-          <p className="text-2xl font-extrabold text-amber-600 mt-1">{orgAdminCount}</p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Full governance authority</p>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">PLATFORM ADMINS</p>
+          <p className="text-3xl font-extrabold text-amber-600 mt-2">{orgAdminCount}</p>
+          <p className="text-xs text-slate-400 mt-1">Full governance authority</p>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200">
+      <div className="flex items-center gap-6 border-b border-slate-200">
         <button
           type="button"
           onClick={() => setActiveTab('users')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all -mb-px ${
+          className={`flex items-center gap-2 py-3 text-xs font-bold border-b-2 transition-all -mb-px cursor-pointer ${
             activeTab === 'users'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -531,15 +521,12 @@ export function GlobalUsersPage() {
         >
           <Users2 className="h-4 w-4" />
           <span>Global Users Directory</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-blue-50 text-blue-700 font-extrabold">
-            {users.length}
-          </span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('roles')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all -mb-px ${
+          className={`flex items-center gap-2 py-3 text-xs font-bold border-b-2 transition-all -mb-px cursor-pointer ${
             activeTab === 'roles'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -547,9 +534,6 @@ export function GlobalUsersPage() {
         >
           <Shield className="h-4 w-4" />
           <span>Product Roles & Permission Matrix</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-50 text-purple-700 font-extrabold">
-            {roles.length}
-          </span>
         </button>
       </div>
 
@@ -559,29 +543,29 @@ export function GlobalUsersPage() {
       {activeTab === 'users' && (
         <div className="space-y-4">
           {/* Search & Filter Toolbar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
             {/* Search Input */}
-            <div className="relative w-full sm:w-80">
-              <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+            <div className="relative w-full lg:w-96">
+              <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by name, email, role or phone..."
-                className="w-full h-9 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full h-10 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50/60 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
-            {/* Filter Dropdowns */}
-            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            {/* Filter Dropdowns & Toolbar Actions */}
+            <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
               {/* Product Filter */}
               <div className="flex items-center gap-1.5">
-                <span className="text-[11px] text-slate-500 font-semibold">Product:</span>
+                <span className="text-xs text-slate-500 font-medium">Product:</span>
                 <select
                   aria-label="Filter by Product"
                   value={productFilter}
                   onChange={(e) => setProductFilter(e.target.value)}
-                  className="h-9 px-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
                   <option value="all">All Products</option>
                   {enabledProducts.map((p) => (
@@ -594,14 +578,14 @@ export function GlobalUsersPage() {
 
               {/* Platform Role Filter */}
               <div className="flex items-center gap-1.5">
-                <span className="text-[11px] text-slate-500 font-semibold">Role:</span>
+                <span className="text-xs text-slate-500 font-medium">Role:</span>
                 <select
                   aria-label="Filter by Platform Role"
                   value={platformRoleFilter}
                   onChange={(e) => setPlatformRoleFilter(e.target.value)}
-                  className="h-9 px-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
-                  <option value="all">All Roles</option>
+                  <option value="all">Role</option>
                   <option value="Organization Admin">Organization Admin</option>
                   <option value="Member">Member</option>
                   <option value="Campus Admin">Campus Admin</option>
@@ -613,21 +597,20 @@ export function GlobalUsersPage() {
                 aria-label="Filter by Status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="h-9 px-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               >
                 <option value="all">All Status</option>
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>
 
-              {/* Quick "+ Add User" shortcut in toolbar */}
+              {/* Manage Roles Button (matches blue button on right of toolbar) */}
               <button
                 type="button"
-                onClick={handleOpenAddUser}
-                className="h-9 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs ml-auto sm:ml-2"
+                onClick={() => setIsManageProductsOpen(true)}
+                className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
               >
-                <Plus className="h-3.5 w-3.5" />
-                <span>Add User</span>
+                <span>Manage Roles</span>
               </button>
             </div>
           </div>
@@ -636,13 +619,13 @@ export function GlobalUsersPage() {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
                   <tr>
-                    <th className="py-3 px-4 sm:px-6">User Identity</th>
-                    <th className="py-3 px-4">Platform Authority</th>
-                    <th className="py-3 px-4">Product-Specific RBAC Roles</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                    <th className="py-3.5 px-4 sm:px-6">USER IDENTITY</th>
+                    <th className="py-3.5 px-4">PLATFORM AUTHORITY</th>
+                    <th className="py-3.5 px-4">PRODUCT ROLES</th>
+                    <th className="py-3.5 px-4">STATUS</th>
+                    <th className="py-3.5 px-4 text-right">ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -669,26 +652,29 @@ export function GlobalUsersPage() {
                       const assignedProducts = Object.entries(u.productRoles || {}).filter(
                         ([_, role]) => role && role !== 'No Access'
                       )
+                      const isExpanded = expandedUserRoles[u.id]
+                      const displayedProducts = isExpanded ? assignedProducts : assignedProducts.slice(0, 2)
+                      const hiddenCount = assignedProducts.length - 2
 
                       return (
                         <tr key={u.id} className="hover:bg-slate-50/70 transition-colors">
-                          {/* User Identity */}
-                          <td className="py-3.5 px-4 sm:px-6">
-                            <div className="flex items-center gap-3">
-                              <div className="h-9 w-9 rounded-full bg-linear-to-tr from-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center text-xs shadow-2xs">
+                          {/* USER IDENTITY */}
+                          <td className="py-4 px-4 sm:px-6">
+                            <div className="flex items-center gap-3.5">
+                              <div className="h-10 w-10 rounded-full bg-slate-100 border border-slate-200 text-slate-700 font-bold flex items-center justify-center text-sm shrink-0">
                                 {u.name ? u.name.charAt(0).toUpperCase() : 'U'}
                               </div>
-                              <div>
-                                <p className="font-bold text-slate-900 leading-snug">{u.name}</p>
-                                <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
-                                  <span className="flex items-center gap-1 font-mono">
-                                    <Mail className="h-3 w-3" />
-                                    {u.email}
+                              <div className="min-w-0">
+                                <p className="font-bold text-slate-900 text-sm leading-snug">{u.name}</p>
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-400 mt-0.5">
+                                  <span className="inline-flex items-center gap-1 font-mono">
+                                    <Mail className="h-3 w-3 text-slate-400 shrink-0" />
+                                    <span>{u.email}</span>
                                   </span>
                                   {u.mobile && (
-                                    <span className="flex items-center gap-1 text-slate-400">
-                                      <Phone className="h-3 w-3" />
-                                      {u.mobile}
+                                    <span className="inline-flex items-center gap-1 text-slate-400">
+                                      <Phone className="h-3 w-3 text-slate-400 shrink-0" />
+                                      <span>{u.mobile}</span>
                                     </span>
                                   )}
                                 </div>
@@ -696,54 +682,64 @@ export function GlobalUsersPage() {
                             </div>
                           </td>
 
-                          {/* Platform Authority */}
-                          <td className="py-3.5 px-4">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
-                                u.platformRole === 'Organization Admin'
-                                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                  : u.platformRole === 'Campus Admin'
-                                  ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                                  : 'bg-slate-100 text-slate-700 border border-slate-200'
-                              }`}
-                            >
-                              <Shield className="h-3 w-3" />
-                              {u.platformRole || 'Member'}
+                          {/* PLATFORM AUTHORITY */}
+                          <td className="py-4 px-4 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                              <Shield className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                              <span>{u.platformRole || 'Member'}</span>
                             </span>
                           </td>
 
-                          {/* Product-Specific Access */}
-                          <td className="py-3.5 px-4">
+                          {/* PRODUCT ROLES */}
+                          <td className="py-4 px-4">
                             {assignedProducts.length === 0 ? (
-                              <span className="text-[11px] text-slate-400 italic">
-                                No Product Access
-                              </span>
+                              <span className="text-xs text-slate-400 italic">No Product Access</span>
                             ) : (
-                              <div className="flex flex-wrap gap-1.5 max-w-md">
-                                {assignedProducts.map(([prodId, roleName]) => (
+                              <div className="flex flex-wrap items-center gap-1.5 max-w-lg">
+                                {displayedProducts.map(([prodId, roleName]) => (
                                   <div
                                     key={prodId}
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[10px]"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-xs"
                                   >
-                                    <span className="font-bold uppercase text-slate-500">
+                                    <span className="font-bold uppercase text-slate-500 text-[10px]">
                                       {prodId}:
                                     </span>
-                                    <span className="font-semibold text-slate-800">
+                                    <span className="font-semibold text-slate-800 text-[11px]">
                                       {String(roleName)}
                                     </span>
                                   </div>
                                 ))}
+
+                                {hiddenCount > 0 && !isExpanded && (
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleExpandUserRoles(u.id)}
+                                    className="px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 border border-slate-200 text-[11px] font-bold text-slate-600 transition-colors cursor-pointer"
+                                  >
+                                    +{hiddenCount} more
+                                  </button>
+                                )}
+
+                                {isExpanded && assignedProducts.length > 2 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleExpandUserRoles(u.id)}
+                                    className="px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 border border-slate-200 text-[10px] font-bold text-slate-500 transition-colors cursor-pointer"
+                                  >
+                                    Show less
+                                  </button>
+                                )}
                               </div>
                             )}
                           </td>
 
-                          {/* Status */}
-                          <td className="py-3.5 px-4">
+                          {/* STATUS */}
+                          <td className="py-4 px-4 whitespace-nowrap">
                             <button
                               type="button"
                               onClick={() => handleToggleUserStatus(u)}
                               title="Click to toggle status"
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all ${
+                              className={`px-3 py-0.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                                 u.status === 'Active'
                                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                                   : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
@@ -753,22 +749,22 @@ export function GlobalUsersPage() {
                             </button>
                           </td>
 
-                          {/* Actions */}
-                          <td className="py-3.5 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
+                          {/* ACTIONS */}
+                          <td className="py-4 px-4 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-2">
                               <button
                                 type="button"
                                 onClick={() => handleOpenManageRoles(u)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-blue-400 bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-semibold text-xs transition-all shadow-2xs"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-blue-400 bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-semibold text-xs transition-all shadow-2xs cursor-pointer"
                               >
-                                <Edit2 className="h-3 w-3" />
+                                <Edit2 className="h-3.5 w-3.5" />
                                 <span>Manage Roles</span>
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleDeleteUser(u)}
                                 title="Remove User"
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors cursor-pointer"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
