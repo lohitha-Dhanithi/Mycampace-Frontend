@@ -47,7 +47,6 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import { ProductSwitcher } from '@/components/layout/ProductSwitcher'
-import { ProductLauncherMenu } from '@/components/layout/ProductLauncherMenu'
 import { GlobalSearchModal } from '@/components/layout/GlobalSearchModal'
 import { ContextSelector } from '@/components/layout/ContextSelector'
 import { productService } from '@/services/productService'
@@ -344,7 +343,6 @@ export function ProductShell({ productId }) {
         <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 sm:px-6 shadow-2xs">
           <div className="flex items-center gap-3">
             <ProductSwitcher currentProductId={productId} />
-            <ProductLauncherMenu />
           </div>
           <Link
             to="/app"

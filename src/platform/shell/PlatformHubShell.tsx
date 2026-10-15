@@ -12,7 +12,6 @@ import {
   LogOut,
   Layers,
 } from 'lucide-react'
-import { ProductLauncherMenu } from '@/components/layout/ProductLauncherMenu'
 import { GlobalSearchModal } from '@/components/layout/GlobalSearchModal'
 import { notificationService } from '@/services/notificationService'
 import { useAuth } from '@/store/AuthContext'
@@ -87,9 +86,6 @@ export function PlatformHubShell() {
               </span>
             </div>
           </Link>
-          <div className="hidden sm:block">
-            <ProductLauncherMenu />
-          </div>
         </div>
 
         {/* Center: Navigation Tabs with active blue underline */}
