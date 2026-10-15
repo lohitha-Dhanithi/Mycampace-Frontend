@@ -45,6 +45,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { CandidateFeeClearanceModal } from './CandidateFeeClearanceModal'
+import { StudentDocumentVerificationModal } from './StudentDocumentVerificationModal'
 
 export interface ApplicationProfileProps {
   application: any
@@ -70,6 +71,7 @@ export function ApplicationProfile({
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overview')
   const [feeModalOpen, setFeeModalOpen] = useState(false)
+  const [docVerificationOpen, setDocVerificationOpen] = useState(false)
 
   // Admission confirmation dialog
   const [admissionDialogOpen, setAdmissionDialogOpen] = useState(false)
@@ -157,13 +159,24 @@ export function ApplicationProfile({
             </Button>
           )}
 
+          {['Approved', 'Docs Uploaded', 'Policy Shared', 'Documents Required'].includes(application.status) && (
+            <Button
+              size="sm"
+              onClick={() => setDocVerificationOpen(true)}
+              className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs"
+            >
+              <FileCheck className="h-3.5 w-3.5" /> Verify Dossier & Send to Finance
+            </Button>
+          )}
+
           {application.status === 'Approved' && (
             <Button
               size="sm"
+              variant="outline"
               onClick={() => setOfferModalOpen(true)}
-              className="gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+              className="gap-1 text-xs text-blue-700 border-blue-200 hover:bg-blue-50 font-semibold"
             >
-              <GraduationCap className="h-3.5 w-3.5" /> Admit / Share Policy Document
+              <GraduationCap className="h-3.5 w-3.5" /> Admit / Share Policy
             </Button>
           )}
 
@@ -178,13 +191,13 @@ export function ApplicationProfile({
             </Button>
           )}
 
-          {application.status === 'Docs Uploaded' && (
+          {application.status === 'Admitted' && (
             <Button
               size="sm"
-              onClick={() => setActiveTab('documents')}
-              className="gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+              onClick={() => setDocVerificationOpen(true)}
+              className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs"
             >
-              <FileCheck className="h-3.5 w-3.5" /> Verify Documents & Handover to Finance
+              <CreditCard className="h-3.5 w-3.5" /> Finance Handover & Payment
             </Button>
           )}
 
@@ -990,6 +1003,16 @@ export function ApplicationProfile({
         onOpenChange={setParentPortalModalOpen}
         application={application}
         onSubmissionComplete={() => {
+          if (onConfirmAdmission) onConfirmAdmission(application.id, application)
+        }}
+      />
+
+      {/* Student Document Verification & Finance Handover (Right-Side Drawer) */}
+      <StudentDocumentVerificationModal
+        open={docVerificationOpen}
+        onOpenChange={setDocVerificationOpen}
+        application={application}
+        onVerificationUpdated={() => {
           if (onConfirmAdmission) onConfirmAdmission(application.id, application)
         }}
       />

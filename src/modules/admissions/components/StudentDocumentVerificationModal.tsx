@@ -684,8 +684,8 @@ export function StudentDocumentVerificationModal({
 
           {/* Pinned Sticky Drawer Footer */}
           <div className="px-5 sm:px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-            <Button size="sm" variant="outline" onClick={() => onOpenChange(false)} className="text-xs">
-              Done Reviewing
+            <Button size="sm" variant="outline" onClick={() => onOpenChange(false)} className="text-xs text-slate-600">
+              Close Drawer
             </Button>
 
             <div className="flex items-center gap-2">
