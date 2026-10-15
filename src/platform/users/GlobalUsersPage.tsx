@@ -472,46 +472,26 @@ export function GlobalUsersPage() {
           </p>
         </div>
 
-        {/* Top Right Header Actions */}
-        <div className="flex items-center gap-2.5">
+        {/* Top Right Header Actions (Exactly 1 Contextual Button) */}
+        <div>
           {activeTab === 'roles' ? (
-            <>
-              <button
-                type="button"
-                onClick={handleOpenCreateRole}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-xs font-bold shadow-xs hover:shadow transition-all shrink-0 cursor-pointer"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Add Custom Role</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleOpenAddUser}
-                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 text-xs font-bold shadow-xs transition-all shrink-0 cursor-pointer"
-              >
-                <UserPlus className="h-4 w-4 text-slate-500" />
-                <span>Add User</span>
-              </button>
-            </>
+            <button
+              type="button"
+              onClick={handleOpenCreateRole}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-xs font-bold shadow-xs hover:shadow transition-all shrink-0 cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Custom Role</span>
+            </button>
           ) : (
-            <>
-              <button
-                type="button"
-                onClick={handleOpenAddUser}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold shadow-xs hover:shadow transition-all shrink-0 cursor-pointer"
-              >
-                <UserPlus className="h-4 w-4" />
-                <span>Add User</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleOpenCreateRole}
-                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 text-xs font-bold shadow-xs transition-all shrink-0 cursor-pointer"
-              >
-                <Plus className="h-4 w-4 text-slate-500" />
-                <span>Add Custom Role</span>
-              </button>
-            </>
+            <button
+              type="button"
+              onClick={handleOpenAddUser}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold shadow-xs hover:shadow transition-all shrink-0 cursor-pointer"
+            >
+              <UserPlus className="h-4 w-4" />
+              <span>Add User</span>
+            </button>
           )}
         </div>
       </div>
@@ -636,16 +616,6 @@ export function GlobalUsersPage() {
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>
-
-              {/* + Add User Toolbar Action */}
-              <button
-                type="button"
-                onClick={handleOpenAddUser}
-                className="h-10 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs whitespace-nowrap cursor-pointer transition-all"
-              >
-                <UserPlus className="h-4 w-4" />
-                <span>+ Add User</span>
-              </button>
             </div>
           </div>
 
@@ -882,16 +852,6 @@ export function GlobalUsersPage() {
                 <option value="system">System Templates</option>
                 <option value="custom">Custom Org Roles</option>
               </select>
-
-              {/* + Add Custom Role */}
-              <button
-                type="button"
-                onClick={handleOpenCreateRole}
-                className="h-9 px-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs whitespace-nowrap cursor-pointer transition-all"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                <span>+ Add Custom Role</span>
-              </button>
             </div>
           </div>
 
