@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { userService } from '@/services/userService'
 import { leadService } from '../services/leadService'
-import { enquiryService } from '../services/enquiryService'
 import { FOLLOWUP_TYPES } from '../config/admissionStatusConfig'
 import { ArrowLeft, Calendar, Save } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -35,18 +34,16 @@ export function FollowUpForm({ initialApplicant = null, onSubmit }) {
 
   useEffect(() => {
     const loadResources = async () => {
-      const [userList, leads, enquiries] = await Promise.all([
+      const [userList, leads] = await Promise.all([
         userService.getUsers({ status: 'Active' }),
         leadService.getLeads(),
-        enquiryService.getEnquiries(),
       ])
 
       setUsers(userList)
 
-      const merged = [
-        ...leads.map((l) => ({ id: l.id, name: l.fullName, phone: l.phone, type: 'Lead' })),
-        ...enquiries.map((e) => ({ id: e.id, name: e.applicantName, phone: e.phone, type: 'Enquiry' })),
-      ]
+      const merged = leads
+        .filter((l: any) => l.status !== 'Closed' && l.stage !== 'Lost')
+        .map((l: any) => ({ id: l.id, name: l.fullName, phone: l.phone, type: 'Lead' }))
       setCandidates(merged)
 
       const defaultCandidate = initialApplicant || merged[0]

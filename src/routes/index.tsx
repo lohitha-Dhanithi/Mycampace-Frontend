@@ -328,7 +328,7 @@ export const router = createBrowserRouter([
       { path: 'leads/new', element: <LeadCreatePage /> },
       { path: 'leads/:id', element: <LeadDetailPage /> },
       { path: 'leads/:id/edit', element: <LeadEditPage /> },
-      { path: 'enquiries', element: <AdmissionsPage defaultTab="enquiries" /> },
+      { path: 'enquiries', element: <Navigate to="/app/admissions/leads" replace /> },
       { path: 'counselling', element: <AdmissionsPage defaultTab="counselling" /> },
       { path: 'counselling/new', element: <CounsellingCreatePage /> },
       { path: 'applications', element: <AdmissionsPage defaultTab="applications" /> },

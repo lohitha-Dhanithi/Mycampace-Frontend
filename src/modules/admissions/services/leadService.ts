@@ -132,8 +132,67 @@ export const leadService = {
     return leads.find((l) => l.id === id)
   },
 
-  convertLeadToEnquiry: async (id) => {
-    await delay(200)
+  closeLead: async (
+    id: string,
+    closureData: {
+      reason: string
+      notes?: string
+      competitorName?: string
+      futureRetargeting?: boolean
+      closedBy?: string
+    }
+  ) => {
+    await delay(180)
+    leads = leads.map((l) =>
+      l.id === id
+        ? {
+            ...l,
+            stage: 'Lost',
+            status: 'Closed',
+            closureReason: closureData.reason,
+            closureNotes: closureData.notes || '',
+            competitorName: closureData.competitorName || '',
+            futureRetargeting: Boolean(closureData.futureRetargeting),
+            closedDate: new Date().toISOString().split('T')[0],
+            closedBy: closureData.closedBy || 'Admissions Desk',
+          }
+        : l
+    )
+    return leads.find((l) => l.id === id)
+  },
+
+  reopenLead: async (id: string, reason?: string) => {
+    await delay(180)
+    leads = leads.map((l) =>
+      l.id === id
+        ? {
+            ...l,
+            stage: 'Contacted',
+            status: 'Active',
+            closureReason: null,
+            closureNotes: null,
+            reopenedDate: new Date().toISOString().split('T')[0],
+            notes: reason ? `${l.notes || ''} [Reopened: ${reason}]` : l.notes,
+          }
+        : l
+    )
+    return leads.find((l) => l.id === id)
+  },
+
+  convertLeadToApplication: async (id: string, applicationId?: string) => {
+    await delay(180)
+    const lead = leads.find((l) => l.id === id)
+    if (!lead) throw new Error('Lead not found')
+
+    lead.stage = 'Converted'
+    lead.status = 'Active'
+    lead.applicationId = applicationId || lead.applicationId || `app-${Date.now()}`
+    lead.lastContact = new Date().toISOString().split('T')[0]
+    return { ...lead }
+  },
+
+  convertLeadToEnquiry: async (id: string) => {
+    await delay(150)
     const lead = leads.find((l) => l.id === id)
     if (!lead) throw new Error('Lead not found')
 
@@ -143,9 +202,9 @@ export const leadService = {
     return { lead, enquiryId }
   },
 
-  archiveLead: async (id) => {
+  archiveLead: async (id: string) => {
     await delay(150)
-    leads = leads.map((l) => (l.id === id ? { ...l, status: 'Archived', stage: 'Lost' } : l))
+    leads = leads.map((l) => (l.id === id ? { ...l, status: 'Closed', stage: 'Lost' } : l))
     return true
   },
 }

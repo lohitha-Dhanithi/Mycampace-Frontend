@@ -177,7 +177,6 @@ const PRODUCT_NAV_CONFIG = {
         title: 'Recruitment Pipeline',
         items: [
           { label: 'Leads', path: '/app/admissions/leads', icon: UserPlus },
-          { label: 'Enquiries', path: '/app/admissions/enquiries', icon: Users },
           { label: 'Counselling Sessions', path: '/app/admissions/counselling', icon: CalendarCheck },
         ],
       },
