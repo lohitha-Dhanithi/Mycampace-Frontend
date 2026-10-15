@@ -42,7 +42,7 @@ export function GlobalUsersPage() {
   }, [selectedOrgId])
 
   // --- Active Tab ---
-  const [activeTab, setActiveTab] = useState<'users' | 'roles'>('users')
+  const [activeTab, setActiveTab] = useState<'roles' | 'users'>('roles')
 
   // --- State for Users Directory ---
   const [users, setUsers] = useState<UserRecord[]>([])
@@ -473,15 +473,46 @@ export function GlobalUsersPage() {
         </div>
 
         {/* Top Right Header Actions */}
-        <div>
-          <button
-            type="button"
-            onClick={handleOpenAddUser}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold shadow-xs hover:shadow transition-all shrink-0 cursor-pointer"
-          >
-            <UserPlus className="h-4 w-4" />
-            <span>Add User</span>
-          </button>
+        <div className="flex items-center gap-2.5">
+          {activeTab === 'roles' ? (
+            <>
+              <button
+                type="button"
+                onClick={handleOpenCreateRole}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-xs font-bold shadow-xs hover:shadow transition-all shrink-0 cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add Custom Role</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenAddUser}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 text-xs font-bold shadow-xs transition-all shrink-0 cursor-pointer"
+              >
+                <UserPlus className="h-4 w-4 text-slate-500" />
+                <span>Add User</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleOpenAddUser}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold shadow-xs hover:shadow transition-all shrink-0 cursor-pointer"
+              >
+                <UserPlus className="h-4 w-4" />
+                <span>Add User</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenCreateRole}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 text-xs font-bold shadow-xs transition-all shrink-0 cursor-pointer"
+              >
+                <Plus className="h-4 w-4 text-slate-500" />
+                <span>Add Custom Role</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -513,6 +544,19 @@ export function GlobalUsersPage() {
       <div className="flex items-center gap-6 border-b border-slate-200">
         <button
           type="button"
+          onClick={() => setActiveTab('roles')}
+          className={`flex items-center gap-2 py-3 text-xs font-bold border-b-2 transition-all -mb-px cursor-pointer ${
+            activeTab === 'roles'
+              ? 'border-purple-600 text-purple-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Shield className="h-4 w-4" />
+          <span>Product Roles & Permission Matrix</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab('users')}
           className={`flex items-center gap-2 py-3 text-xs font-bold border-b-2 transition-all -mb-px cursor-pointer ${
             activeTab === 'users'
@@ -522,19 +566,6 @@ export function GlobalUsersPage() {
         >
           <Users2 className="h-4 w-4" />
           <span>Global Users Directory</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('roles')}
-          className={`flex items-center gap-2 py-3 text-xs font-bold border-b-2 transition-all -mb-px cursor-pointer ${
-            activeTab === 'roles'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Shield className="h-4 w-4" />
-          <span>Product Roles & Permission Matrix</span>
         </button>
       </div>
 
@@ -605,6 +636,16 @@ export function GlobalUsersPage() {
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>
+
+              {/* + Add User Toolbar Action */}
+              <button
+                type="button"
+                onClick={handleOpenAddUser}
+                className="h-10 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs whitespace-nowrap cursor-pointer transition-all"
+              >
+                <UserPlus className="h-4 w-4" />
+                <span>+ Add User</span>
+              </button>
             </div>
           </div>
 
@@ -842,14 +883,14 @@ export function GlobalUsersPage() {
                 <option value="custom">Custom Org Roles</option>
               </select>
 
-              {/* + Create Custom Role */}
+              {/* + Add Custom Role */}
               <button
                 type="button"
                 onClick={handleOpenCreateRole}
-                className="h-9 px-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs whitespace-nowrap"
+                className="h-9 px-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs whitespace-nowrap cursor-pointer transition-all"
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span>+ Create Custom Role</span>
+                <span>+ Add Custom Role</span>
               </button>
             </div>
           </div>
