@@ -70,6 +70,7 @@ export function ApplicationForm({ initialData = null, onSaveDraft, onSubmitAppli
       courseName: initialData?.academicInterest?.courseName || 'Science Stream (PCM / PCB)',
       classId: initialData?.academicInterest?.classId || 'cls-11',
       className: initialData?.academicInterest?.className || 'Class 11',
+      selectedElectives: (initialData?.academicInterest?.selectedElectives || []) as string[],
     },
     guardian: {
       name: initialData?.guardian?.name || '',
@@ -96,6 +97,9 @@ export function ApplicationForm({ initialData = null, onSaveDraft, onSubmitAppli
   const [programs, setPrograms] = useState([])
   const [courses, setCourses] = useState([])
   const [classes, setClasses] = useState([])
+  const [compulsorySubjects, setCompulsorySubjects] = useState([])
+  const [electiveSubjects, setElectiveSubjects] = useState([])
+  const [stepError, setStepError] = useState('')
 
   useEffect(() => {
     const loadAcademicOptions = async () => {
@@ -115,8 +119,148 @@ export function ApplicationForm({ initialData = null, onSaveDraft, onSubmitAppli
     loadAcademicOptions()
   }, [])
 
-  const handleNext = () => setStep((s) => Math.min(STEPS.length, s + 1))
-  const handlePrev = () => setStep((s) => Math.max(1, s - 1))
+  // Automatically fetch curriculum subjects whenever course or class changes
+  useEffect(() => {
+    const loadSubjects = async () => {
+      const courseId = formData.academicInterest.courseId
+      const classId = formData.academicInterest.classId
+      if (courseId) {
+        try {
+          const [compulsory, electives] = await Promise.all([
+            academicService.getCompulsorySubjects(courseId, classId),
+            academicService.getElectiveSubjects(courseId, classId),
+          ])
+          setCompulsorySubjects(compulsory)
+          setElectiveSubjects(electives)
+        } catch (err) {
+          console.error('Failed to load curriculum subjects', err)
+        }
+      } else {
+        setCompulsorySubjects([])
+        setElectiveSubjects([])
+      }
+    }
+    loadSubjects()
+  }, [formData.academicInterest.courseId, formData.academicInterest.classId])
+
+  // Cascading Selection Handlers with Automatic Clearing of Incompatible Children
+  const handleAcademicYearChange = (yearId) => {
+    const ay = academicYears.find((y) => y.id === yearId)
+    setFormData((prev) => ({
+      ...prev,
+      academicInterest: {
+        ...prev.academicInterest,
+        academicYearId: yearId,
+        academicYearName: ay?.name || ay?.year || '',
+      },
+    }))
+  }
+
+  const handleCampusChange = (campusId) => {
+    const cmp = campuses.find((c) => c.id === campusId)
+    setFormData((prev) => ({
+      ...prev,
+      academicInterest: {
+        ...prev.academicInterest,
+        campusId,
+        campusName: cmp?.name || '',
+      },
+    }))
+  }
+
+  const handleProgramChange = (progId) => {
+    const prog = programs.find((p) => p.id === progId)
+    const validCourses = courses.filter((c) => c.programId === progId && c.status === 'Active' && c.admissionAvailable !== false)
+    const firstCourse = validCourses[0]
+    const validClasses = firstCourse ? classes.filter((cls) => cls.courseId === firstCourse.id && cls.status === 'Active') : []
+    const firstClass = validClasses[0]
+
+    setFormData((prev) => ({
+      ...prev,
+      academicInterest: {
+        ...prev.academicInterest,
+        programId: progId,
+        programName: prog?.name || '',
+        courseId: firstCourse?.id || '',
+        courseName: firstCourse?.name || '',
+        classId: firstClass?.id || '',
+        className: firstClass?.name || '',
+        selectedElectives: [],
+      },
+    }))
+    setStepError('')
+  }
+
+  const handleCourseChange = (courseId) => {
+    const crs = courses.find((c) => c.id === courseId)
+    const validClasses = classes.filter((cls) => cls.courseId === courseId && cls.status === 'Active')
+    const firstClass = validClasses[0]
+
+    setFormData((prev) => ({
+      ...prev,
+      academicInterest: {
+        ...prev.academicInterest,
+        courseId,
+        courseName: crs?.name || '',
+        classId: firstClass?.id || '',
+        className: firstClass?.name || '',
+        selectedElectives: [],
+      },
+    }))
+    setStepError('')
+  }
+
+  const handleClassChange = (classId) => {
+    const cls = classes.find((c) => c.id === classId)
+    setFormData((prev) => ({
+      ...prev,
+      academicInterest: {
+        ...prev.academicInterest,
+        classId,
+        className: cls?.name || '',
+        selectedElectives: [],
+      },
+    }))
+    setStepError('')
+  }
+
+  const handleToggleElective = (subjectId) => {
+    setFormData((prev) => {
+      const current = prev.academicInterest.selectedElectives || []
+      const exists = current.includes(subjectId)
+      const next = exists ? current.filter((id) => id !== subjectId) : [...current, subjectId]
+      return {
+        ...prev,
+        academicInterest: {
+          ...prev.academicInterest,
+          selectedElectives: next,
+        },
+      }
+    })
+  }
+
+  const handleNext = async () => {
+    if (step === 4) {
+      setStepError('')
+      const validation = await academicService.validateAcademicHierarchy({
+        academicYearId: formData.academicInterest.academicYearId,
+        programId: formData.academicInterest.programId,
+        courseId: formData.academicInterest.courseId,
+        classId: formData.academicInterest.classId,
+        selectedElectiveIds: formData.academicInterest.selectedElectives,
+      })
+      if (!validation.isValid) {
+        setStepError(validation.errors.join(' '))
+        return
+      }
+    }
+    setStepError('')
+    setStep((s) => Math.min(STEPS.length, s + 1))
+  }
+  const handlePrev = () => {
+    setStepError('')
+    setStep((s) => Math.max(1, s - 1))
+  }
 
   const handleSaveDraft = () => {
     if (onSaveDraft) {
@@ -124,12 +268,26 @@ export function ApplicationForm({ initialData = null, onSaveDraft, onSubmitAppli
     }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!formData.declaration.confirmed) {
       alert('Please check the declaration box before submitting.')
       return
     }
+    // Final check of academic hierarchy
+    const validation = await academicService.validateAcademicHierarchy({
+      academicYearId: formData.academicInterest.academicYearId,
+      programId: formData.academicInterest.programId,
+      courseId: formData.academicInterest.courseId,
+      classId: formData.academicInterest.classId,
+      selectedElectiveIds: formData.academicInterest.selectedElectives,
+    })
+    if (!validation.isValid) {
+      alert(`Invalid Academic Selection: ${validation.errors.join(', ')}`)
+      setStep(4)
+      return
+    }
+
     if (onSubmitApplication) {
       onSubmitApplication(formData)
     }
@@ -473,109 +631,204 @@ export function ApplicationForm({ initialData = null, onSaveDraft, onSubmitAppli
             </div>
           )}
 
-          {/* STEP 4: Program Selection (Loaded from Academic Configuration) */}
+          {/* STEP 4: Academic Program & Curriculum Selection */}
           {step === 4 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Academic Year *</label>
-                <Select
-                  value={formData.academicInterest.academicYearId}
-                  onChange={(e) => {
-                    const ay = academicYears.find((y) => y.id === e.target.value)
-                    setFormData({
-                      ...formData,
-                      academicInterest: {
-                        ...formData.academicInterest,
-                        academicYearId: e.target.value,
-                        academicYearName: ay?.name || ay?.year || '',
-                      },
-                    })
-                  }}
-                >
-                  {academicYears.map((ay) => (
-                    <option key={ay.id} value={ay.id}>
-                      {ay.name || ay.year} {ay.isCurrent ? '(Current)' : ''}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+            <div className="space-y-5">
+              {stepError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg font-medium">
+                  {stepError}
+                </div>
+              )}
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Campus *</label>
-                <Select
-                  value={formData.academicInterest.campusId}
-                  onChange={(e) => {
-                    const cmp = campuses.find((c) => c.id === e.target.value)
-                    setFormData({
-                      ...formData,
-                      academicInterest: {
-                        ...formData.academicInterest,
-                        campusId: e.target.value,
-                        campusName: cmp?.name || '',
-                      },
-                    })
-                  }}
-                >
-                  {campuses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Academic Program *</label>
-                <Select
-                  value={formData.academicInterest.programId}
-                  onChange={(e) => {
-                    const prog = programs.find((p) => p.id === e.target.value)
-                    const filteredCourses = courses.filter((c) => c.programId === e.target.value)
-                    setFormData({
-                      ...formData,
-                      academicInterest: {
-                        ...formData.academicInterest,
-                        programId: e.target.value,
-                        programName: prog?.name || '',
-                        courseId: filteredCourses[0]?.id || '',
-                        courseName: filteredCourses[0]?.name || '',
-                      },
-                    })
-                  }}
-                >
-                  {programs.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Course / Stream *</label>
-                <Select
-                  value={formData.academicInterest.courseId}
-                  onChange={(e) => {
-                    const crs = courses.find((c) => c.id === e.target.value)
-                    setFormData({
-                      ...formData,
-                      academicInterest: {
-                        ...formData.academicInterest,
-                        courseId: e.target.value,
-                        courseName: crs?.name || '',
-                      },
-                    })
-                  }}
-                >
-                  {courses
-                    .filter((c) => !formData.academicInterest.programId || c.programId === formData.academicInterest.programId)
-                    .map((crs) => (
-                      <option key={crs.id} value={crs.id}>
-                        {crs.name}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {/* 1. Academic Year */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">1. Academic Year *</label>
+                  <Select
+                    value={formData.academicInterest.academicYearId}
+                    onChange={(e) => handleAcademicYearChange(e.target.value)}
+                  >
+                    {academicYears.map((ay) => (
+                      <option key={ay.id} value={ay.id}>
+                        {ay.name || ay.year} {ay.isCurrent ? '(Current)' : ''}
                       </option>
                     ))}
-                </Select>
+                  </Select>
+                  <p className="text-[10px] text-slate-400">Intake academic cycle</p>
+                </div>
+
+                {/* 2. Campus */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">2. Campus *</label>
+                  <Select
+                    value={formData.academicInterest.campusId}
+                    onChange={(e) => handleCampusChange(e.target.value)}
+                  >
+                    {campuses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </Select>
+                  <p className="text-[10px] text-slate-400">Operating campus facility</p>
+                </div>
+
+                {/* 3. Program */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">3. Academic Program *</label>
+                  <Select
+                    value={formData.academicInterest.programId}
+                    onChange={(e) => handleProgramChange(e.target.value)}
+                  >
+                    {programs
+                      .filter((p) => p.status === 'Active')
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                  </Select>
+                  <p className="text-[10px] text-slate-400">Overall academic qualification pathway</p>
+                </div>
+
+                {/* 4. Course Offering */}
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-xs font-semibold text-slate-700">4. Course / Curriculum Offering *</label>
+                  <Select
+                    value={formData.academicInterest.courseId}
+                    onChange={(e) => handleCourseChange(e.target.value)}
+                  >
+                    {courses
+                      .filter(
+                        (c) =>
+                          c.programId === formData.academicInterest.programId &&
+                          c.status === 'Active' &&
+                          c.admissionAvailable !== false
+                      )
+                      .map((crs) => (
+                        <option key={crs.id} value={crs.id}>
+                          {crs.name} ({crs.code}) {crs.intakeCapacity ? `— ${crs.intakeCapacity} Seats` : ''}
+                        </option>
+                      ))}
+                  </Select>
+                  <p className="text-[10px] text-slate-400">Distinct curriculum offering or branch stream</p>
+                </div>
+
+                {/* 5. Class / Grade / Semester */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">5. Class / Academic Level *</label>
+                  <Select
+                    value={formData.academicInterest.classId}
+                    onChange={(e) => handleClassChange(e.target.value)}
+                  >
+                    {classes
+                      .filter(
+                        (cls) =>
+                          cls.courseId === formData.academicInterest.courseId &&
+                          cls.status === 'Active'
+                      )
+                      .map((cls) => (
+                        <option key={cls.id} value={cls.id}>
+                          {cls.name} ({cls.code})
+                        </option>
+                      ))}
+                  </Select>
+                  <p className="text-[10px] text-slate-400">Cohort level or academic grade</p>
+                </div>
               </div>
+
+              {/* Compulsory Subjects (Derived from Curriculum Mapping) */}
+              <div className="p-4 bg-slate-50/80 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <span>Compulsory Curriculum Subjects</span>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        Auto-Derived from Curriculum
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      These subjects are automatically prescribed for this class and course. Applicants do not select them individually.
+                    </p>
+                  </div>
+                  <span className="text-xs font-mono font-semibold text-slate-600">
+                    {compulsorySubjects.length} Compulsory Units
+                  </span>
+                </div>
+
+                {compulsorySubjects.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1">
+                    {compulsorySubjects.map((sub: any) => (
+                      <div
+                        key={sub.id || sub.subjectId}
+                        className="p-2.5 rounded-lg bg-white border border-slate-200 text-xs flex items-center justify-between shadow-2xs"
+                      >
+                        <div className="truncate mr-2">
+                          <div className="font-semibold text-slate-800 truncate">{sub.subjectName}</div>
+                          <div className="text-[10px] text-slate-400 font-mono">{sub.subjectCode}</div>
+                        </div>
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 whitespace-nowrap">
+                          {sub.credits || 4} Credits
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">No specific compulsory curriculum mapped for this selection.</p>
+                )}
+              </div>
+
+              {/* Elective / Optional Subjects (If configured for this course/semester) */}
+              {electiveSubjects.length > 0 && (
+                <div className="p-4 bg-amber-50/50 rounded-xl border border-amber-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                        <span>Elective / Optional Subject Choices</span>
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                          Higher Education Option
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-slate-600 mt-0.5">
+                        Select elective units according to your academic interest and credit prerequisites.
+                      </p>
+                    </div>
+                    <span className="text-xs font-mono font-semibold text-amber-900">
+                      {(formData.academicInterest.selectedElectives || []).length} Selected
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    {electiveSubjects.map((ele: any) => {
+                      const isSelected = (formData.academicInterest.selectedElectives || []).includes(ele.subjectId || ele.id)
+                      return (
+                        <label
+                          key={ele.id || ele.subjectId}
+                          className={`flex items-center gap-2.5 p-2.5 rounded-lg border text-xs cursor-pointer transition-colors ${
+                            isSelected
+                              ? 'bg-amber-100/70 border-amber-300 text-amber-950 font-medium'
+                              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleElective(ele.subjectId || ele.id)}
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-3.5 w-3.5"
+                          />
+                          <div className="truncate flex-1">
+                            <span className="font-semibold">{ele.subjectName}</span>
+                            <span className="text-[10px] text-slate-500 ml-1.5 font-mono">({ele.subjectCode})</span>
+                          </div>
+                          <span className="text-[10px] font-semibold text-slate-600 font-mono">
+                            {ele.credits || 4} Cr
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

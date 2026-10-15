@@ -4,6 +4,7 @@ import { APPLICATION_WORKFLOW_TRANSITIONS } from '../config/admissionStatusConfi
 import { documentService } from './documentService'
 import { studentFeeService } from '@/modules/finance/services/studentFeeService'
 import { invoiceService } from '@/modules/finance/services/invoiceService'
+import { academicService } from '@/services/academicService'
 
 let applications: any[] = [...INITIAL_APPLICATIONS]
 const delay = (ms = 120) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -698,26 +699,89 @@ export const applicationService = {
     const app = applications.find((a) => a.id === id)
     if (!app) throw new Error('Application not found')
 
+    // Idempotency check: if student is already enrolled, return existing records to prevent duplicates
+    if (app.status === 'Enrolled' && app.enrolmentRecord && app.studentRecord) {
+      return {
+        application: { ...app },
+        studentRecord: app.studentRecord,
+        enrolmentRecord: app.enrolmentRecord,
+        isExisting: true,
+      }
+    }
+
+    const courseId = app.academicInterest?.courseId || 'crs-1'
+    const classId = app.academicInterest?.classId || 'cls-11'
+
+    // Automatically map compulsory subjects from curriculum configuration
+    let compulsorySubjects: any[] = []
+    try {
+      compulsorySubjects = await academicService.getCompulsorySubjects(courseId, classId)
+    } catch (e) {
+      console.warn('Could not fetch compulsory subjects for enrolment:', e)
+    }
+
+    const studentId = app.studentId || `stu-${Date.now()}`
+    const enrolmentId = `enr-${Date.now()}`
+
     app.status = 'Enrolled'
-    const studentId = `stu-${Date.now()}`
     app.studentId = studentId
+
+    const studentRecord = {
+      id: studentId,
+      studentNumber: app.admissionDetails?.rollNumber || `STU-${Date.now()}`,
+      admissionNumber: app.admissionDetails?.admissionNumber || `ADM-${Date.now()}`,
+      fullName: app.applicantName,
+      email: app.contact?.email,
+      phone: app.contact?.mobile,
+      campus: app.academicInterest?.campusName,
+      programId: app.academicInterest?.programId,
+      program: app.academicInterest?.programName,
+      courseId: courseId,
+      course: app.academicInterest?.courseName,
+      classId: classId,
+      class: app.academicInterest?.className,
+      academicYearId: app.academicInterest?.academicYearId,
+      academicYear: app.academicInterest?.academicYearName,
+      section: app.admissionDetails?.allocatedSection || 'Section A',
+      status: 'Active',
+      createdAt: new Date().toISOString(),
+    }
+
+    const enrolmentRecord = {
+      id: enrolmentId,
+      studentId,
+      academicYearId: app.academicInterest?.academicYearId,
+      academicYear: app.academicInterest?.academicYearName,
+      programId: app.academicInterest?.programId,
+      programName: app.academicInterest?.programName,
+      courseId,
+      courseName: app.academicInterest?.courseName,
+      classId,
+      className: app.academicInterest?.className,
+      section: app.admissionDetails?.allocatedSection || 'Section A',
+      status: 'Active',
+      compulsorySubjects: compulsorySubjects.map((s) => ({
+        subjectId: s.subjectId || s.id,
+        subjectName: s.subjectName || s.name,
+        subjectCode: s.subjectCode || s.code,
+        credits: s.credits || 4,
+        type: 'Compulsory',
+      })),
+      electiveSubjects: (app.academicInterest?.selectedElectives || []).map((id: string) => ({
+        subjectId: id,
+        type: 'Elective',
+      })),
+      enrolledAt: new Date().toISOString(),
+    }
+
+    app.studentRecord = studentRecord
+    app.enrolmentRecord = enrolmentRecord
 
     return {
       application: { ...app },
-      studentRecord: {
-        id: studentId,
-        studentNumber: app.admissionDetails?.rollNumber || `STU-${Date.now()}`,
-        admissionNumber: app.admissionDetails?.admissionNumber,
-        fullName: app.applicantName,
-        email: app.contact?.email,
-        phone: app.contact?.mobile,
-        campus: app.academicInterest?.campusName,
-        program: app.academicInterest?.programName,
-        course: app.academicInterest?.courseName,
-        academicYear: app.academicInterest?.academicYearName,
-        section: app.admissionDetails?.allocatedSection,
-        status: 'Active',
-      },
+      studentRecord,
+      enrolmentRecord,
+      isExisting: false,
     }
   },
 

@@ -13,6 +13,8 @@ export function SectionsAcademicPage() {
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
 
+  const [editingItem, setEditingItem] = useState(null)
+
   const fetchSections = async () => {
     setLoading(true)
     try {
@@ -29,20 +31,54 @@ export function SectionsAcademicPage() {
     fetchSections()
   }, [])
 
+  const handleEdit = (sec) => {
+    setEditingItem(sec)
+    setOpen(true)
+  }
+
+  const handleCreate = () => {
+    setEditingItem(null)
+    setOpen(true)
+  }
+
+  const handleToggleStatus = async (sec) => {
+    const nextStatus = sec.status === 'Active' ? 'Inactive' : 'Active'
+    await academicService.updateAcademicSection(sec.id, { status: nextStatus })
+    fetchSections()
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Sections Management"
         description="Classroom section capacity tracking, homeroom rooms, and teacher allocations."
         actions={
-          <Button size="sm" onClick={() => setOpen(true)} className="text-xs">
-            <Plus className="h-3.5 w-3.5 mr-1.5" /> Add section
+          <Button size="sm" onClick={handleCreate} className="text-xs bg-blue-600 hover:bg-blue-700 text-white">
+            <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Section
           </Button>
         }
       />
 
-      {loading ? <LoadingState message="Loading classroom sections..." /> : <SectionAcademicTable sections={sections} loading={loading} />}
-      <StructureFormDialog kind="section" open={open} onOpenChange={setOpen} onCreated={fetchSections} />
+      {loading ? (
+        <LoadingState message="Loading classroom sections..." />
+      ) : (
+        <SectionAcademicTable
+          sections={sections}
+          loading={loading}
+          onEdit={handleEdit}
+          onToggleStatus={handleToggleStatus}
+        />
+      )}
+      <StructureFormDialog
+        kind="section"
+        open={open}
+        initialData={editingItem}
+        onOpenChange={(isOpen) => {
+          setOpen(isOpen)
+          if (!isOpen) setEditingItem(null)
+        }}
+        onCreated={fetchSections}
+      />
     </div>
   )
 }

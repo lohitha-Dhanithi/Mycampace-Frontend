@@ -13,6 +13,8 @@ export function SubjectsAcademicPage() {
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
 
+  const [editingItem, setEditingItem] = useState(null)
+
   const fetchSubjects = async () => {
     setLoading(true)
     try {
@@ -29,20 +31,54 @@ export function SubjectsAcademicPage() {
     fetchSubjects()
   }, [])
 
+  const handleEdit = (sub) => {
+    setEditingItem(sub)
+    setOpen(true)
+  }
+
+  const handleCreate = () => {
+    setEditingItem(null)
+    setOpen(true)
+  }
+
+  const handleToggleStatus = async (sub) => {
+    const nextStatus = sub.status === 'Active' ? 'Inactive' : 'Active'
+    await academicService.updateAcademicSubject(sub.id, { status: nextStatus })
+    fetchSubjects()
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Subjects Management"
-        description="Curriculum syllabus subjects, credit allocations, and educator assignments."
+        description="Independent learning areas and academic units (e.g. Physics, Chemistry, Mathematics) mapped to courses and classes."
         actions={
-          <Button size="sm" onClick={() => setOpen(true)} className="text-xs">
-            <Plus className="h-3.5 w-3.5 mr-1.5" /> Add subject
+          <Button size="sm" onClick={handleCreate} className="text-xs bg-blue-600 hover:bg-blue-700 text-white">
+            <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Subject
           </Button>
         }
       />
 
-      {loading ? <LoadingState message="Loading subjects catalog..." /> : <SubjectAcademicTable subjects={subjects} loading={loading} />}
-      <StructureFormDialog kind="subject" open={open} onOpenChange={setOpen} onCreated={fetchSubjects} />
+      {loading ? (
+        <LoadingState message="Loading subjects catalog..." />
+      ) : (
+        <SubjectAcademicTable
+          subjects={subjects}
+          loading={loading}
+          onEdit={handleEdit}
+          onToggleStatus={handleToggleStatus}
+        />
+      )}
+      <StructureFormDialog
+        kind="subject"
+        open={open}
+        initialData={editingItem}
+        onOpenChange={(isOpen) => {
+          setOpen(isOpen)
+          if (!isOpen) setEditingItem(null)
+        }}
+        onCreated={fetchSubjects}
+      />
     </div>
   )
 }

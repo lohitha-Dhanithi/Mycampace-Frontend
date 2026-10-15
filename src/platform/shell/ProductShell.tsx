@@ -66,6 +66,7 @@ const PRODUCT_NAV_CONFIG = {
         title: 'Academic Structure',
         items: [
           { label: 'Overview', path: '/app/academics/overview', icon: LayoutDashboard },
+          { label: 'Academic Years', path: '/app/academics/academic-years', icon: CalendarDays },
           { label: 'Programs', path: '/app/academics/programs', icon: GraduationCap },
           { label: 'Courses', path: '/app/academics/courses', icon: BookOpen },
           { label: 'Classes', path: '/app/academics/classes', icon: Layers },
@@ -80,7 +81,7 @@ const PRODUCT_NAV_CONFIG = {
           { label: 'Faculty Assignments', path: '/app/academics/faculty-assignments', icon: UserCheck },
           { label: 'Subject Assignments', path: '/app/academics/subject-assignments', icon: FileSpreadsheet },
           { label: 'Class Teachers', path: '/app/academics/class-teachers', icon: UserPlus },
-          { label: 'Workload Index', path: '/app/academics/workload', icon: Gauge },
+          { label: 'Workload', path: '/app/academics/workload', icon: Gauge },
         ],
       },
       {
@@ -89,7 +90,6 @@ const PRODUCT_NAV_CONFIG = {
           { label: 'Student Enrolments', path: '/app/academics/enrolments', icon: Users },
           { label: 'Academic Calendar', path: '/app/academics/academic-calendar', icon: CalendarDays },
           { label: 'Timetable', path: '/app/academics/timetable', icon: CalendarCheck },
-          { label: 'Academic Years', path: '/app/academics/academic-years', icon: CalendarDays },
         ],
       },
     ],

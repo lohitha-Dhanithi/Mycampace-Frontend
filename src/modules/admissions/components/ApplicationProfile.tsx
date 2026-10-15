@@ -754,7 +754,7 @@ export function ApplicationProfile({
             <CardHeader className="pb-3 border-b border-slate-100">
               <CardTitle className="text-xs font-bold uppercase text-slate-700">Target Academic Structure</CardTitle>
             </CardHeader>
-            <CardContent className="pt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+            <CardContent className="pt-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
               <div className="p-3 bg-slate-50 rounded border border-slate-200">
                 <span className="text-slate-400 text-[11px]">Academic Year</span>
                 <div className="font-bold text-slate-900 mt-0.5">{application.academicInterest?.academicYearName}</div>
@@ -768,8 +768,12 @@ export function ApplicationProfile({
                 <div className="font-bold text-slate-900 mt-0.5">{application.academicInterest?.programName}</div>
               </div>
               <div className="p-3 bg-slate-50 rounded border border-slate-200">
-                <span className="text-slate-400 text-[11px]">Course / Stream</span>
+                <span className="text-slate-400 text-[11px]">Course Offering</span>
                 <div className="font-bold text-slate-900 mt-0.5">{application.academicInterest?.courseName}</div>
+              </div>
+              <div className="p-3 bg-slate-50 rounded border border-slate-200">
+                <span className="text-slate-400 text-[11px]">Class / Level</span>
+                <div className="font-bold text-slate-900 mt-0.5">{application.academicInterest?.className || 'Class 11'}</div>
               </div>
             </CardContent>
           </Card>
