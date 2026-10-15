@@ -34,6 +34,7 @@ import {
   ArrowRight,
   CreditCard,
   Receipt,
+  X,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { PaymentCollectionModal } from '@/modules/finance/components/PaymentCollectionModal'
@@ -243,14 +244,25 @@ export function StudentDocumentVerificationModal({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between gap-2 text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <FileCheck className="h-5 w-5 text-blue-600" />
-                Student Document Verification Portfolio
+      <Dialog open={open} onOpenChange={onOpenChange} side="right">
+        <div className="flex flex-col h-full bg-white select-text">
+          {/* Side Drawer Header */}
+          <div className="px-5 sm:px-6 py-3.5 border-b border-slate-200/90 bg-slate-50/70 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
+                <FileCheck className="h-4.5 w-4.5" />
               </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
+                  Student Document Verification Portfolio
+                </h2>
+                <p className="text-[11px] text-slate-500">
+                  Candidate credential authentication & finance clearance
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
@@ -258,19 +270,31 @@ export function StudentDocumentVerificationModal({
                   onOpenChange(false)
                   navigate(`/admissions/applications/${application.id}`)
                 }}
-                className="text-xs text-blue-600 hover:text-blue-700 h-7 gap-1"
+                className="text-xs text-blue-600 hover:text-blue-700 h-8 gap-1 hidden sm:inline-flex"
               >
                 Full Application Profile <ExternalLink className="h-3 w-3" />
               </Button>
-            </DialogTitle>
-          </DialogHeader>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onOpenChange(false)}
+                className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200/60 transition-colors"
+                title="Close Drawer"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
 
           {toast && (
-            <div className="bg-slate-900 text-white text-xs px-3 py-2 rounded-lg flex items-center gap-2 animate-in fade-in-0">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+            <div className="mx-5 sm:mx-6 mt-3 bg-slate-900 text-white text-xs px-3.5 py-2.5 rounded-lg flex items-center gap-2 animate-in fade-in-0 shadow-md shrink-0">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
               <span>{toast}</span>
             </div>
           )}
+
+          {/* Scrollable Center Body */}
+          <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
 
           {/* Student Profile Card */}
           <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 text-xs">
@@ -656,7 +680,10 @@ export function StudentDocumentVerificationModal({
             </div>
           )}
 
-          <DialogFooter className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-slate-100">
+          </div>
+
+          {/* Pinned Sticky Drawer Footer */}
+          <div className="px-5 sm:px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
             <Button size="sm" variant="outline" onClick={() => onOpenChange(false)} className="text-xs">
               Done Reviewing
             </Button>
@@ -720,8 +747,8 @@ export function StudentDocumentVerificationModal({
                 </Button>
               )}
             </div>
-          </DialogFooter>
-        </DialogContent>
+          </div>
+        </div>
       </Dialog>
 
       {/* Reject Reason Dialog */}
