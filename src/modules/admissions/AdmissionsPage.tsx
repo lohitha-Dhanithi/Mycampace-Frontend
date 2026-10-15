@@ -238,14 +238,17 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
     })
     await leadService.convertLeadToApplication(targetLead.id, newApp.id)
 
-    setConversionNotification({
+    const notif = {
       applicationId: newApp.id,
       applicationNumber: newApp.applicationNumber,
       applicantName: targetLead.fullName || `${targetLead.firstName} ${targetLead.lastName}`,
       leadNumber: targetLead.leadNumber,
-    })
+    }
+    setConversionNotification(notif)
+    setTimeout(() => {
+      setConversionNotification((curr) => (curr?.applicationId === notif.applicationId ? null : curr))
+    }, 5000)
 
-    showToast(`Lead ${targetLead.leadNumber} converted to Application #${newApp.applicationNumber} (ID: ${newApp.id}). Removed from active leads.`)
     await loadModuleData()
   }
 
@@ -285,52 +288,49 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
 
   return (
     <div className="space-y-6">
-      {/* Toast Alert */}
-      {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 bg-slate-900 text-white text-xs px-4 py-3 rounded-lg shadow-xl border border-slate-700 flex items-center gap-2 animate-in fade-in-0 slide-in-from-bottom-5">
-          <CheckCircle className="h-4 w-4 text-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
-      {/* Floating Conversion Card Notification with ID */}
+      {/* Side Notification for Lead Conversion */}
       {conversionNotification && (
-        <div className="fixed top-20 right-5 z-50 max-w-sm bg-slate-900 text-white p-3.5 rounded-xl shadow-2xl border border-slate-700 animate-in fade-in-0 slide-in-from-top-4 space-y-2">
-          <div className="flex items-start justify-between gap-2">
+        <div className="fixed bottom-5 right-5 z-50 max-w-sm bg-slate-900 text-white p-3 rounded-xl shadow-2xl border border-slate-700 animate-in fade-in-0 slide-in-from-bottom-5 space-y-2">
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                <FileCheck2 className="h-4 w-4" />
+              <div className="h-6 w-6 rounded-md bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                <FileCheck2 className="h-3.5 w-3.5" />
               </div>
-              <div>
-                <div className="font-bold text-xs text-white">Lead Converted to Application</div>
-                <div className="text-[10px] text-slate-400">Removed from active leads</div>
-              </div>
+              <span className="font-bold text-xs text-white">Converted to Application</span>
             </div>
             <button
               onClick={() => setConversionNotification(null)}
-              className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors"
+              className="text-slate-400 hover:text-white p-0.5 rounded hover:bg-slate-800 transition-colors"
+              title="Dismiss"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
-          <p className="text-[11px] text-slate-300">
-            Prospect <strong className="text-white">{conversionNotification.applicantName}</strong> has been converted to Application ID:
-          </p>
-          <div className="flex items-center justify-between gap-2 bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-700">
-            <span className="font-mono text-xs font-bold text-emerald-400">
-              {conversionNotification.applicationNumber}
-            </span>
+          <div className="text-[11px] text-slate-300">
+            <strong className="text-white">{conversionNotification.applicantName}</strong> &rarr; Application ID:{' '}
+            <span className="font-mono font-bold text-emerald-400">{conversionNotification.applicationNumber}</span>
+          </div>
+          <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-800">
+            <span className="text-[10px] text-slate-400">Removed from active leads</span>
             <Button
               size="sm"
               onClick={() => {
                 setConversionNotification(null)
                 navigate('/app/admissions/applications')
               }}
-              className="h-6 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white px-2 gap-1 font-semibold"
+              className="h-6 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 gap-1 font-semibold"
             >
               View Application <ArrowRight className="h-3 w-3" />
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Standard Toast (when no conversion notification is active) */}
+      {toastMessage && !conversionNotification && (
+        <div className="fixed bottom-5 right-5 z-50 bg-slate-900 text-white text-xs px-4 py-3 rounded-lg shadow-xl border border-slate-700 flex items-center gap-2 animate-in fade-in-0 slide-in-from-bottom-5">
+          <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
         </div>
       )}
 
@@ -410,44 +410,6 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
               </div>
             }
           />
-
-          {/* Prominent Lead-to-Application Conversion Alert Banner */}
-          {conversionNotification && (
-            <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-in fade-in-0 slide-in-from-top-2">
-              <div className="flex items-start sm:items-center gap-2.5">
-                <div className="h-8 w-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
-                  <FileCheck2 className="h-4 w-4" />
-                </div>
-                <div className="space-y-0.5">
-                  <div className="font-bold flex items-center gap-2 flex-wrap">
-                    <span>Lead Converted to Application Successfully!</span>
-                    <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold border border-emerald-300">
-                      Application ID: {conversionNotification.applicationNumber}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-emerald-700">
-                    Lead <strong>{conversionNotification.leadNumber}</strong> ({conversionNotification.applicantName}) has been graduated to an official applicant (System ID: <code className="font-mono">{conversionNotification.applicationId}</code>) and is now removed from active Leads.
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-                <Button
-                  size="sm"
-                  onClick={() => navigate('/app/admissions/applications')}
-                  className="h-7 text-xs bg-emerald-700 hover:bg-emerald-800 text-white gap-1 font-medium shadow-xs"
-                >
-                  View in Applications <ArrowRight className="h-3 w-3" />
-                </Button>
-                <button
-                  onClick={() => setConversionNotification(null)}
-                  className="p-1 text-emerald-600 hover:text-emerald-900 rounded hover:bg-emerald-100/50 transition-colors"
-                  title="Dismiss notification"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
 
           {leadsViewMode === 'table' ? (
             <LeadTable
