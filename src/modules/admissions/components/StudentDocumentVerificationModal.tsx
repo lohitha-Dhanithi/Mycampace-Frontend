@@ -80,15 +80,24 @@ export function StudentDocumentVerificationModal({
   const handleApproveAllAndSendToFinance = async () => {
     const targetApp = currentApp || application
     if (!targetApp?.id) return
+
+    // Strict validation: check all docs verified before dispatch
+    if (!allDocsVerified) {
+      showToast(`Validation Error: All documents must be verified (${verifiedCount}/${totalCount} verified) before sending to Finance.`)
+      return
+    }
+
     setFinanceHandoverLoading(true)
     try {
       const updated = await applicationService.approveAllDocumentsAndSendToFinance(targetApp.id)
       setCurrentApp(updated)
-      showToast('All documents approved! Candidate dispatched to Finance for payment collection.')
+      showToast('All documents verified! Candidate dispatched to Finance for payment collection.')
       await loadStudentDocs()
       if (onVerificationUpdated) {
         onVerificationUpdated()
       }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to dispatch candidate to Finance')
     } finally {
       setFinanceHandoverLoading(false)
     }
@@ -615,16 +624,24 @@ export function StudentDocumentVerificationModal({
                 </div>
               </div>
             ) : (
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-xs flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-slate-400 shrink-0" />
-                  <span className="text-[11px]">
-                    <strong>Document Verification in Progress:</strong> {verifiedCount} of {totalCount} documents verified. Handover to Finance unlocks once all required credentials are authenticated.
-                  </span>
+              <div className="p-3 bg-amber-50/90 border border-amber-200 rounded-xl text-amber-950 text-xs flex items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-7 w-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <Lock className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-xs text-amber-950 flex items-center gap-1.5">
+                      <span>Validation Active: Document Verification Required</span>
+                    </div>
+                    <div className="text-[11px] text-amber-900/90 leading-tight">
+                      Handover to Finance is <strong>locked</strong> until all required credentials are authenticated ({verifiedCount} of {totalCount} verified). Verify all documents above to enable sending to Finance.
+                    </div>
+                  </div>
                 </div>
-                <span className="text-[11px] font-semibold text-slate-500 shrink-0 bg-white px-2 py-0.5 rounded border border-slate-200">
-                  {totalCount - verifiedCount} remaining
-                </span>
+                <div className="text-right shrink-0 bg-white/85 px-2.5 py-1 rounded-lg border border-amber-200">
+                  <div className="text-[9px] uppercase font-bold tracking-wider text-amber-700">Remaining</div>
+                  <div className="text-xs font-bold text-amber-900 font-mono text-center">{totalCount - verifiedCount} Docs</div>
+                </div>
               </div>
             )
           )}
@@ -724,13 +741,13 @@ export function StudentDocumentVerificationModal({
                   onClick={handleApproveAllAndSendToFinance}
                   className={`text-xs gap-1.5 font-bold transition-all shadow-sm ${
                     canSendToFinance
-                      ? 'bg-slate-900 hover:bg-slate-800 text-white'
-                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                      ? 'bg-slate-900 hover:bg-slate-800 text-white cursor-pointer'
+                      : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-80'
                   }`}
                   title={
                     canSendToFinance
-                      ? 'Send candidate to Finance Department for collecting admission payment'
-                      : 'Locked until all required documents are verified'
+                      ? `Send candidate to Finance Department for collecting admission payment (₹${courseFee.totalFees.toLocaleString('en-IN')})`
+                      : `Validation Locked: Complete document verification (${verifiedCount}/${totalCount} verified) before sending to Finance`
                   }
                 >
                   {financeHandoverLoading ? (
@@ -741,7 +758,7 @@ export function StudentDocumentVerificationModal({
                     </>
                   ) : (
                     <>
-                      <Lock className="h-3.5 w-3.5" /> Send to Finance (Locked: Verify All Docs)
+                      <Lock className="h-3.5 w-3.5 text-slate-400" /> Send to Finance (Locked: Verify All Documents First)
                     </>
                   )}
                 </Button>

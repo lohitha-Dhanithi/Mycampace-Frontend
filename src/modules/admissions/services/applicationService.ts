@@ -467,15 +467,17 @@ export const applicationService = {
     const app = applications.find((a) => a.id === id)
     if (!app) throw new Error('Application not found')
 
-    // Mark all documents as verified in documentService
+    // Strictly validate that all required documents have been verified
     const docs = await documentService.getApplicationDocuments(id)
-    for (const d of docs) {
-      if (d.verificationStatus !== 'Verified') {
-        await documentService.verifyDocument(d.id, 'Admissions Review Committee')
-      }
+    const total = docs.length
+    const verified = docs.filter((d) => d.verificationStatus === 'Verified').length
+
+    if (total === 0 || verified !== total) {
+      throw new Error(
+        `Validation Error: Candidate cannot be sent to Finance until all required documents are verified (${verified}/${total} verified). Please complete document verification first.`
+      )
     }
 
-    const total = docs.length || 4
     app.documentVerificationSummary = {
       totalRequired: total,
       verifiedCount: total,
@@ -645,6 +647,17 @@ export const applicationService = {
     await delay(180)
     const app = applications.find((a) => a.id === id)
     if (!app) throw new Error('Application not found')
+
+    // Strictly validate that all required documents have been verified
+    const docs = await documentService.getApplicationDocuments(id)
+    const total = docs.length
+    const verified = docs.filter((d) => d.verificationStatus === 'Verified').length
+
+    if (total === 0 || verified !== total) {
+      throw new Error(
+        `Validation Error: Candidate cannot be sent to Finance until all required documents are verified (${verified}/${total} verified). Please complete document verification first.`
+      )
+    }
 
     const courseFee = getCourseFeeStructure(
       app.academicInterest?.courseName || app.academicInterest?.courseId,

@@ -42,6 +42,7 @@ import {
   ExternalLink,
   DollarSign,
   ShieldCheck,
+  ArrowRight,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { CandidateFeeClearanceModal } from './CandidateFeeClearanceModal'
@@ -163,9 +164,21 @@ export function ApplicationProfile({
             <Button
               size="sm"
               onClick={() => setDocVerificationOpen(true)}
-              className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs"
+              className={`gap-1.5 text-xs font-semibold shadow-xs ${
+                application.documentVerificationSummary?.status === 'Verified'
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              }`}
             >
-              <FileCheck className="h-3.5 w-3.5" /> Verify Dossier & Send to Finance
+              {application.documentVerificationSummary?.status === 'Verified' ? (
+                <>
+                  <ArrowRight className="h-3.5 w-3.5" /> Send to Finance
+                </>
+              ) : (
+                <>
+                  <FileCheck className="h-3.5 w-3.5" /> Verify Documents
+                </>
+              )}
             </Button>
           )}
 

@@ -544,11 +544,28 @@ export function ApplicationTable({
                               <Button
                                 size="sm"
                                 onClick={() => handleOpenDocModal(app)}
-                                className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 gap-1 font-semibold shadow-none"
-                                title="Next Step: Verify student documents and send to Finance to collect admission payments"
+                                className={`h-7 text-xs px-2.5 gap-1 font-semibold shadow-none ${
+                                  app.documentVerificationSummary?.status === 'Verified'
+                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                }`}
+                                title={
+                                  app.documentVerificationSummary?.status === 'Verified'
+                                    ? 'All documents verified. Ready to send to Finance to collect admission payments'
+                                    : 'Verify required student documents to enable sending to Finance'
+                                }
                               >
-                                <FileCheck className="h-3 w-3" />
-                                <span>Verify & Send to Finance</span>
+                                {app.documentVerificationSummary?.status === 'Verified' ? (
+                                  <>
+                                    <ArrowRight className="h-3 w-3 text-emerald-200" />
+                                    <span>Send to Finance</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <FileCheck className="h-3 w-3 text-blue-200" />
+                                    <span>Verify Documents</span>
+                                  </>
+                                )}
                               </Button>
                               <Button
                                 size="sm"
