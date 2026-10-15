@@ -81,7 +81,16 @@ export function LeadDetailPage() {
       },
     })
     await leadService.convertLeadToApplication(targetLead.id, newApp.id)
-    navigate('/app/admissions/applications')
+    navigate('/app/admissions/applications', {
+      state: {
+        conversionNotification: {
+          applicationId: newApp.id,
+          applicationNumber: newApp.applicationNumber,
+          applicantName: targetLead.fullName || `${targetLead.firstName} ${targetLead.lastName}`,
+          leadNumber: targetLead.leadNumber,
+        },
+      },
+    })
   }
 
   // Close lead as lost

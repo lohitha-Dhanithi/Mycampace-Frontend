@@ -26,6 +26,9 @@ import {
   ShieldCheck,
   BarChart3,
   ExternalLink,
+  FileCheck2,
+  X,
+  ArrowRight,
 } from 'lucide-react'
 import { useTenantContext } from '@/store/TenantContext'
 import { leadService } from './services/leadService'
@@ -75,6 +78,12 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
   const [followUps, setFollowUps] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [toastMessage, setToastMessage] = useState('')
+  const [conversionNotification, setConversionNotification] = useState<{
+    applicationId: string
+    applicationNumber: string
+    applicantName: string
+    leadNumber: string
+  } | null>(null)
 
   // Schedule follow-up dialog state
   const [scheduleFollowUpModalOpen, setScheduleFollowUpModalOpen] = useState(false)
@@ -86,7 +95,7 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
 
   const showToast = (msg: string) => {
     setToastMessage(msg)
-    setTimeout(() => setToastMessage(''), 3500)
+    setTimeout(() => setToastMessage(''), 4500)
   }
 
   const loadModuleData = async () => {
@@ -121,11 +130,22 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
 
   useEffect(() => {
     setActiveTab(getTabFromPath())
-  }, [location.pathname, defaultTab])
+    if (location.state?.conversionNotification) {
+      setConversionNotification(location.state.conversionNotification)
+      showToast(`Application #${location.state.conversionNotification.applicationNumber} created. Lead removed from leads pipeline.`)
+    }
+  }, [location.pathname, defaultTab, location.state])
 
   // Stage advancement in leads pipeline
   const handleStageChange = async (leadId: string, nextStage: string) => {
     try {
+      if (nextStage === 'Converted') {
+        const targetLead = leads.find((l) => l.id === leadId)
+        if (targetLead) {
+          await handleConvertLeadToApplication(targetLead)
+          return
+        }
+      }
       await leadService.updateLeadStage(leadId, nextStage)
       showToast(`Lead stage progressed to: ${nextStage}`)
       loadModuleData()
@@ -217,8 +237,16 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
       },
     })
     await leadService.convertLeadToApplication(targetLead.id, newApp.id)
-    showToast(`Lead transformed to Application ${newApp.applicationNumber}`)
-    loadModuleData()
+
+    setConversionNotification({
+      applicationId: newApp.id,
+      applicationNumber: newApp.applicationNumber,
+      applicantName: targetLead.fullName || `${targetLead.firstName} ${targetLead.lastName}`,
+      leadNumber: targetLead.leadNumber,
+    })
+
+    showToast(`Lead ${targetLead.leadNumber} converted to Application #${newApp.applicationNumber} (ID: ${newApp.id}). Removed from active leads.`)
+    await loadModuleData()
   }
 
   // Complete counselling
@@ -265,6 +293,47 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
         </div>
       )}
 
+      {/* Floating Conversion Card Notification with ID */}
+      {conversionNotification && (
+        <div className="fixed top-20 right-5 z-50 max-w-sm bg-slate-900 text-white p-3.5 rounded-xl shadow-2xl border border-slate-700 animate-in fade-in-0 slide-in-from-top-4 space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                <FileCheck2 className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="font-bold text-xs text-white">Lead Converted to Application</div>
+                <div className="text-[10px] text-slate-400">Removed from active leads</div>
+              </div>
+            </div>
+            <button
+              onClick={() => setConversionNotification(null)}
+              className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <p className="text-[11px] text-slate-300">
+            Prospect <strong className="text-white">{conversionNotification.applicantName}</strong> has been converted to Application ID:
+          </p>
+          <div className="flex items-center justify-between gap-2 bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-700">
+            <span className="font-mono text-xs font-bold text-emerald-400">
+              {conversionNotification.applicationNumber}
+            </span>
+            <Button
+              size="sm"
+              onClick={() => {
+                setConversionNotification(null)
+                navigate('/app/admissions/applications')
+              }}
+              className="h-6 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white px-2 gap-1 font-semibold"
+            >
+              View Application <ArrowRight className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* 1. ADMISSIONS ANALYTICS DASHBOARD */}
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
@@ -308,7 +377,7 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
             subtitle="Prospective candidates interested in enrolling for the upcoming academic cycle."
             badge={
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                {leads.length} Leads
+                {leads.filter((l) => l.stage !== 'Converted' && !l.applicationId && l.status !== 'Converted').length} Active Leads
               </span>
             }
             actions={
@@ -341,6 +410,44 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
               </div>
             }
           />
+
+          {/* Prominent Lead-to-Application Conversion Alert Banner */}
+          {conversionNotification && (
+            <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-in fade-in-0 slide-in-from-top-2">
+              <div className="flex items-start sm:items-center gap-2.5">
+                <div className="h-8 w-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
+                  <FileCheck2 className="h-4 w-4" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="font-bold flex items-center gap-2 flex-wrap">
+                    <span>Lead Converted to Application Successfully!</span>
+                    <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold border border-emerald-300">
+                      Application ID: {conversionNotification.applicationNumber}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-emerald-700">
+                    Lead <strong>{conversionNotification.leadNumber}</strong> ({conversionNotification.applicantName}) has been graduated to an official applicant (System ID: <code className="font-mono">{conversionNotification.applicationId}</code>) and is now removed from active Leads.
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                <Button
+                  size="sm"
+                  onClick={() => navigate('/app/admissions/applications')}
+                  className="h-7 text-xs bg-emerald-700 hover:bg-emerald-800 text-white gap-1 font-medium shadow-xs"
+                >
+                  View in Applications <ArrowRight className="h-3 w-3" />
+                </Button>
+                <button
+                  onClick={() => setConversionNotification(null)}
+                  className="p-1 text-emerald-600 hover:text-emerald-900 rounded hover:bg-emerald-100/50 transition-colors"
+                  title="Dismiss notification"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
 
           {leadsViewMode === 'table' ? (
             <LeadTable

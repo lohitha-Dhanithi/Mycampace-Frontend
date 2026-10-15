@@ -55,19 +55,21 @@ export function LeadTable({
 
   const todayStr = new Date().toISOString().split('T')[0]
 
-  // Filter leads based on selected tab
+  // Filter leads based on selected tab - Converted leads must NOT be visible in active leads!
   const filteredLeads = leads.filter((lead) => {
     const isClosed = lead.status === 'Closed' || lead.stage === 'Lost'
-    const isConverted = lead.stage === 'Converted' || Boolean(lead.applicationId)
+    const isConverted =
+      lead.stage === 'Converted' || Boolean(lead.applicationId) || lead.status === 'Converted'
 
-    if (statusFilter === 'all') return true
-    if (statusFilter === 'closed') return isClosed
-    if (statusFilter === 'converted') return isConverted
+    // Once converted, leads are no longer visible in the main leads list
+    if (statusFilter === 'all') return !isConverted
     if (statusFilter === 'active') return !isClosed && !isConverted
     if (statusFilter === 'followup_due') {
-      return !isClosed && lead.nextFollowup && lead.nextFollowup <= todayStr
+      return !isClosed && !isConverted && Boolean(lead.nextFollowup) && lead.nextFollowup <= todayStr
     }
-    return true
+    if (statusFilter === 'closed') return isClosed && !isConverted
+    if (statusFilter === 'converted') return isConverted
+    return !isConverted
   })
 
   const columns = [
@@ -350,7 +352,7 @@ export function LeadTable({
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          All Leads ({leads.length})
+          All Leads ({leads.filter((l) => l.stage !== 'Converted' && !l.applicationId && l.status !== 'Converted').length})
         </button>
         <button
           type="button"
@@ -361,7 +363,7 @@ export function LeadTable({
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          Active Pipeline ({leads.filter((l) => l.status !== 'Closed' && l.stage !== 'Lost' && l.stage !== 'Converted').length})
+          Active Pipeline ({leads.filter((l) => l.status !== 'Closed' && l.stage !== 'Lost' && l.stage !== 'Converted' && !l.applicationId && l.status !== 'Converted').length})
         </button>
         <button
           type="button"
@@ -372,18 +374,7 @@ export function LeadTable({
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          Follow-up Due ({leads.filter((l) => l.status !== 'Closed' && l.nextFollowup && l.nextFollowup <= todayStr).length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setStatusFilter('converted')}
-          className={`px-3 py-1 rounded-lg font-medium transition-colors ${
-            statusFilter === 'converted'
-              ? 'bg-slate-900 text-white shadow-2xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-          }`}
-        >
-          Converted ({leads.filter((l) => l.stage === 'Converted' || Boolean(l.applicationId)).length})
+          Follow-up Due ({leads.filter((l) => l.status !== 'Closed' && l.stage !== 'Converted' && !l.applicationId && l.status !== 'Converted' && l.nextFollowup && l.nextFollowup <= todayStr).length})
         </button>
         <button
           type="button"
@@ -394,9 +385,39 @@ export function LeadTable({
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          Closed / Lost ({leads.filter((l) => l.status === 'Closed' || l.stage === 'Lost').length})
+          Closed / Lost ({leads.filter((l) => (l.status === 'Closed' || l.stage === 'Lost') && l.stage !== 'Converted' && !l.applicationId).length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setStatusFilter('converted')}
+          className={`px-3 py-1 rounded-lg font-medium transition-colors ${
+            statusFilter === 'converted'
+              ? 'bg-slate-900 text-white shadow-2xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          Converted Archive ({leads.filter((l) => l.stage === 'Converted' || Boolean(l.applicationId) || l.status === 'Converted').length})
         </button>
       </div>
+
+      {statusFilter === 'converted' && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-900 text-xs flex items-center justify-between animate-in fade-in-0">
+          <div className="flex items-center gap-2">
+            <FileCheck2 className="h-4 w-4 text-emerald-600 shrink-0" />
+            <span>
+              <strong>Converted Leads Transferred to Applications:</strong> These prospects have officially converted to student applications and are removed from the active leads pipeline. Click &ldquo;Application&rdquo; in the actions column to view the applicant dossier.
+            </span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => navigate('/app/admissions/applications')}
+            className="h-6 text-[11px] text-emerald-800 border-emerald-300 hover:bg-emerald-100 shrink-0 gap-1 font-semibold"
+          >
+            Go to Applications <ArrowRight className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
 
       <DataTable
         columns={columns}

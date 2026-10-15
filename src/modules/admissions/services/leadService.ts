@@ -185,9 +185,10 @@ export const leadService = {
     if (!lead) throw new Error('Lead not found')
 
     lead.stage = 'Converted'
-    lead.status = 'Active'
+    lead.status = 'Converted'
     lead.applicationId = applicationId || lead.applicationId || `app-${Date.now()}`
     lead.lastContact = new Date().toISOString().split('T')[0]
+    lead.nextFollowup = null
     return { ...lead }
   },
 
