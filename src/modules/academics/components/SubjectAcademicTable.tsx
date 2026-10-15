@@ -30,16 +30,17 @@ export function SubjectAcademicTable({
       header: 'Subject',
       accessor: 'name',
       sortable: true,
+      className: 'min-w-[260px]',
       cell: (r: any) => (
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
             <Bookmark className="w-4 h-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <button
               type="button"
               onClick={() => navigate(`/app/academics/subjects/${r.id}`)}
-              className="font-bold text-xs text-slate-900 hover:text-blue-600 text-left transition-colors"
+              className="font-bold text-xs text-slate-900 hover:text-blue-600 text-left transition-colors whitespace-nowrap block"
             >
               {r.name}
             </button>
@@ -52,35 +53,40 @@ export function SubjectAcademicTable({
       header: 'Department',
       accessor: 'department',
       sortable: true,
-      cell: (r: any) => <span className="text-xs text-slate-700 font-medium">{r.department}</span>,
+      className: 'whitespace-nowrap min-w-[150px]',
+      cell: (r: any) => <span className="text-xs text-slate-700 font-medium whitespace-nowrap">{r.department}</span>,
     },
     {
       header: 'Subject Type',
       accessor: 'type',
       sortable: true,
-      cell: (r: any) => <span className="text-xs text-slate-600">{r.type}</span>,
+      className: 'whitespace-nowrap min-w-[140px]',
+      cell: (r: any) => <span className="text-xs text-slate-600 whitespace-nowrap">{r.type}</span>,
     },
     {
       header: 'Credits',
       accessor: 'credits',
       sortable: true,
-      cell: (r: any) => <span className="text-xs font-mono font-bold text-slate-700">{r.credits} Credits</span>,
+      className: 'whitespace-nowrap min-w-[110px]',
+      cell: (r: any) => <span className="text-xs font-mono font-bold text-slate-700 whitespace-nowrap">{r.credits} Credits</span>,
     },
     {
       header: 'Weekly Hours',
       accessor: 'weeklyHours',
       sortable: true,
-      cell: (r: any) => <span className="text-xs text-slate-600">{r.weeklyHours || 4} hrs/wk</span>,
+      className: 'whitespace-nowrap min-w-[120px]',
+      cell: (r: any) => <span className="text-xs text-slate-600 whitespace-nowrap">{r.weeklyHours || 4} hrs/wk</span>,
     },
     {
       header: 'Status',
       accessor: 'status',
       sortable: true,
+      className: 'whitespace-nowrap min-w-[90px]',
       cell: (r: any) => <StatusBadge status={r.status} />,
     },
     {
       header: 'Actions',
-      className: 'text-right',
+      className: 'text-right whitespace-nowrap min-w-[180px]',
       cell: (r: any) => (
         <div className="flex items-center justify-end gap-1.5">
           <Button

@@ -129,76 +129,80 @@ export function AcademicConfigPage({ defaultTab }) {
 
   // Columns for Academic Years
   const yearColumns = [
-    { header: 'Academic Year', accessor: 'name', sortable: true },
-    { header: 'Start Date', accessor: 'startDate' },
-    { header: 'End Date', accessor: 'endDate' },
+    { header: 'Academic Year', accessor: 'name', sortable: true, className: 'whitespace-nowrap min-w-[180px]' },
+    { header: 'Start Date', accessor: 'startDate', className: 'whitespace-nowrap min-w-[130px]' },
+    { header: 'End Date', accessor: 'endDate', className: 'whitespace-nowrap min-w-[130px]' },
     {
       header: 'Is Current',
+      className: 'whitespace-nowrap min-w-[130px]',
       cell: (row) =>
         row.isCurrent ? (
-          <span className="px-2 py-0.5 rounded-full text-[11px] bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">
+          <span className="px-2 py-0.5 rounded-full text-[11px] bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200 whitespace-nowrap">
             Active Session
           </span>
         ) : (
-          <span className="text-slate-400 text-xs">No</span>
+          <span className="text-slate-400 text-xs whitespace-nowrap">No</span>
         ),
     },
     {
       header: 'Admission Status',
       accessor: 'admissionStatus',
+      className: 'whitespace-nowrap min-w-[130px]',
       cell: (row) => <StatusBadge status={row.admissionStatus} />,
     },
     {
       header: 'Status',
       accessor: 'status',
+      className: 'whitespace-nowrap min-w-[100px]',
       cell: (row) => <StatusBadge status={row.status} />,
     },
   ]
 
   // Columns for Programs
   const programColumns = [
-    { header: 'Program Name', accessor: 'name', sortable: true },
-    { header: 'Code', accessor: 'code', cell: (r) => <span className="font-mono text-xs">{r.code}</span> },
-    { header: 'Academic Level', accessor: 'level' },
-    { header: 'Duration', accessor: 'duration' },
-    { header: 'Status', accessor: 'status', cell: (r) => <StatusBadge status={r.status} /> },
+    { header: 'Program Name', accessor: 'name', sortable: true, className: 'min-w-[240px]' },
+    { header: 'Code', accessor: 'code', className: 'whitespace-nowrap min-w-[120px]', cell: (r) => <span className="font-mono text-xs">{r.code}</span> },
+    { header: 'Academic Level', accessor: 'level', className: 'whitespace-nowrap min-w-[180px]' },
+    { header: 'Duration', accessor: 'duration', className: 'whitespace-nowrap min-w-[110px]' },
+    { header: 'Status', accessor: 'status', className: 'whitespace-nowrap min-w-[90px]', cell: (r) => <StatusBadge status={r.status} /> },
   ]
 
   // Columns for Classes
   const classColumns = [
-    { header: 'Class / Grade', accessor: 'name', sortable: true },
-    { header: 'Class Code', accessor: 'code', cell: (r) => <span className="font-mono text-xs">{r.code}</span> },
-    { header: 'Program', accessor: 'program' },
-    { header: 'Active Sections', accessor: 'sectionsCount' },
-    { header: 'Total Students', accessor: 'totalStudents' },
-    { header: 'Status', accessor: 'status', cell: (r) => <StatusBadge status={r.status} /> },
+    { header: 'Class / Grade', accessor: 'name', sortable: true, className: 'min-w-[200px]' },
+    { header: 'Class Code', accessor: 'code', className: 'whitespace-nowrap min-w-[110px]', cell: (r) => <span className="font-mono text-xs">{r.code}</span> },
+    { header: 'Program', accessor: 'program', className: 'whitespace-nowrap min-w-[200px]' },
+    { header: 'Active Sections', accessor: 'sectionsCount', className: 'whitespace-nowrap min-w-[120px]' },
+    { header: 'Total Students', accessor: 'totalStudents', className: 'whitespace-nowrap min-w-[120px]' },
+    { header: 'Status', accessor: 'status', className: 'whitespace-nowrap min-w-[90px]', cell: (r) => <StatusBadge status={r.status} /> },
   ]
 
   // Columns for Sections
   const sectionColumns = [
-    { header: 'Section', accessor: 'name', sortable: true },
-    { header: 'Class', accessor: 'className' },
-    { header: 'Classroom', accessor: 'room' },
-    { header: 'Class Teacher', accessor: 'classTeacher' },
+    { header: 'Section', accessor: 'name', sortable: true, className: 'min-w-[200px]' },
+    { header: 'Class', accessor: 'className', className: 'whitespace-nowrap min-w-[140px]' },
+    { header: 'Classroom', accessor: 'room', className: 'whitespace-nowrap min-w-[140px]' },
+    { header: 'Class Teacher', accessor: 'classTeacher', className: 'whitespace-nowrap min-w-[170px]' },
     {
       header: 'Occupancy',
+      className: 'whitespace-nowrap min-w-[140px]',
       cell: (r) => (
-        <span className="font-semibold text-xs text-slate-800">
+        <span className="font-semibold text-xs text-slate-800 whitespace-nowrap">
           {r.currentStrength} / {r.capacity} seats
         </span>
       ),
     },
-    { header: 'Status', accessor: 'status', cell: (r) => <StatusBadge status={r.status} /> },
+    { header: 'Status', accessor: 'status', className: 'whitespace-nowrap min-w-[90px]', cell: (r) => <StatusBadge status={r.status} /> },
   ]
 
   // Columns for Subjects
   const subjectColumns = [
-    { header: 'Subject Name', accessor: 'name', sortable: true },
-    { header: 'Code', accessor: 'code', cell: (r) => <span className="font-mono text-xs">{r.code}</span> },
-    { header: 'Department', accessor: 'department' },
-    { header: 'Type', accessor: 'type' },
-    { header: 'Credits / Hours', cell: (r) => `${r.credits} Credits (${r.weeklyHours || 5}h/wk)` },
-    { header: 'Status', accessor: 'status', cell: (r) => <StatusBadge status={r.status} /> },
+    { header: 'Subject Name', accessor: 'name', sortable: true, className: 'min-w-[240px]' },
+    { header: 'Code', accessor: 'code', className: 'whitespace-nowrap min-w-[110px]', cell: (r) => <span className="font-mono text-xs">{r.code}</span> },
+    { header: 'Department', accessor: 'department', className: 'whitespace-nowrap min-w-[150px]' },
+    { header: 'Type', accessor: 'type', className: 'whitespace-nowrap min-w-[120px]' },
+    { header: 'Credits / Hours', className: 'whitespace-nowrap min-w-[160px]', cell: (r) => `${r.credits} Credits (${r.weeklyHours || 5}h/wk)` },
+    { header: 'Status', accessor: 'status', className: 'whitespace-nowrap min-w-[90px]', cell: (r) => <StatusBadge status={r.status} /> },
   ]
 
   return (
@@ -217,7 +221,7 @@ export function AcademicConfigPage({ defaultTab }) {
         value={activeTab}
         onValueChange={(val) => {
           setActiveTab(val)
-          navigate(`/academics/${val === 'years' ? 'academic-years' : val}`)
+          navigate(`/app/academics/${val === 'years' ? 'academic-years' : val}`)
         }}
         className="w-full"
       >

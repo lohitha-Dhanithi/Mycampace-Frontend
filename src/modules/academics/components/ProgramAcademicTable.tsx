@@ -23,16 +23,17 @@ export function ProgramAcademicTable({
       header: 'Program Name',
       accessor: 'name',
       sortable: true,
+      className: 'min-w-[280px]',
       cell: (r: any) => (
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
             <GraduationCap className="w-4 h-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <button
               type="button"
               onClick={() => navigate(`/app/academics/programs/${r.id}`)}
-              className="font-bold text-xs text-slate-900 hover:text-blue-600 text-left transition-colors"
+              className="font-bold text-xs text-slate-900 hover:text-blue-600 text-left transition-colors whitespace-nowrap block"
             >
               {r.name}
             </button>
@@ -45,37 +46,48 @@ export function ProgramAcademicTable({
       header: 'Education Level',
       accessor: 'level',
       sortable: true,
-      cell: (r: any) => <span className="text-xs text-slate-600 font-medium">{r.level}</span>,
+      className: 'whitespace-nowrap min-w-[200px]',
+      cell: (r: any) => <span className="text-xs text-slate-700 font-medium whitespace-nowrap">{r.level}</span>,
     },
     {
       header: 'Duration',
       accessor: 'duration',
       sortable: true,
-      cell: (r: any) => <span className="text-xs text-slate-600 font-medium">{r.duration || `${r.durationYears} Years`}</span>,
+      className: 'whitespace-nowrap min-w-[100px]',
+      cell: (r: any) => <span className="text-xs text-slate-600 font-medium whitespace-nowrap">{r.duration || `${r.durationYears} Years`}</span>,
     },
     {
       header: 'Active Courses',
       accessor: 'coursesCount',
+      className: 'whitespace-nowrap min-w-[120px]',
       cell: (r: any) => (
-        <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+        <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 whitespace-nowrap">
           {r.coursesCount ?? 2} Courses
         </span>
       ),
     },
     {
+      header: 'Total Students',
+      accessor: 'studentCount',
+      className: 'whitespace-nowrap min-w-[110px]',
+      cell: (r: any) => <span className="text-xs font-mono font-bold text-slate-800 whitespace-nowrap">{r.studentCount ?? 240}</span>,
+    },
+    {
       header: 'Intake Capacity',
       accessor: 'intakeCapacity',
-      cell: (r: any) => <span className="text-xs font-mono font-bold text-slate-800">{r.intakeCapacity ?? 120} Seats</span>,
+      className: 'whitespace-nowrap min-w-[120px]',
+      cell: (r: any) => <span className="text-xs font-mono font-semibold text-slate-600 whitespace-nowrap">{r.intakeCapacity ?? 120} Seats</span>,
     },
     {
       header: 'Status',
       accessor: 'status',
       sortable: true,
+      className: 'whitespace-nowrap min-w-[90px]',
       cell: (r: any) => <StatusBadge status={r.status} />,
     },
     {
       header: 'Actions',
-      className: 'text-right',
+      className: 'text-right whitespace-nowrap min-w-[150px]',
       cell: (r: any) => (
         <div className="flex items-center justify-end gap-1.5">
           <Button

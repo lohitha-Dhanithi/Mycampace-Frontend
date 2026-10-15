@@ -23,20 +23,21 @@ export function SectionAcademicTable({
       header: 'Section',
       accessor: 'name',
       sortable: true,
+      className: 'min-w-[220px]',
       cell: (r: any) => (
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-teal-50 text-teal-700 border border-teal-200">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-teal-50 text-teal-700 border border-teal-200 shrink-0">
             <Users2 className="w-4 h-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <button
               type="button"
               onClick={() => navigate(`/app/academics/sections/${r.id}`)}
-              className="font-bold text-xs text-slate-900 hover:text-blue-600 text-left transition-colors"
+              className="font-bold text-xs text-slate-900 hover:text-blue-600 text-left transition-colors whitespace-nowrap block"
             >
               {r.name}
             </button>
-            <div className="text-[10px] text-slate-400">{r.room || 'Standard Classroom'}</div>
+            <div className="text-[10px] text-slate-400 font-mono">{r.room || 'Standard Classroom'}</div>
           </div>
         </div>
       ),
@@ -45,17 +46,20 @@ export function SectionAcademicTable({
       header: 'Class / Academic Level',
       accessor: 'className',
       sortable: true,
-      cell: (r: any) => <span className="text-xs font-semibold text-slate-800">{r.className}</span>,
+      className: 'whitespace-nowrap min-w-[170px]',
+      cell: (r: any) => <span className="text-xs font-semibold text-slate-800 whitespace-nowrap">{r.className}</span>,
     },
     {
       header: 'Class Teacher',
       accessor: 'classTeacher',
       sortable: true,
-      cell: (r: any) => <span className="text-xs text-slate-800 font-medium">{r.classTeacher || 'Assigned Mentor'}</span>,
+      className: 'whitespace-nowrap min-w-[170px]',
+      cell: (r: any) => <span className="text-xs text-slate-800 font-medium whitespace-nowrap">{r.classTeacher || 'Assigned Mentor'}</span>,
     },
     {
       header: 'Capacity & Enrolment',
       accessor: 'currentStrength',
+      className: 'whitespace-nowrap min-w-[150px]',
       cell: (r: any) => {
         const current = r.currentStrength ?? 0
         const max = r.capacity ?? 40
@@ -81,17 +85,19 @@ export function SectionAcademicTable({
     {
       header: 'Classroom',
       accessor: 'room',
-      cell: (r: any) => <span className="text-xs font-mono text-slate-700">{r.room || 'TBD'}</span>,
+      className: 'whitespace-nowrap min-w-[150px]',
+      cell: (r: any) => <span className="text-xs font-mono text-slate-700 whitespace-nowrap">{r.room || 'TBD'}</span>,
     },
     {
       header: 'Status',
       accessor: 'status',
       sortable: true,
+      className: 'whitespace-nowrap min-w-[90px]',
       cell: (r: any) => <StatusBadge status={r.status} />,
     },
     {
       header: 'Actions',
-      className: 'text-right',
+      className: 'text-right whitespace-nowrap min-w-[150px]',
       cell: (r: any) => (
         <div className="flex items-center justify-end gap-1.5">
           <Button

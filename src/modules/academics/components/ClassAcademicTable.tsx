@@ -23,16 +23,17 @@ export function ClassAcademicTable({
       header: 'Class / Academic Level',
       accessor: 'name',
       sortable: true,
+      className: 'min-w-[240px]',
       cell: (r: any) => (
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-purple-50 text-purple-700 border border-purple-200">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-purple-50 text-purple-700 border border-purple-200 shrink-0">
             <Layers className="w-4 h-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <button
               type="button"
               onClick={() => navigate(`/app/academics/classes/${r.id}`)}
-              className="font-bold text-xs text-slate-900 hover:text-blue-600 text-left transition-colors"
+              className="font-bold text-xs text-slate-900 hover:text-blue-600 text-left transition-colors whitespace-nowrap block"
             >
               {r.name}
             </button>
@@ -45,13 +46,15 @@ export function ClassAcademicTable({
       header: 'Program / Pathway',
       accessor: 'program',
       sortable: true,
-      cell: (r: any) => <span className="text-xs text-slate-700 font-medium">{r.program || 'Academics'}</span>,
+      className: 'whitespace-nowrap min-w-[220px]',
+      cell: (r: any) => <span className="text-xs text-slate-700 font-medium whitespace-nowrap">{r.program || 'Academics'}</span>,
     },
     {
       header: 'Sections',
       accessor: 'sectionsCount',
+      className: 'whitespace-nowrap min-w-[110px]',
       cell: (r: any) => (
-        <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200">
+        <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200 whitespace-nowrap">
           {r.sectionsCount ?? 0} Sections
         </span>
       ),
@@ -59,23 +62,26 @@ export function ClassAcademicTable({
     {
       header: 'Total Enrolled',
       accessor: 'totalStudents',
-      cell: (r: any) => <span className="text-xs font-mono font-bold text-slate-800">{r.totalStudents ?? 0} Students</span>,
+      className: 'whitespace-nowrap min-w-[130px]',
+      cell: (r: any) => <span className="text-xs font-mono font-bold text-slate-800 whitespace-nowrap">{r.totalStudents ?? 0} Students</span>,
     },
     {
       header: 'Campus',
       accessor: 'campus',
       sortable: true,
-      cell: (r: any) => <span className="text-xs text-slate-600">{r.campus || 'Hyderabad Main Campus'}</span>,
+      className: 'whitespace-nowrap min-w-[180px]',
+      cell: (r: any) => <span className="text-xs text-slate-600 whitespace-nowrap">{r.campus || 'Hyderabad Main Campus'}</span>,
     },
     {
       header: 'Status',
       accessor: 'status',
       sortable: true,
+      className: 'whitespace-nowrap min-w-[90px]',
       cell: (r: any) => <StatusBadge status={r.status} />,
     },
     {
       header: 'Actions',
-      className: 'text-right',
+      className: 'text-right whitespace-nowrap min-w-[150px]',
       cell: (r: any) => (
         <div className="flex items-center justify-end gap-1.5">
           <Button

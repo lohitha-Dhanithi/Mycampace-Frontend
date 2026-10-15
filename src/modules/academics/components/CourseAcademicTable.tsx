@@ -23,16 +23,17 @@ export function CourseAcademicTable({
       header: 'Course Offering',
       accessor: 'name',
       sortable: true,
+      className: 'min-w-[320px]',
       cell: (r: any) => (
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0">
             <BookOpen className="w-4 h-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <button
               type="button"
               onClick={() => navigate(`/app/academics/courses/${r.id}`)}
-              className="font-bold text-xs text-slate-900 hover:text-blue-600 text-left transition-colors"
+              className="font-bold text-xs text-slate-900 hover:text-blue-600 text-left transition-colors whitespace-nowrap block"
             >
               {r.name}
             </button>
@@ -45,27 +46,30 @@ export function CourseAcademicTable({
       header: 'Department',
       accessor: 'department',
       sortable: true,
-      cell: (r: any) => <span className="text-xs text-slate-700 font-medium">{r.department || 'Academics'}</span>,
+      className: 'whitespace-nowrap min-w-[150px]',
+      cell: (r: any) => <span className="text-xs text-slate-700 font-medium whitespace-nowrap">{r.department || 'Academics'}</span>,
     },
     {
       header: 'Credits',
       accessor: 'credits',
       sortable: true,
-      cell: (r: any) => <span className="text-xs font-mono font-bold text-slate-700">{r.credits ?? 4} Credits</span>,
+      className: 'whitespace-nowrap min-w-[110px]',
+      cell: (r: any) => <span className="text-xs font-mono font-bold text-slate-700 whitespace-nowrap">{r.credits ?? 4} Credits</span>,
     },
     {
       header: 'Admissions Intake',
       accessor: 'intakeCapacity',
+      className: 'whitespace-nowrap min-w-[140px]',
       cell: (r: any) => (
-        <div className="text-xs">
+        <div className="text-xs whitespace-nowrap">
           <span className="font-mono font-bold text-slate-800">{r.intakeCapacity ?? 60} Seats</span>
           <div className="text-[10px] text-slate-400">
             {r.admissionAvailable !== false ? (
-              <span className="text-emerald-600 font-semibold flex items-center gap-0.5">
+              <span className="text-emerald-600 font-semibold flex items-center gap-0.5 whitespace-nowrap">
                 <CheckCircle2 className="w-2.5 h-2.5 inline" /> Open
               </span>
             ) : (
-              <span className="text-slate-400 font-semibold flex items-center gap-0.5">
+              <span className="text-slate-400 font-semibold flex items-center gap-0.5 whitespace-nowrap">
                 <XCircle className="w-2.5 h-2.5 inline" /> Closed
               </span>
             )}
@@ -77,11 +81,12 @@ export function CourseAcademicTable({
       header: 'Status',
       accessor: 'status',
       sortable: true,
+      className: 'whitespace-nowrap min-w-[90px]',
       cell: (r: any) => <StatusBadge status={r.status} />,
     },
     {
       header: 'Actions',
-      className: 'text-right',
+      className: 'text-right whitespace-nowrap min-w-[150px]',
       cell: (r: any) => (
         <div className="flex items-center justify-end gap-1.5">
           <Button

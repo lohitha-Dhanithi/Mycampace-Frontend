@@ -2,7 +2,7 @@
 // Comprehensive Database-Driven Academic Entity Separation Service
 import { MOCK_ACADEMIC_DATA, MOCK_ACADEMIC_YEARS } from './mockData';
 
-const STORAGE_KEY = 'mycampace_academic_structure_v2';
+const STORAGE_KEY = 'mycampace_academic_structure_v4';
 
 function readStored() {
   if (typeof window === 'undefined') return null;
