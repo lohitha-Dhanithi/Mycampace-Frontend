@@ -1,9 +1,9 @@
 // src/modules/admissions/components/EnquiryTable.jsx
-import React from 'react'
+import React, { useState } from 'react'
 import { DataTable } from '@/components/tables/DataTable'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
-import { Eye, Edit, Calendar, FileText, CheckCircle2, XCircle } from 'lucide-react'
+import { Eye, Edit, Calendar, FileText, CheckCircle2, XCircle, Copy, Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export interface EnquiryTableProps {
@@ -22,68 +22,102 @@ export function EnquiryTable({
   onCloseEnquiry,
 }: EnquiryTableProps) {
   const navigate = useNavigate()
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  const handleCopyId = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(id)
+    setCopiedId(id)
+    setTimeout(() => {
+      setCopiedId((current) => (current === id ? null : current))
+    }, 2000)
+  }
 
   const columns = [
     {
       header: 'Enquiry ID',
       accessor: 'enquiryNumber',
       sortable: true,
+      className: 'whitespace-nowrap min-w-[130px]',
       cell: (row) => (
-        <span className="font-mono font-bold text-blue-600 text-xs">
-          {row.enquiryNumber}
-        </span>
+        <div className="flex items-center gap-1.5 whitespace-nowrap">
+          <span className="font-mono font-medium text-slate-800 text-xs">
+            {row.enquiryNumber}
+          </span>
+          <button
+            type="button"
+            onClick={(e) => handleCopyId(e, row.enquiryNumber)}
+            className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors shrink-0"
+            title={copiedId === row.enquiryNumber ? 'Copied!' : 'Copy Enquiry ID'}
+            aria-label="Copy Enquiry ID"
+          >
+            {copiedId === row.enquiryNumber ? (
+              <Check className="h-3 w-3 text-emerald-600" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </button>
+        </div>
       ),
     },
     {
       header: 'Applicant Name',
       accessor: 'applicantName',
       sortable: true,
+      className: 'whitespace-nowrap min-w-[160px]',
       cell: (row) => (
-        <div>
-          <div className="font-bold text-slate-900">{row.applicantName}</div>
-          <div className="text-[10px] text-slate-400">{row.phone} • {row.email}</div>
+        <div className="font-semibold text-slate-900 text-xs whitespace-nowrap">
+          {row.applicantName}
         </div>
       ),
     },
     {
-      header: 'Program & Campus',
+      header: 'Contact',
+      accessor: 'phone',
+      className: 'whitespace-nowrap min-w-[130px]',
+      cell: (row) => (
+        <span className="font-mono text-xs text-slate-700 whitespace-nowrap">
+          {row.phone}
+        </span>
+      ),
+    },
+    {
+      header: 'Program',
       accessor: 'programName',
       sortable: true,
+      className: 'whitespace-nowrap min-w-[180px]',
       cell: (row) => (
-        <div>
-          <div className="font-semibold text-slate-800">{row.programName}</div>
-          <div className="text-[10px] text-slate-500">{row.campusName}</div>
-        </div>
+        <span className="font-medium text-slate-800 text-xs truncate max-w-[200px] block" title={row.programName}>
+          {row.programName}
+        </span>
       ),
     },
     {
       header: 'Academic Year',
       accessor: 'academicYearName',
-      cell: (row) => <span className="text-slate-600">{row.academicYearName}</span>,
+      className: 'whitespace-nowrap',
+      cell: (row) => <span className="text-slate-600 text-xs whitespace-nowrap">{row.academicYearName}</span>,
     },
     {
       header: 'Counsellor',
       accessor: 'counsellorName',
       sortable: true,
-      cell: (row) => <span className="text-slate-700 font-medium">{row.counsellorName || 'Unassigned'}</span>,
-    },
-    {
-      header: 'Enquiry Date',
-      accessor: 'enquiryDate',
-      sortable: true,
-      cell: (row) => <span className="text-slate-600">{row.enquiryDate}</span>,
+      className: 'whitespace-nowrap min-w-[140px]',
+      cell: (row) => <span className="text-slate-700 text-xs font-medium whitespace-nowrap">{row.counsellorName || 'Unassigned'}</span>,
     },
     {
       header: 'Status',
       accessor: 'status',
       sortable: true,
+      className: 'whitespace-nowrap',
       cell: (row) => <StatusBadge status={row.status} />,
     },
     {
       header: 'Next Follow-up',
       accessor: 'nextFollowup',
+      className: 'whitespace-nowrap',
       cell: (row) => (
-        <span className={row.nextFollowup ? 'text-blue-600 font-medium' : 'text-slate-400'}>
+        <span className={row.nextFollowup ? 'text-blue-600 text-xs font-medium whitespace-nowrap' : 'text-slate-400 text-xs'}>
           {row.nextFollowup || '—'}
         </span>
       ),

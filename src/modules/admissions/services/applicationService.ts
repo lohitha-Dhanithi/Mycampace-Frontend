@@ -1,8 +1,9 @@
 // src/modules/admissions/services/applicationService.js
 import { INITIAL_APPLICATIONS } from '../data/applicationMockData'
 import { APPLICATION_WORKFLOW_TRANSITIONS } from '../config/admissionStatusConfig'
+import { documentService } from './documentService'
 
-let applications = [...INITIAL_APPLICATIONS]
+let applications: any[] = [...INITIAL_APPLICATIONS]
 const delay = (ms = 120) => new Promise((resolve) => setTimeout(resolve, ms))
 
 /**
@@ -27,6 +28,90 @@ export function calculateApplicationCompletion(app) {
   return { percentage, sections }
 }
 
+/**
+ * Course-dependent fee structure mapping
+ * Returns configured fee structure depending on the specific course opted for
+ */
+export function getCourseFeeStructure(courseNameOrId?: string, programName?: string) {
+  const c = (courseNameOrId || '').toLowerCase()
+  const p = (programName || '').toLowerCase()
+
+  if (c.includes('science') || c.includes('pcm') || c.includes('pcb') || c.includes('b.tech') || c.includes('engineering') || p.includes('engineering')) {
+    return {
+      feeStructureId: 'fs-sci-composite-2026',
+      feeStructureName: 'Senior Secondary Science Composite Fee (2026-27)',
+      courseCategory: 'Science Stream (PCM / PCB)',
+      totalFees: 120000,
+      admissionFee: 25000,
+      tuitionFee: 75000,
+      labFee: 15000,
+      developmentFee: 5000,
+      netPayable: 120000,
+      termSchedule: [
+        { term: 'Term 1 (Admission & Induction)', amount: 65000, dueDate: '2026-11-15' },
+        { term: 'Term 2 (Mid-Year Academic)', amount: 55000, dueDate: '2027-01-15' },
+      ],
+      description: 'Comprehensive fee structure for Senior Secondary Science (PCM/PCB) including Physics, Chemistry & Computer Labs.',
+    }
+  }
+
+  if (c.includes('commerce') || c.includes('accountancy') || c.includes('business')) {
+    return {
+      feeStructureId: 'fs-com-composite-2026',
+      feeStructureName: 'Senior Secondary Commerce Composite Fee (2026-27)',
+      courseCategory: 'Commerce with Applied Mathematics',
+      totalFees: 95000,
+      admissionFee: 20000,
+      tuitionFee: 65000,
+      labFee: 5000,
+      developmentFee: 5000,
+      netPayable: 95000,
+      termSchedule: [
+        { term: 'Term 1 (Admission & Induction)', amount: 50000, dueDate: '2026-11-15' },
+        { term: 'Term 2 (Mid-Year Academic)', amount: 45000, dueDate: '2027-01-15' },
+      ],
+      description: 'Fee structure for Senior Secondary Commerce with Applied Mathematics & Business Studies.',
+    }
+  }
+
+  if (c.includes('humanities') || c.includes('arts') || c.includes('social') || c.includes('media')) {
+    return {
+      feeStructureId: 'fs-hum-composite-2026',
+      feeStructureName: 'Senior Secondary Humanities & Media Studies Fee (2026-27)',
+      courseCategory: 'Humanities & Social Sciences',
+      totalFees: 85000,
+      admissionFee: 15000,
+      tuitionFee: 60000,
+      labFee: 5000,
+      developmentFee: 5000,
+      netPayable: 85000,
+      termSchedule: [
+        { term: 'Term 1 (Admission & Induction)', amount: 45000, dueDate: '2026-11-15' },
+        { term: 'Term 2 (Mid-Year Academic)', amount: 40000, dueDate: '2027-01-15' },
+      ],
+      description: 'Fee structure for Senior Secondary Humanities, Psychology and Media Studies.',
+    }
+  }
+
+  // Default / Secondary School (Class 9-10)
+  return {
+    feeStructureId: 'fs-sec-composite-2026',
+    feeStructureName: 'Secondary School Composite Annual Fee (2026-27)',
+    courseCategory: 'Secondary School Curriculum',
+    totalFees: 75000,
+    admissionFee: 15000,
+    tuitionFee: 50000,
+    labFee: 5000,
+    developmentFee: 5000,
+    netPayable: 75000,
+    termSchedule: [
+      { term: 'Term 1 (Admission & Induction)', amount: 40000, dueDate: '2026-11-15' },
+      { term: 'Term 2 (Mid-Year Academic)', amount: 35000, dueDate: '2027-01-15' },
+    ],
+    description: 'Annual fee structure for CBSE General Secondary Academic Curriculum.',
+  }
+}
+
 export const applicationService = {
   getApplications: async (filters: any = {}) => {
     await delay(120)
@@ -34,13 +119,21 @@ export const applicationService = {
 
     if (filters.campusId && filters.campusId !== 'all') {
       result = result.filter(
-        (a) => a.academicInterest?.campusId === filters.campusId || !a.academicInterest?.campusId
+        (a) =>
+          !a.academicInterest?.campusId ||
+          a.academicInterest?.campusId === filters.campusId ||
+          ((filters.campusId === 'camp-1' || filters.campusId === 'campus-main') &&
+            (a.academicInterest?.campusId === 'camp-1' || a.academicInterest?.campusId === 'campus-main'))
       )
     }
 
     if (filters.academicYearId && filters.academicYearId !== 'all') {
       result = result.filter(
-        (a) => a.academicInterest?.academicYearId === filters.academicYearId || !a.academicInterest?.academicYearId
+        (a) =>
+          !a.academicInterest?.academicYearId ||
+          a.academicInterest?.academicYearId === filters.academicYearId ||
+          ((filters.academicYearId === 'ay-2026' || filters.academicYearId === 'ay-2026-27') &&
+            (a.academicInterest?.academicYearId === 'ay-2026' || a.academicInterest?.academicYearId === 'ay-2026-27'))
       )
     }
 
@@ -60,6 +153,18 @@ export const applicationService = {
 
     if (filters.status && filters.status !== 'all') {
       result = result.filter((a) => a.status.toLowerCase() === filters.status.toLowerCase())
+    }
+
+    if (filters.feeStatus && filters.feeStatus !== 'all') {
+      result = result.filter(
+        (a) => a.feeDetails?.feeStatus?.toLowerCase() === filters.feeStatus.toLowerCase()
+      )
+    }
+
+    if (filters.documentStatus && filters.documentStatus !== 'all') {
+      result = result.filter(
+        (a) => a.documentVerificationSummary?.status?.toLowerCase() === filters.documentStatus.toLowerCase()
+      )
     }
 
     if (filters.programId && filters.programId !== 'all') {
@@ -103,6 +208,33 @@ export const applicationService = {
       declaration: data.declaration || {},
       reviewData: null,
       admissionDetails: null,
+      feeDetails: data.feeDetails || {
+        feeStructureId: 'fs-btech-cse-y1',
+        feeStructureName: 'General University Fee Schedule (2026-27)',
+        totalFees: 120000,
+        admissionFee: 25000,
+        tuitionFee: 95000,
+        discountAmount: 0,
+        netPayable: 120000,
+        paidAmount: 0,
+        outstandingAmount: 120000,
+        feeStatus: 'Not Invoiced',
+        dueDate: '2026-11-15',
+        lastPaymentDate: null,
+        invoiceNumber: null,
+        receiptNumber: null,
+        paymentMode: null,
+        transactionRef: null,
+      },
+      documentVerificationSummary: data.documentVerificationSummary || {
+        totalRequired: 4,
+        verifiedCount: 0,
+        pendingCount: 4,
+        rejectedCount: 0,
+        status: 'Pending Verification',
+        lastUpdated: new Date().toISOString().split('T')[0],
+        verifiedBy: null,
+      },
       communications: [
         {
           id: `comm-${Date.now()}`,
@@ -205,18 +337,253 @@ export const applicationService = {
     return { ...app }
   },
 
-  convertToAdmission: async (id, admissionData) => {
+  sendAdmissionPolicyToParent: async (id: string, policyData: any = {}) => {
+    await delay(200)
+    const app = applications.find((a) => a.id === id)
+    if (!app) throw new Error('Application not found')
+
+    const parentEmail = policyData.parentEmail || app.guardian?.email || app.contact?.email || 'parent@example.com'
+    const parentName = policyData.parentName || app.guardian?.name || 'Parent / Guardian'
+    const parentMobile = policyData.parentMobile || app.guardian?.mobile || app.contact?.mobile || ''
+
+    // Calculate course fee for this applicant
+    const courseFee = getCourseFeeStructure(
+      app.academicInterest?.courseName || app.academicInterest?.courseId,
+      app.academicInterest?.programName
+    )
+
+    app.status = 'Policy Shared'
+    app.admissionPolicy = {
+      policyStatus: 'Policy Sent',
+      policyDocumentName: `Institutional Admission Policy & Terms (2026-27)`,
+      policySentDate: new Date().toISOString().split('T')[0],
+      policySentToEmail: parentEmail,
+      parentName,
+      parentMobile,
+      termsAccepted: false,
+      termsAcceptedDate: null,
+      termsAcceptedBy: null,
+      parentDeclarationNotes: null,
+      offeredCourse: app.academicInterest?.courseName || 'Standard Curriculum',
+      applicableFeeSchedule: courseFee.feeStructureName,
+      applicableTotalFee: courseFee.totalFees,
+    }
+
+    app.communications = [
+      {
+        id: `comm-${Date.now()}`,
+        type: 'Email',
+        recipient: parentEmail,
+        sentBy: 'Registrar & Admissions Board',
+        date: new Date().toLocaleString(),
+        status: 'Delivered',
+        subject: `Institutional Admission Policy Document & Verification Checklist for ${app.applicantName} (${app.applicationNumber})`,
+      },
+      ...(app.communications || []),
+    ]
+
+    return { ...app }
+  },
+
+  parentSubmitPolicyAndDocuments: async (id: string, submissionData: any = {}) => {
     await delay(250)
     const app = applications.find((a) => a.id === id)
     if (!app) throw new Error('Application not found')
 
+    const parentName = submissionData.parentName || app.admissionPolicy?.parentName || app.guardian?.name || 'Parent / Guardian'
+    const parentSignature = submissionData.parentSignature || parentName
+    const notes = submissionData.parentNotes || 'All required credentials uploaded and institutional terms accepted.'
+
+    app.status = 'Docs Uploaded'
+    app.admissionPolicy = {
+      ...(app.admissionPolicy || {}),
+      policyStatus: 'Docs Uploaded',
+      termsAccepted: true,
+      termsAcceptedDate: new Date().toISOString().split('T')[0],
+      termsAcceptedBy: parentName,
+      parentSignature,
+      parentDeclarationNotes: notes,
+      digitalSignatureHash: `SIG-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
+    }
+
+    // If documents were uploaded in this parent submission, upload them to documentService
+    if (submissionData.uploadedDocs && Array.isArray(submissionData.uploadedDocs)) {
+      for (const d of submissionData.uploadedDocs) {
+        await documentService.uploadDocument(id, {
+          id: d.id,
+          type: d.type,
+          code: d.code || 'DOC',
+          fileName: d.fileName || `${d.type.replace(/\s+/g, '_')}_Parent_Upload.pdf`,
+          fileSize: d.fileSize || '1.8 MB',
+        })
+      }
+    }
+
+    // Refresh application document summary
+    const docs = await documentService.getApplicationDocuments(id)
+    const verified = docs.filter((d) => d.verificationStatus === 'Verified').length
+    const total = docs.length || 4
+
+    app.documentVerificationSummary = {
+      totalRequired: total,
+      verifiedCount: verified,
+      pendingCount: total - verified,
+      rejectedCount: 0,
+      status: verified === total && total > 0 ? 'Verified' : 'Pending Verification',
+      lastUpdated: new Date().toISOString().split('T')[0],
+      verifiedBy: app.documentVerificationSummary?.verifiedBy || null,
+    }
+
+    app.communications = [
+      {
+        id: `comm-${Date.now()}`,
+        type: 'Notification',
+        recipient: app.admissionPolicy?.policySentToEmail || app.contact?.email || 'Admissions',
+        sentBy: 'Parent Admission Portal',
+        date: new Date().toLocaleString(),
+        status: 'Delivered',
+        subject: `Parent Sign-Off: Terms Accepted & ${total} Documents Uploaded for ${app.applicantName}`,
+      },
+      ...(app.communications || []),
+    ]
+
+    return { ...app }
+  },
+
+  approveAllDocumentsAndSendToFinance: async (id: string, reviewerNotes?: string) => {
+    await delay(250)
+    const app = applications.find((a) => a.id === id)
+    if (!app) throw new Error('Application not found')
+
+    // Mark all documents as verified in documentService
+    const docs = await documentService.getApplicationDocuments(id)
+    for (const d of docs) {
+      if (d.verificationStatus !== 'Verified') {
+        await documentService.verifyDocument(d.id, 'Admissions Review Committee')
+      }
+    }
+
+    const total = docs.length || 4
+    app.documentVerificationSummary = {
+      totalRequired: total,
+      verifiedCount: total,
+      pendingCount: 0,
+      rejectedCount: 0,
+      status: 'Verified',
+      lastUpdated: new Date().toISOString().split('T')[0],
+      verifiedBy: 'Admissions Review Committee',
+    }
+
+    // Set admission policy as Approved
+    app.admissionPolicy = {
+      ...(app.admissionPolicy || {}),
+      policyStatus: 'Approved',
+      termsAccepted: true,
+      termsAcceptedDate: app.admissionPolicy?.termsAcceptedDate || new Date().toISOString().split('T')[0],
+      termsAcceptedBy: app.admissionPolicy?.termsAcceptedBy || app.guardian?.name || 'Parent / Guardian',
+    }
+
+    // Determine course-dependent fee structure!
+    const courseFee = getCourseFeeStructure(
+      app.academicInterest?.courseName || app.academicInterest?.courseId,
+      app.academicInterest?.programName
+    )
+
+    const invoiceNumber = `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`
+    const admissionNumber = app.admissionDetails?.admissionNumber || `ADM-2026-${Math.floor(100 + Math.random() * 900)}`
+    const rollNumber = app.admissionDetails?.rollNumber || `ROLL-${Math.floor(10 + Math.random() * 90)}`
+
     app.status = 'Admitted'
+    app.sentToFinance = true
+    app.feeDetails = {
+      feeStructureId: courseFee.feeStructureId,
+      feeStructureName: courseFee.feeStructureName,
+      totalFees: courseFee.totalFees,
+      admissionFee: courseFee.admissionFee,
+      tuitionFee: courseFee.tuitionFee,
+      discountAmount: 0,
+      netPayable: courseFee.netPayable,
+      paidAmount: 0,
+      outstandingAmount: courseFee.netPayable,
+      feeStatus: 'Pending',
+      dueDate: '2026-11-15',
+      lastPaymentDate: null,
+      invoiceNumber,
+      receiptNumber: null,
+      paymentMode: null,
+      transactionRef: null,
+      termSchedule: courseFee.termSchedule,
+    }
+
+    app.admissionDetails = {
+      admissionNumber,
+      rollNumber,
+      allocatedSection: app.admissionDetails?.allocatedSection || 'Section A',
+      admissionDate: new Date().toISOString().split('T')[0],
+      admissionNotes:
+        reviewerNotes ||
+        `All verification documents approved by Admissions. Handed over to Finance under ${courseFee.feeStructureName}.`,
+    }
+
+    app.communications = [
+      {
+        id: `comm-${Date.now()}`,
+        type: 'Email',
+        recipient: app.contact?.email || 'Applicant',
+        sentBy: 'Registrar & Admissions',
+        date: new Date().toLocaleString(),
+        status: 'Delivered',
+        subject: `Admission Confirmed (${admissionNumber}) - Invoiced for ${courseFee.feeStructureName} (Invoice #${invoiceNumber})`,
+      },
+      ...(app.communications || []),
+    ]
+
+    return { ...app }
+  },
+
+  convertToAdmission: async (id, admissionData: any = {}) => {
+    await delay(250)
+    const app = applications.find((a) => a.id === id)
+    if (!app) throw new Error('Application not found')
+
+    // Determine course-dependent fee structure
+    const courseFee = getCourseFeeStructure(
+      app.academicInterest?.courseName || app.academicInterest?.courseId,
+      app.academicInterest?.programName
+    )
+
+    app.status = 'Admitted'
+    app.sentToFinance = true
+    if (!app.feeDetails) {
+      app.feeDetails = {
+        feeStructureId: courseFee.feeStructureId,
+        feeStructureName: courseFee.feeStructureName,
+        totalFees: courseFee.totalFees,
+        admissionFee: courseFee.admissionFee,
+        tuitionFee: courseFee.tuitionFee,
+        discountAmount: 0,
+        netPayable: courseFee.netPayable,
+        paidAmount: 0,
+        outstandingAmount: courseFee.netPayable,
+        feeStatus: 'Pending',
+        dueDate: '2026-11-15',
+        lastPaymentDate: null,
+        invoiceNumber: `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        receiptNumber: null,
+        paymentMode: null,
+        transactionRef: null,
+        termSchedule: courseFee.termSchedule,
+      }
+    }
+    if (!app.feeDetails.invoiceNumber) {
+      app.feeDetails.invoiceNumber = `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`
+    }
     app.admissionDetails = {
       admissionNumber: admissionData.admissionNumber || `ADM-2026-${Math.floor(100 + Math.random() * 900)}`,
       rollNumber: admissionData.rollNumber || `ROLL-${Math.floor(10 + Math.random() * 90)}`,
       allocatedSection: admissionData.section || 'Section A',
       admissionDate: admissionData.admissionDate || new Date().toISOString().split('T')[0],
-      admissionNotes: admissionData.admissionNotes || 'Admission officially confirmed by Admissions Committee.',
+      admissionNotes: admissionData.admissionNotes || `Admission officially confirmed by Admissions Committee under ${courseFee.feeStructureName}.`,
     }
 
     app.communications = [
@@ -231,6 +598,45 @@ export const applicationService = {
       },
       ...(app.communications || []),
     ]
+
+    return { ...app }
+  },
+
+  sendToFinance: async (id: string) => {
+    await delay(180)
+    const app = applications.find((a) => a.id === id)
+    if (!app) throw new Error('Application not found')
+
+    const courseFee = getCourseFeeStructure(
+      app.academicInterest?.courseName || app.academicInterest?.courseId,
+      app.academicInterest?.programName
+    )
+
+    app.sentToFinance = true
+    if (!app.feeDetails) {
+      app.feeDetails = {
+        feeStructureId: courseFee.feeStructureId,
+        feeStructureName: courseFee.feeStructureName,
+        totalFees: courseFee.totalFees,
+        admissionFee: courseFee.admissionFee,
+        tuitionFee: courseFee.tuitionFee,
+        discountAmount: 0,
+        netPayable: courseFee.netPayable,
+        paidAmount: 0,
+        outstandingAmount: courseFee.netPayable,
+        feeStatus: 'Pending',
+        dueDate: '2026-11-15',
+        lastPaymentDate: null,
+        invoiceNumber: `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        receiptNumber: null,
+        paymentMode: null,
+        transactionRef: null,
+        termSchedule: courseFee.termSchedule,
+      }
+    }
+    if (!app.feeDetails.invoiceNumber) {
+      app.feeDetails.invoiceNumber = `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`
+    }
 
     return { ...app }
   },
@@ -261,5 +667,90 @@ export const applicationService = {
         status: 'Active',
       },
     }
+  },
+
+  recordFeePayment: async (applicationId, { amount, paymentMode, transactionRef, notes }) => {
+    await delay(200)
+    const app = applications.find((a) => a.id === applicationId)
+    if (!app) throw new Error('Application not found')
+
+    const currentFee = app.feeDetails || {
+      feeStructureId: 'fs-std',
+      feeStructureName: 'General Admission Fee Schedule',
+      totalFees: 120000,
+      admissionFee: 25000,
+      tuitionFee: 95000,
+      discountAmount: 0,
+      netPayable: 120000,
+      paidAmount: 0,
+      outstandingAmount: 120000,
+      feeStatus: 'Pending',
+    }
+
+    const payAmount = Number(amount) || 0
+    const newPaid = (currentFee.paidAmount || 0) + payAmount
+    const net = currentFee.netPayable || currentFee.totalFees || 120000
+    const newOutstanding = Math.max(0, net - newPaid)
+    const newStatus = newOutstanding === 0 ? 'Paid' : newPaid > 0 ? 'Partially Paid' : 'Pending'
+    const receiptNumber = `RCP-2026-${Math.floor(1000 + Math.random() * 9000)}`
+
+    app.feeDetails = {
+      ...currentFee,
+      paidAmount: newPaid,
+      outstandingAmount: newOutstanding,
+      feeStatus: newStatus,
+      lastPaymentDate: new Date().toISOString().split('T')[0],
+      receiptNumber,
+      paymentMode: paymentMode || 'UPI / Net Banking',
+      transactionRef: transactionRef || `PAY-TXN-${Date.now().toString().slice(-6)}`,
+    }
+
+    // Auto-advance application status if approved and admission fee paid
+    if (app.status === 'Approved' && newPaid >= (currentFee.admissionFee || 20000)) {
+      app.status = 'Admitted'
+      if (!app.admissionDetails) {
+        app.admissionDetails = {
+          admissionNumber: `ADM-2026-${Math.floor(100 + Math.random() * 900)}`,
+          rollNumber: `26-${(app.personal?.firstName || 'STU').slice(0, 3).toUpperCase()}-${Math.floor(10 + Math.random() * 90)}`,
+          allocatedSection: 'Section A',
+          admissionDate: new Date().toISOString().split('T')[0],
+          admissionNotes: 'Direct admission auto-confirmed upon admission fee clearance.',
+        }
+      }
+    }
+
+    app.communications = [
+      {
+        id: `comm-${Date.now()}`,
+        type: 'Receipt',
+        recipient: app.contact?.email || 'Applicant',
+        sentBy: 'Finance & Accounts',
+        date: new Date().toLocaleString(),
+        status: 'Delivered',
+        subject: `Fee Payment Acknowledgment: ₹${payAmount.toLocaleString('en-IN')} Received (${receiptNumber})`,
+      },
+      ...(app.communications || []),
+    ]
+
+    return { ...app }
+  },
+
+  updateDocumentVerification: async (applicationId, docSummary) => {
+    await delay(100)
+    const app = applications.find((a) => a.id === applicationId)
+    if (!app) return null
+
+    app.documentVerificationSummary = {
+      ...(app.documentVerificationSummary || {}),
+      ...docSummary,
+      lastUpdated: new Date().toISOString().split('T')[0],
+    }
+
+    // If documents are required or rejected, update application status if not already admitted
+    if (docSummary.rejectedCount > 0 && ['Submitted', 'Under Review'].includes(app.status)) {
+      app.status = 'Documents Required'
+    }
+
+    return { ...app }
   },
 }

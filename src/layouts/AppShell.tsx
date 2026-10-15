@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { AppSidebar } from '@/components/layout/AppSidebar'
 import { AppHeader } from '@/components/layout/AppHeader'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export function AppShell() {
   const [collapsed, setCollapsed] = useState(false)
@@ -39,7 +40,21 @@ export function AppShell() {
       )}
 
       {/* Sidebar for Desktop & Mobile */}
-      <div className={`hidden lg:block ${collapsed ? 'w-16' : 'w-64'} transition-all duration-300`}>
+      <div className={`hidden lg:block ${collapsed ? 'w-16' : 'w-64'} transition-all duration-300 relative`}>
+        {/* Sidebar Collapse Toggle Button on the Center of the Sidebar Line */}
+        <button
+          type="button"
+          onClick={() => setCollapsed(!collapsed)}
+          className="absolute -right-3.5 top-1/2 -translate-y-1/2 z-30 h-7 w-7 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/70 shadow-xs flex items-center justify-center transition-all hover:scale-110 focus:outline-none"
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {collapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
+        </button>
         <AppSidebar collapsed={collapsed} />
       </div>
 

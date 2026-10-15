@@ -7,7 +7,13 @@ export const metadata: Metadata = {
   description:
     'Enterprise Multi-Tenant Educational Operating System with integrated Academics, Admissions, LMS, SIS, and Finance.',
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/favicon.png', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: '/favicon.png',
+    apple: '/apple-touch-icon.png',
   },
 }
 
@@ -20,6 +26,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

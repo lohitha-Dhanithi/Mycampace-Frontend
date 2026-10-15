@@ -63,7 +63,7 @@ export function LeadProfile({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate('/admissions/leads')}
+          onClick={() => navigate('/app/admissions/leads')}
           className="gap-1.5 text-xs self-start"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back to Leads

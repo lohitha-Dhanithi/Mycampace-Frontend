@@ -1,12 +1,15 @@
 // src/platform/shell/ProductShell.jsx
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Outlet, NavLink, useLocation, useNavigate, Link } from 'react-router-dom'
 import {
   Menu,
   Search,
   Bell,
   LogOut,
+  Building2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   LayoutDashboard,
   GraduationCap,
   BookOpen,
@@ -41,6 +44,7 @@ import {
   Clock,
   User,
   ArrowLeftRight,
+  ShieldCheck,
 } from 'lucide-react'
 import { ProductSwitcher } from '@/components/layout/ProductSwitcher'
 import { ProductLauncherMenu } from '@/components/layout/ProductLauncherMenu'
@@ -160,18 +164,36 @@ const PRODUCT_NAV_CONFIG = {
     ],
   },
   admissions: {
-    name: 'Admissions',
-    tagline: 'Recruitment Funnel & Applications',
+    name: 'Admissions CRM',
+    tagline: 'Intake Funnel, Enrolment & Verification',
     color: 'emerald',
     sections: [
       {
-        title: 'Admissions CRM',
+        title: 'Intake & Insights',
         items: [
-          { label: 'CRM Dashboard', path: '/app/admissions', icon: LayoutDashboard },
-          { label: 'Leads & Enquiries', path: '/app/admissions/leads', icon: UserPlus },
-          { label: 'Counselling Pipeline', path: '/app/admissions/counselling', icon: Users2 },
+          { label: 'Admissions Analytics', path: '/app/admissions', icon: LayoutDashboard, end: true },
+        ],
+      },
+      {
+        title: 'Recruitment Pipeline',
+        items: [
+          { label: 'Leads', path: '/app/admissions/leads', icon: UserPlus },
+          { label: 'Enquiries', path: '/app/admissions/enquiries', icon: Users },
+          { label: 'Counselling Sessions', path: '/app/admissions/counselling', icon: CalendarCheck },
+        ],
+      },
+      {
+        title: 'Enrolment & Processing',
+        items: [
           { label: 'Applications', path: '/app/admissions/applications', icon: FileSpreadsheet },
-          { label: 'Documents & Verification', path: '/app/admissions/documents', icon: FileText },
+          { label: 'Fee Clearance', path: '/app/admissions/fees', icon: CreditCard },
+          { label: 'Documents & Verification', path: '/app/admissions/documents', icon: ShieldCheck },
+        ],
+      },
+      {
+        title: 'Operations',
+        items: [
+          { label: 'Follow-ups', path: '/app/admissions/follow-ups', icon: Clock },
           { label: 'Admissions Reports', path: '/app/admissions/reports', icon: BarChart3 },
         ],
       },
@@ -257,6 +279,22 @@ export function ProductShell({ productId }) {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [notifications] = useState(notificationService.getNotifications())
+
+  const userMenuRef = useRef<HTMLDivElement>(null)
+  const notifRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false)
+      }
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setShowNotifications(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Check product access & entitlements
   const accessCheck = productService.checkProductAccess(productId)
@@ -389,28 +427,50 @@ export function ProductShell({ productId }) {
       <aside
         className={`hidden lg:flex flex-col border-r border-slate-200 bg-white transition-all duration-300 ${
           collapsed ? 'w-16' : 'w-64'
-        } sticky top-0 h-screen z-20`}
+        } sticky top-0 h-screen z-20 relative`}
       >
+        {/* Sidebar Collapse Toggle Button on the Center of the Sidebar Line */}
+        <button
+          type="button"
+          onClick={() => setCollapsed(!collapsed)}
+          className="absolute -right-3.5 top-1/2 -translate-y-1/2 z-30 h-7 w-7 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/70 shadow-xs flex items-center justify-center transition-all hover:scale-110 focus:outline-none"
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {collapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
+        </button>
+
         {/* Sidebar Product Brand Banner */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 shrink-0">
+        <div className="h-16 flex items-center justify-between px-3.5 border-b border-slate-200 shrink-0">
           {!collapsed ? (
-            <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                {currentNav.name.charAt(0)}
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs font-extrabold text-slate-900 tracking-wide">
+            <Link to="/app" className="flex items-center gap-2.5 group hover:opacity-90 transition-opacity min-w-0" title="Go to Product Hub">
+              <img
+                src="/mycampace-logo.png"
+                alt="MyCampace"
+                className="h-8 w-8 object-contain shrink-0 drop-shadow-2xs"
+              />
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-extrabold text-slate-900 tracking-wide leading-tight truncate">
                   {currentNav.name}
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium truncate max-w-[140px]">
-                  {currentNav.tagline}
+                <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Enterprise Workspace
                 </span>
               </div>
-            </div>
+            </Link>
           ) : (
-            <div className="h-8 w-8 mx-auto rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
-              {currentNav.name.charAt(0)}
-            </div>
+            <Link to="/app" className="mx-auto hover:opacity-90 transition-opacity" title="MyCampace Hub">
+              <img
+                src="/mycampace-logo.png"
+                alt="MyCampace"
+                className="h-8 w-8 object-contain drop-shadow-2xs"
+              />
+            </Link>
           )}
         </div>
 
@@ -431,10 +491,9 @@ export function ProductShell({ productId }) {
                     to={item.path}
                     end={Boolean(item.end)}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                        isActive
-                          ? 'bg-blue-50 text-blue-700 shadow-2xs font-bold'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${isActive
+                        ? 'bg-blue-50 text-blue-700 shadow-2xs font-bold'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                       } ${collapsed ? 'justify-center px-0' : ''}`
                     }
                     title={collapsed ? item.label : undefined}
@@ -448,46 +507,107 @@ export function ProductShell({ productId }) {
           ))}
         </div>
 
-        {/* Sidebar Footer */}
-        <div className="p-3 border-t border-slate-200 shrink-0 space-y-1">
+        {/* Sidebar Footer / User Profile */}
+        <div className="p-2 border-t border-slate-200 shrink-0 relative bg-white" ref={userMenuRef}>
           {showPortalSwitch && (
             <button
               type="button"
               onClick={switchPortal}
               title={portalSwitchLabel}
-              className={`flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-2 text-left text-xs font-semibold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 ${
-                collapsed ? 'justify-center' : ''
-              }`}
+              className={`flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-2 text-left text-xs font-semibold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 mb-1.5 ${collapsed ? 'justify-center' : ''}`}
             >
               <ArrowLeftRight className="h-4 w-4 shrink-0 text-blue-600" />
               {!collapsed && <span>{portalSwitchLabel}</span>}
             </button>
           )}
-          <Link
-            to="/app"
-            className={`flex items-center gap-2.5 p-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors ${
-              collapsed ? 'justify-center p-2' : ''
-            }`}
+
+          {/* User Profile Button */}
+          <button
+            type="button"
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className={`w-full flex items-center rounded-xl p-1.5 hover:bg-slate-100 transition-colors group focus:outline-none text-left ${collapsed ? 'justify-center' : 'justify-between'}`}
+            title={user?.name || 'Administrator'}
           >
-            <Layers className="h-4 w-4 shrink-0 text-blue-600" />
-            {!collapsed && <span>Return to Product Hub</span>}
-          </Link>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="h-9 w-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs">
+                {user?.name ? user.name.charAt(0) : 'A'}
+              </div>
+              {!collapsed && (
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-bold text-slate-900 truncate">
+                    {user?.name || 'Administrator'}
+                  </span>
+                  <span className="text-[10px] text-slate-500 truncate">
+                    {user?.productRoles?.[productId] || user?.platformRole || 'Head of Admissions'}
+                  </span>
+                </div>
+              )}
+            </div>
+            {!collapsed && (
+              <ChevronDown className={`h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform shrink-0 ${showUserMenu ? 'rotate-180' : ''}`} />
+            )}
+          </button>
+
+          {/* User Popover Menu (Opens upward from bottom of sidebar) */}
+          {showUserMenu && (
+            <div
+              className={`absolute ${collapsed ? 'left-full bottom-0 ml-2' : 'left-2 right-2 bottom-full mb-2'} w-60 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl z-50 animate-in fade-in-0 zoom-in-95 text-xs`}
+            >
+              <div className="p-2.5 border-b border-slate-100 mb-1">
+                <p className="font-bold text-slate-900 truncate">{user?.name || 'Administrator'}</p>
+                <p className="text-[11px] text-blue-600 font-semibold truncate mt-0.5">
+                  {user?.productRoles?.[productId] || user?.platformRole || 'Head of Admissions'}
+                </p>
+                <p className="text-[10px] text-slate-400 truncate mt-0.5">{user?.email}</p>
+              </div>
+              <Link
+                to="/app"
+                onClick={() => setShowUserMenu(false)}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+              >
+                <Layers className="h-4 w-4 text-blue-600" />
+                <span>Product Hub</span>
+              </Link>
+              <Link
+                to="/app/organization"
+                onClick={() => setShowUserMenu(false)}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+              >
+                <Building2 className="h-4 w-4 text-slate-500" />
+                <span>Organization Profile</span>
+              </Link>
+              <div className="my-1 border-t border-slate-100" />
+              <button
+                type="button"
+                onClick={() => {
+                  setShowUserMenu(false)
+                  logout()
+                  navigate('/auth')
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 text-left font-medium transition-colors"
+              >
+                <LogOut className="h-4 w-4 text-red-500" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          )}
         </div>
       </aside>
 
       {/* Product-Specific Mobile Drawer */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white border-r border-slate-200 transform lg:hidden transition-transform duration-300 ease-in-out ${
-          mobileOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white border-r border-slate-200 transform lg:hidden transition-transform duration-300 ease-in-out ${mobileOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
-              {currentNav.name.charAt(0)}
-            </div>
+          <Link to="/app" className="flex items-center gap-2.5">
+            <img
+              src="/mycampace-logo.png"
+              alt="MyCampace"
+              className="h-8 w-8 object-contain drop-shadow-2xs"
+            />
             <span className="text-sm font-bold text-slate-900">{currentNav.name}</span>
-          </div>
+          </Link>
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
@@ -511,8 +631,7 @@ export function ProductShell({ productId }) {
                     end={Boolean(item.end)}
                     onClick={() => setMobileOpen(false)}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold ${
-                        isActive ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600'
+                      `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold ${isActive ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600'
                       }`
                     }
                   >
@@ -524,70 +643,115 @@ export function ProductShell({ productId }) {
             </div>
           ))}
         </div>
-        {showPortalSwitch && (
-          <div className="p-3 border-t border-slate-200">
+        {/* Mobile Drawer Footer with User Profile & Sign Out */}
+        <div className="p-3 border-t border-slate-200 bg-slate-50/50 space-y-2">
+          {showPortalSwitch && (
             <button
               type="button"
               onClick={switchPortal}
-              className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-2 text-left text-xs font-semibold text-slate-700"
+              className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-white p-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
             >
               <ArrowLeftRight className="h-4 w-4 shrink-0 text-blue-600" />
               <span>{portalSwitchLabel}</span>
             </button>
+          )}
+
+          <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 shadow-2xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="h-8 w-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs">
+                {user?.name ? user.name.charAt(0) : 'A'}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-bold text-slate-900 truncate">
+                  {user?.name || 'Administrator'}
+                </span>
+                <span className="text-[10px] text-slate-500 truncate">
+                  {user?.productRoles?.[productId] || user?.platformRole || 'Head of Admissions'}
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileOpen(false)
+                logout()
+                navigate('/auth')
+              }}
+              className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+              title="Sign Out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 sm:px-6 shadow-2xs">
-          {/* Left: Mobile hamburger & Product Switcher & Tenant Selector */}
-          <div className="flex items-center gap-2 sm:gap-3">
+        {/* Top Navigation Bar */}
+        <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-200/90 bg-white/95 backdrop-blur-md px-4 sm:px-6 shadow-2xs">
+          {/* Left: Mobile hamburger & Organization / Campus Context & Product Switcher */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Mobile Hamburger Drawer Toggle (Mobile only) */}
             <button
               type="button"
-              onClick={() => {
-                if (window.innerWidth < 1024) setMobileOpen(!mobileOpen)
-                else setCollapsed(!collapsed)
-              }}
-              className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none"
-              title="Toggle Sidebar"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none"
+              title="Open Navigation"
             >
               <Menu className="h-5 w-5" />
             </button>
 
-            {/* Product Switcher Dropdown */}
-            <ProductSwitcher currentProductId={productId} />
-
-            {/* Waffle Launcher */}
-            <ProductLauncherMenu />
-
-            {/* Context Selector */}
-            <div className="hidden md:block">
+            {/* Context Selector (Institution, Campus, Academic Year) */}
+            <div className="hidden sm:block">
               <ContextSelector />
             </div>
+
+            {/* Product Switcher Dropdown */}
+            <ProductSwitcher currentProductId={productId} />
           </div>
 
-          {/* Right: Search, Notifications, User */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Center: Prominent Global Search Bar */}
+          <div className="hidden md:flex flex-1 max-w-sm lg:max-w-md mx-3 lg:mx-6">
             <button
               type="button"
               onClick={() => setShowSearchModal(true)}
-              className="flex items-center gap-2 h-9 px-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs text-slate-500 transition-all shadow-2xs"
+              className="w-full flex items-center justify-between h-9 px-3.5 rounded-xl border border-slate-200 bg-slate-50/80 hover:bg-white hover:border-slate-300 text-xs text-slate-500 transition-all shadow-2xs group focus:outline-none"
             >
-              <Search className="h-4 w-4 text-slate-400" />
-              <span className="hidden sm:inline">Search...</span>
+              <div className="flex items-center gap-2.5">
+                <Search className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-600 transition-colors" />
+                <span className="text-slate-400 group-hover:text-slate-600 transition-colors">
+                  Search students, applications, records...
+                </span>
+              </div>
+              <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-white border border-slate-200 rounded shadow-3xs">
+                ⌘K
+              </kbd>
+            </button>
+          </div>
+
+          {/* Right: Search (Mobile), Notifications */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Mobile Search Icon */}
+            <button
+              type="button"
+              onClick={() => setShowSearchModal(true)}
+              className="md:hidden h-9 w-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 transition-all shadow-2xs"
+              title="Search"
+            >
+              <Search className="h-4 w-4" />
             </button>
 
             {/* Notifications Popover */}
-            <div className="relative">
+            <div className="relative" ref={notifRef}>
               <button
                 type="button"
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors relative"
+                className="h-9 w-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-all shadow-2xs relative focus:outline-none"
+                title="Notifications"
               >
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-blue-600 ring-2 ring-white" />
+                <Bell className="h-4 w-4" />
+                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-blue-600 ring-2 ring-white" />
               </button>
 
               {showNotifications && (
@@ -618,62 +782,6 @@ export function ProductShell({ productId }) {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* User Profile */}
-            <div className="relative border-l border-slate-200 pl-3 ml-1">
-              <button
-                type="button"
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 rounded-xl p-1 hover:bg-slate-100 transition-colors"
-              >
-                <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs">
-                  {user?.name ? user.name.charAt(0) : 'A'}
-                </div>
-                <div className="hidden sm:flex flex-col text-left leading-none">
-                  <span className="text-xs font-bold text-slate-900 truncate max-w-[100px]">
-                    {user?.name || 'Administrator'}
-                  </span>
-                  <span className="text-[10px] text-slate-500 mt-0.5">
-                    {user?.productRoles?.[productId] || user?.platformRole || 'Admin'}
-                  </span>
-                </div>
-                <ChevronDown className="h-3.5 w-3.5 text-slate-400 hidden sm:block" />
-              </button>
-
-              {showUserMenu && (
-                <div className="absolute right-0 top-full mt-2 w-52 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl z-50 animate-in fade-in-0 zoom-in-95 text-xs">
-                  <div className="p-2 border-b border-slate-100 mb-1">
-                    <p className="font-bold text-slate-900 truncate">{user?.name}</p>
-                    <p className="text-[10px] text-slate-500 truncate">{user?.email}</p>
-                  </div>
-                  <Link
-                    to="/app"
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50"
-                  >
-                    <Layers className="h-4 w-4 text-blue-600" />
-                    <span>Product Hub</span>
-                  </Link>
-                  <Link
-                    to="/app/organization"
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50"
-                  >
-                    <span>Organization</span>
-                  </Link>
-                  <div className="my-1 border-t border-slate-100" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      logout()
-                      navigate('/auth')
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 text-left font-medium"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Sign Out</span>
-                  </button>
                 </div>
               )}
             </div>

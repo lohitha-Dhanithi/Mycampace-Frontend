@@ -335,6 +335,7 @@ export const router = createBrowserRouter([
       { path: 'applications/new', element: <ApplicationCreatePage /> },
       { path: 'applications/:id', element: <ApplicationDetailPage /> },
       { path: 'applications/:id/review', element: <ApplicationReviewPage /> },
+      { path: 'fees', element: <AdmissionsPage defaultTab="fees" /> },
       { path: 'documents', element: <AdmissionsPage defaultTab="documents" /> },
       { path: 'follow-ups', element: <AdmissionsPage defaultTab="followups" /> },
       { path: 'reports', element: <AdmissionsPage defaultTab="reports" /> },

@@ -73,9 +73,11 @@ export function PlatformHubShell() {
         {/* Left: Brand Logo & Title */}
         <div className="flex items-center gap-3">
           <Link to="/app" className="flex items-center gap-2.5 group">
-            <div className="h-9 w-9 rounded-xl bg-blue-600 flex items-center justify-center font-black text-sm text-white shadow-xs">
-              M
-            </div>
+            <img
+              src="/mycampace-logo.png"
+              alt="MyCampace"
+              className="h-9 w-9 object-contain drop-shadow-2xs group-hover:scale-105 transition-transform"
+            />
             <div className="flex flex-col">
               <span className="text-xs font-black tracking-wider text-slate-900 uppercase leading-tight">
                 MYCAMPACE

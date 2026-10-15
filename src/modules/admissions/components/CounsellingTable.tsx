@@ -67,46 +67,46 @@ export function CounsellingTable({
       header: 'Applicant',
       accessor: 'applicantName',
       sortable: true,
+      className: 'whitespace-nowrap min-w-[160px]',
       cell: (row) => (
-        <div>
-          <div className="font-bold text-slate-900">{row.applicantName}</div>
-          <div className="text-[10px] text-slate-400">{row.applicantContact}</div>
-        </div>
+        <div className="font-semibold text-slate-900 text-xs whitespace-nowrap">{row.applicantName}</div>
       ),
     },
     {
       header: 'Counsellor',
       accessor: 'counsellorName',
       sortable: true,
-      cell: (row) => <span className="text-slate-800 font-medium">{row.counsellorName}</span>,
+      className: 'whitespace-nowrap min-w-[140px]',
+      cell: (row) => <span className="text-slate-700 text-xs font-medium whitespace-nowrap">{row.counsellorName}</span>,
     },
     {
-      header: 'Program & Campus',
+      header: 'Program',
       accessor: 'programName',
+      className: 'whitespace-nowrap min-w-[180px]',
       cell: (row) => (
-        <div>
-          <div className="font-semibold text-slate-800">{row.programName}</div>
-          <div className="text-[10px] text-slate-500">{row.campusName}</div>
-        </div>
+        <span className="font-medium text-slate-800 text-xs truncate max-w-[200px] block" title={row.programName}>
+          {row.programName}
+        </span>
       ),
     },
     {
-      header: 'Date & Time',
+      header: 'Schedule',
       accessor: 'date',
       sortable: true,
+      className: 'whitespace-nowrap min-w-[150px]',
       cell: (row) => (
-        <div>
-          <div className="font-semibold text-slate-800">{row.date}</div>
-          <div className="text-[10px] text-slate-500">{row.time}</div>
-        </div>
+        <span className="text-slate-700 text-xs whitespace-nowrap">
+          {row.date} ({row.time})
+        </span>
       ),
     },
     {
       header: 'Mode',
       accessor: 'mode',
       sortable: true,
+      className: 'whitespace-nowrap',
       cell: (row) => (
-        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-medium">
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-medium whitespace-nowrap">
           {getModeIcon(row.mode)} {row.mode}
         </span>
       ),
@@ -114,20 +114,12 @@ export function CounsellingTable({
     {
       header: 'Outcome',
       accessor: 'outcome',
+      className: 'whitespace-nowrap',
       cell: (row) => (
         row.outcome ? (
-          <div>
-            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-              {row.outcome}
-            </span>
-            {row.nextAction && (
-              <div className="text-[10px] text-slate-500 mt-1 max-w-xs truncate">
-                Next: {row.nextAction}
-              </div>
-            )}
-          </div>
+          <StatusBadge status={row.outcome} />
         ) : (
-          <span className="text-slate-400 italic text-[11px]">Pending session completion</span>
+          <span className="text-slate-400 italic text-[11px] whitespace-nowrap">Pending Decision</span>
         )
       ),
     },

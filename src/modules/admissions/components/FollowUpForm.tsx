@@ -92,7 +92,7 @@ export function FollowUpForm({ initialApplicant = null, onSubmit }) {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => navigate('/admissions/follow-ups')}
+          onClick={() => navigate('/app/admissions/follow-ups')}
           className="gap-1.5 text-xs"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back to Follow-ups

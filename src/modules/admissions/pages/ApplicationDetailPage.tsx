@@ -73,6 +73,12 @@ export function ApplicationDetailPage() {
     showToast('Document marked as Rejected.')
   }
 
+  const handleRecordPayment = async (appId: string, paymentData: any) => {
+    await applicationService.recordFeePayment(appId, paymentData)
+    showToast('Payment recorded successfully and receipt issued!')
+    loadData()
+  }
+
   if (loading) {
     return <LoadingState message="Loading application profile..." />
   }
@@ -96,6 +102,7 @@ export function ApplicationDetailPage() {
         onSendMessage={handleSendMessage}
         onVerifyDoc={handleVerifyDoc}
         onRejectDoc={handleRejectDoc}
+        onRecordPayment={handleRecordPayment}
       />
     </div>
   )

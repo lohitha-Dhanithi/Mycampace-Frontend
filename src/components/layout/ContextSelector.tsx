@@ -40,24 +40,22 @@ export function ContextSelector() {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50/80 hover:bg-slate-100 text-left transition-all max-w-[280px] sm:max-w-none shadow-2xs"
+        className="h-9 flex items-center gap-2 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-left transition-all shadow-2xs group focus:outline-none"
       >
-        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-600 text-white shrink-0">
-          <Building2 className="h-4 w-4" />
+        <div className="flex h-5 w-5 items-center justify-center rounded-md bg-blue-50 text-blue-600 shrink-0">
+          <Building2 className="h-3.5 w-3.5" />
         </div>
-        <div className="flex flex-col overflow-hidden text-left">
-          <div className="flex items-center gap-1.5 leading-none">
-            <span className="text-xs font-semibold text-slate-900 truncate">
-              {selectedInstitution?.name || 'Select Institution'}
-            </span>
-          </div>
-          <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-0.5 leading-none">
-            <span className="truncate">{selectedCampus?.name?.replace(' Campus', '') || 'Campus'}</span>
-            <span className="text-slate-300">•</span>
-            <span className="font-medium text-blue-600 shrink-0">AY {selectedAcademicYear?.name}</span>
-          </div>
-        </div>
-        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 ml-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <span className="text-xs font-bold text-slate-800 truncate max-w-[150px] sm:max-w-[200px]">
+          {selectedInstitution?.name || 'Select Institution'}
+        </span>
+        <span className="text-slate-300 hidden sm:inline">/</span>
+        <span className="text-xs text-slate-600 font-medium truncate max-w-[110px] hidden sm:inline">
+          {selectedCampus?.name?.replace(' Campus', '') || 'Campus'}
+        </span>
+        <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/60 shrink-0 hidden md:inline-block">
+          AY {selectedAcademicYear?.name}
+        </span>
+        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 ml-0.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Popover Selector Panel */}

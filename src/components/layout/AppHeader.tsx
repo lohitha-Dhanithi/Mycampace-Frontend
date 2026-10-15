@@ -147,23 +147,22 @@ export function AppHeader({ onToggleSidebar, isSidebarCollapsed }) {
         </div>
 
         {/* User Profile Menu */}
-        <div className="relative border-l border-slate-200 pl-3 ml-1" ref={userMenuRef}>
+        <div className="relative" ref={userMenuRef}>
           <button
             type="button"
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-2 rounded-lg p-1 hover:bg-slate-100 transition-colors"
+            className="h-9 flex items-center gap-2 px-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-2xs group focus:outline-none"
           >
             <Avatar
               src={user?.avatar}
               alt={user?.name || 'Administrator'}
-              fallback="VA"
+              fallback={user?.name ? user.name.charAt(0) : 'A'}
               size="sm"
             />
-            <div className="hidden sm:flex flex-col text-left leading-none">
-              <span className="text-xs font-semibold text-slate-900">{user?.name || 'Administrator'}</span>
-              <span className="text-[10px] text-slate-500 mt-0.5">{user?.role || 'Super Admin'}</span>
-            </div>
-            <ChevronDown className="h-3.5 w-3.5 text-slate-400 hidden sm:block" />
+            <span className="hidden sm:inline-block text-xs font-semibold text-slate-800 truncate max-w-[120px]">
+              {user?.name || 'Administrator'}
+            </span>
+            <ChevronDown className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-600 transition-transform hidden sm:block" />
           </button>
 
           {showUserMenu && (

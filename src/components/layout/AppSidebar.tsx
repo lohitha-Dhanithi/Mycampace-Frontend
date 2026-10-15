@@ -107,31 +107,32 @@ export function AppSidebar({ collapsed = false, onCloseMobile }: AppSidebarProps
     },
     ...(isLMSActive
       ? [
-          {
-            group: 'LMS NAVIGATION',
-            items: [
-              { label: 'LMS Dashboard', path: '/lms', icon: LayoutDashboard },
-              { label: 'Courses', path: '/lms/courses', icon: BookOpen },
-              { label: 'My Learning (Student)', path: '/lms/my-learning', icon: GraduationCap },
-              { label: 'Assignments', path: '/lms/assignments', icon: ClipboardList },
-              { label: 'Quizzes', path: '/lms/quizzes', icon: HelpCircle },
-              { label: 'Content Library', path: '/lms/content-library', icon: FolderOpen },
-              { label: 'LMS Reports', path: '/lms/reports', icon: BarChart3 },
-            ],
-          },
-        ]
+        {
+          group: 'LMS NAVIGATION',
+          items: [
+            { label: 'LMS Dashboard', path: '/lms', icon: LayoutDashboard },
+            { label: 'Courses', path: '/lms/courses', icon: BookOpen },
+            { label: 'My Learning (Student)', path: '/lms/my-learning', icon: GraduationCap },
+            { label: 'Assignments', path: '/lms/assignments', icon: ClipboardList },
+            { label: 'Quizzes', path: '/lms/quizzes', icon: HelpCircle },
+            { label: 'Content Library', path: '/lms/content-library', icon: FolderOpen },
+            { label: 'LMS Reports', path: '/lms/reports', icon: BarChart3 },
+          ],
+        },
+      ]
       : []),
     {
       group: 'ADMISSIONS',
       items: [
-        { label: 'Admissions Dashboard', path: '/admissions', icon: LayoutDashboard },
-        { label: 'Leads', path: '/admissions/leads', icon: UserPlus },
-        { label: 'Enquiries', path: '/admissions/enquiries', icon: MessageSquare },
-        { label: 'Counselling', path: '/admissions/counselling', icon: CalendarDays },
-        { label: 'Applications', path: '/admissions/applications', icon: FileText },
-        { label: 'Documents', path: '/admissions/documents', icon: FileSpreadsheet },
-        { label: 'Follow-ups', path: '/admissions/follow-ups', icon: CheckCircle },
-        { label: 'Reports', path: '/admissions/reports', icon: BarChart3 },
+        { label: 'Admissions Analytics', path: '/app/admissions', icon: LayoutDashboard },
+        { label: 'Leads', path: '/app/admissions/leads', icon: UserPlus },
+        { label: 'Enquiries', path: '/app/admissions/enquiries', icon: MessageSquare },
+        { label: 'Counselling', path: '/app/admissions/counselling', icon: CalendarDays },
+        { label: 'Applications', path: '/app/admissions/applications', icon: FileText },
+        { label: 'Fee Clearance', path: '/app/admissions/fees', icon: CreditCard },
+        { label: 'Documents & Verification', path: '/app/admissions/documents', icon: ShieldCheck },
+        { label: 'Follow-ups', path: '/app/admissions/follow-ups', icon: CheckCircle },
+        { label: 'Reports', path: '/app/admissions/reports', icon: BarChart3 },
       ],
     },
     {
@@ -186,9 +187,8 @@ export function AppSidebar({ collapsed = false, onCloseMobile }: AppSidebarProps
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-40 flex flex-col bg-slate-900 text-slate-300 transition-all duration-300 border-r border-slate-800 ${
-        collapsed ? 'w-16' : 'w-64'
-      }`}
+      className={`fixed inset-y-0 left-0 z-40 flex flex-col bg-slate-900 text-slate-300 transition-all duration-300 border-r border-slate-800 ${collapsed ? 'w-16' : 'w-64'
+        }`}
     >
       {/* Brand Header */}
       <div className="flex h-16 items-center px-4 border-b border-slate-800/80 bg-slate-950/60 justify-between">
@@ -196,9 +196,11 @@ export function AppSidebar({ collapsed = false, onCloseMobile }: AppSidebarProps
           to="/dashboard"
           className="flex items-center gap-2.5 overflow-hidden font-bold tracking-tight text-white hover:opacity-90 transition-opacity"
         >
-          <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0 shadow-sm text-white font-black text-base">
-            M
-          </div>
+          <img
+            src="/mycampace-logo.png"
+            alt="MyCampace"
+            className="h-8 w-8 object-contain shrink-0 drop-shadow-2xs"
+          />
           {!collapsed && (
             <div className="flex flex-col">
               <span className="text-sm tracking-wide font-extrabold text-white flex items-center gap-1.5">
@@ -240,11 +242,10 @@ export function AppSidebar({ collapsed = false, onCloseMobile }: AppSidebarProps
                     title={collapsed ? item.label : undefined}
                     className={({ isActive: navActive }) => {
                       const active = navActive || location.pathname === item.path
-                      return `flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
-                        active
+                      return `flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-colors ${active
                           ? 'bg-blue-600 text-white shadow-xs font-semibold'
                           : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-                      } ${collapsed ? 'justify-center px-0 py-2.5' : ''}`
+                        } ${collapsed ? 'justify-center px-0 py-2.5' : ''}`
                     }}
                   >
                     <Icon className="h-4 w-4 shrink-0" />

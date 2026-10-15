@@ -143,7 +143,7 @@ export function LeadForm({ initialData = null, onSubmit, isEditing = false }) {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => navigate('/admissions/leads')}
+          onClick={() => navigate('/app/admissions/leads')}
           className="gap-1.5 text-xs"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back to Leads

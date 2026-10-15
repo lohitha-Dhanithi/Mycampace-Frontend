@@ -71,14 +71,14 @@ export function DashboardPage() {
               variant="outline"
               size="sm"
               className="text-xs"
-              onClick={() => navigate('/admissions')}
+              onClick={() => navigate('/app/admissions')}
             >
               <UserPlus className="h-3.5 w-3.5 mr-1.5" /> Admissions CRM
             </Button>
             <Button
               size="sm"
               className="text-xs"
-              onClick={() => navigate('/students')}
+              onClick={() => navigate('/app/students')}
             >
               <GraduationCap className="h-3.5 w-3.5 mr-1.5" /> Student Directory
             </Button>
@@ -114,7 +114,7 @@ export function DashboardPage() {
                 variant="ghost"
                 size="sm"
                 className="text-xs text-blue-600 hover:text-blue-700"
-                onClick={() => navigate('/admissions')}
+                onClick={() => navigate('/app/admissions')}
               >
                 View Pipeline <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
               </Button>

@@ -11,11 +11,23 @@ export const leadService = {
     let result = [...leads]
 
     if (filters.campusId && filters.campusId !== 'all') {
-      result = result.filter((l) => l.campusId === filters.campusId || !l.campusId)
+      result = result.filter(
+        (l) =>
+          !l.campusId ||
+          l.campusId === filters.campusId ||
+          ((filters.campusId === 'camp-1' || filters.campusId === 'campus-main') &&
+            (l.campusId === 'camp-1' || l.campusId === 'campus-main'))
+      )
     }
 
     if (filters.academicYearId && filters.academicYearId !== 'all') {
-      result = result.filter((l) => l.academicYearId === filters.academicYearId || !l.academicYearId)
+      result = result.filter(
+        (l) =>
+          !l.academicYearId ||
+          l.academicYearId === filters.academicYearId ||
+          ((filters.academicYearId === 'ay-2026' || filters.academicYearId === 'ay-2026-27') &&
+            (l.academicYearId === 'ay-2026' || l.academicYearId === 'ay-2026-27'))
+      )
     }
 
     if (filters.search) {

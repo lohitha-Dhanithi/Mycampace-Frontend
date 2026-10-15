@@ -180,7 +180,7 @@ export const PRODUCT_CATALOG = [
     pricing: '₹40 / staff / month',
     plan: 'Professional',
     modulesCount: 7,
-    defaultStatus: 'Available',
+    defaultStatus: 'Active',
     route: '/app/hrms',
     color: 'from-indigo-600 to-blue-700',
     badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200',
@@ -387,7 +387,7 @@ export const PRODUCT_CATALOG = [
 ]
 
 // Default enabled products for the initial organization
-const INITIAL_ENABLED_PRODUCTS = ['academics', 'lms', 'finance', 'admissions']
+const INITIAL_ENABLED_PRODUCTS = ['academics', 'lms', 'finance', 'admissions', 'hrms']
 
 class ProductService {
   storageKey: string
@@ -400,8 +400,24 @@ class ProductService {
   }
 
   init() {
-    if (!localStorage.getItem(this.storageKey)) {
-      localStorage.setItem(this.storageKey, JSON.stringify(INITIAL_ENABLED_PRODUCTS))
+    try {
+      const stored = localStorage.getItem(this.storageKey)
+      const migrationKey = 'mycampace_hrms_activated_v1'
+      if (!stored) {
+        localStorage.setItem(this.storageKey, JSON.stringify(INITIAL_ENABLED_PRODUCTS))
+        localStorage.setItem(migrationKey, 'true')
+      } else {
+        if (!localStorage.getItem(migrationKey)) {
+          const parsed = JSON.parse(stored)
+          if (Array.isArray(parsed) && !parsed.includes('hrms')) {
+            parsed.push('hrms')
+            localStorage.setItem(this.storageKey, JSON.stringify(parsed))
+          }
+          localStorage.setItem(migrationKey, 'true')
+        }
+      }
+    } catch (e) {
+      // fallback
     }
   }
 
@@ -421,10 +437,22 @@ class ProductService {
     })
   }
 
-  getActiveProductIds() {
+  getActiveProductIds(): string[] {
     try {
       const stored = localStorage.getItem(this.storageKey)
-      return stored ? JSON.parse(stored) : INITIAL_ENABLED_PRODUCTS
+      let ids: string[] = stored ? JSON.parse(stored) : INITIAL_ENABLED_PRODUCTS
+      if (!Array.isArray(ids)) {
+        ids = [...INITIAL_ENABLED_PRODUCTS]
+      }
+      const migrationKey = 'mycampace_hrms_activated_v1'
+      if (typeof localStorage !== 'undefined' && !localStorage.getItem(migrationKey)) {
+        if (!ids.includes('hrms')) {
+          ids.push('hrms')
+          localStorage.setItem(this.storageKey, JSON.stringify(ids))
+        }
+        localStorage.setItem(migrationKey, 'true')
+      }
+      return ids
     } catch (e) {
       return INITIAL_ENABLED_PRODUCTS
     }

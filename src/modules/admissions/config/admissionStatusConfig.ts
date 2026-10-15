@@ -26,6 +26,8 @@ export const APPLICATION_STATUSES = [
   { id: 'Under Review', label: 'Under Review', color: 'warning' },
   { id: 'Documents Required', label: 'Documents Required', color: 'warning' },
   { id: 'Approved', label: 'Approved', color: 'success' },
+  { id: 'Policy Shared', label: 'Policy Shared', color: 'purple' },
+  { id: 'Docs Uploaded', label: 'Docs Uploaded', color: 'info' },
   { id: 'Conditionally Approved', label: 'Conditionally Approved', color: 'warning' },
   { id: 'Rejected', label: 'Rejected', color: 'destructive' },
   { id: 'Withdrawn', label: 'Withdrawn', color: 'secondary' },
@@ -77,15 +79,26 @@ export const DOCUMENT_VERIFICATION_STATUSES = [
   { id: 'Required', label: 'Required', color: 'destructive' },
 ]
 
+export const ADMISSION_FEE_STATUSES = [
+  { id: 'Paid', label: 'Paid', color: 'success' },
+  { id: 'Partially Paid', label: 'Partially Paid', color: 'warning' },
+  { id: 'Pending', label: 'Pending', color: 'destructive' },
+  { id: 'Overdue', label: 'Overdue', color: 'destructive' },
+  { id: 'Not Invoiced', label: 'Not Invoiced', color: 'secondary' },
+]
+
 export const APPLICATION_WORKFLOW_TRANSITIONS = {
   Draft: ['Submitted', 'Withdrawn'],
   Submitted: ['Under Review', 'Documents Required', 'Withdrawn'],
   'Under Review': ['Documents Required', 'Approved', 'Conditionally Approved', 'Rejected', 'Withdrawn'],
-  'Documents Required': ['Under Review', 'Withdrawn'],
+  'Documents Required': ['Under Review', 'Docs Uploaded', 'Withdrawn'],
   'Conditionally Approved': ['Approved', 'Rejected', 'Withdrawn'],
-  Approved: ['Admitted', 'Withdrawn'],
+  Approved: ['Policy Shared', 'Docs Uploaded', 'Admitted', 'Withdrawn'],
+  'Policy Shared': ['Docs Uploaded', 'Withdrawn'],
+  'Docs Uploaded': ['Admitted', 'Documents Required', 'Withdrawn'],
   Admitted: ['Enrolled'],
   Enrolled: [],
   Rejected: ['Under Review'],
   Withdrawn: ['Draft'],
 }
+

@@ -1,9 +1,9 @@
 // src/modules/admissions/components/LeadTable.jsx
-import React from 'react'
+import React, { useState } from 'react'
 import { DataTable } from '@/components/tables/DataTable'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
-import { Eye, Edit, UserCheck, Plus, CheckCircle, ArrowRight } from 'lucide-react'
+import { Eye, Edit, UserCheck, Plus, CheckCircle, ArrowRight, Copy, Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export interface LeadTableProps {
@@ -24,40 +24,75 @@ export function LeadTable({
   onArchive,
 }: LeadTableProps) {
   const navigate = useNavigate()
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  const handleCopyId = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(id)
+    setCopiedId(id)
+    setTimeout(() => {
+      setCopiedId((current) => (current === id ? null : current))
+    }, 2000)
+  }
 
   const columns = [
     {
-      header: 'Lead Name & ID',
-      accessor: 'fullName',
+      header: 'Lead ID',
+      accessor: 'leadNumber',
       sortable: true,
+      className: 'whitespace-nowrap min-w-[130px]',
       cell: (row) => (
-        <div>
+        <div className="flex items-center gap-1.5 whitespace-nowrap">
           <button
             onClick={() => navigate(`/admissions/leads/${row.id}`)}
-            className="font-bold text-slate-900 hover:text-blue-600 transition-colors text-left"
+            className="font-mono font-medium text-slate-800 hover:text-blue-600 transition-colors text-xs"
           >
-            {row.fullName}
+            {row.leadNumber}
           </button>
-          <div className="text-[10px] text-slate-400 font-mono">{row.leadNumber}</div>
+          <button
+            type="button"
+            onClick={(e) => handleCopyId(e, row.leadNumber)}
+            className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors shrink-0"
+            title={copiedId === row.leadNumber ? 'Copied!' : 'Copy Lead ID'}
+            aria-label="Copy Lead ID"
+          >
+            {copiedId === row.leadNumber ? (
+              <Check className="h-3 w-3 text-emerald-600" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </button>
+        </div>
+      ),
+    },
+    {
+      header: 'Lead Name',
+      accessor: 'fullName',
+      sortable: true,
+      className: 'whitespace-nowrap min-w-[160px]',
+      cell: (row) => (
+        <div className="font-semibold text-slate-900 text-xs whitespace-nowrap">
+          {row.fullName}
         </div>
       ),
     },
     {
       header: 'Contact',
       accessor: 'phone',
+      className: 'whitespace-nowrap min-w-[130px]',
       cell: (row) => (
-        <div>
-          <div className="font-medium text-slate-800">{row.phone}</div>
-          <div className="text-[10px] text-slate-400 truncate max-w-[140px]">{row.email}</div>
-        </div>
+        <span className="font-mono text-xs text-slate-700 whitespace-nowrap">
+          {row.phone}
+        </span>
       ),
     },
     {
       header: 'Source',
       accessor: 'source',
       sortable: true,
+      className: 'whitespace-nowrap',
       cell: (row) => (
-        <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-[11px] font-medium">
+        <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap">
           {row.source}
         </span>
       ),
@@ -66,53 +101,41 @@ export function LeadTable({
       header: 'Target Program',
       accessor: 'programName',
       sortable: true,
+      className: 'whitespace-nowrap min-w-[180px]',
       cell: (row) => (
-        <div>
-          <div className="font-semibold text-slate-800 truncate max-w-[180px]">
-            {row.programName || 'Senior Secondary'}
-          </div>
-          <div className="text-[10px] text-slate-400 truncate max-w-[180px]">
-            {row.courseName || 'General Stream'}
-          </div>
-        </div>
+        <span className="font-medium text-slate-800 text-xs truncate max-w-[200px] block" title={row.programName || 'Senior Secondary'}>
+          {row.programName || 'Senior Secondary'}
+        </span>
       ),
     },
     {
       header: 'Academic Year',
       accessor: 'academicYearName',
-      cell: (row) => <span className="text-slate-600">{row.academicYearName || '2026-2027'}</span>,
+      className: 'whitespace-nowrap',
+      cell: (row) => <span className="text-slate-600 text-xs whitespace-nowrap">{row.academicYearName || '2026-2027'}</span>,
     },
     {
       header: 'Counsellor',
       accessor: 'counsellorName',
       sortable: true,
+      className: 'whitespace-nowrap min-w-[140px]',
       cell: (row) => (
-        <span className="text-slate-700 font-medium">{row.counsellorName || 'Unassigned'}</span>
+        <span className="text-slate-700 text-xs font-medium whitespace-nowrap">{row.counsellorName || 'Unassigned'}</span>
       ),
     },
     {
       header: 'Stage',
       accessor: 'stage',
       sortable: true,
+      className: 'whitespace-nowrap',
       cell: (row) => <StatusBadge status={row.stage} />,
     },
     {
       header: 'Priority',
       accessor: 'priority',
       sortable: true,
-      cell: (row) => (
-        <span
-          className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
-            row.priority === 'High'
-              ? 'bg-red-50 text-red-700 border border-red-200'
-              : row.priority === 'Medium'
-              ? 'bg-amber-50 text-amber-700 border border-amber-200'
-              : 'bg-slate-100 text-slate-600'
-          }`}
-        >
-          {row.priority}
-        </span>
-      ),
+      className: 'whitespace-nowrap',
+      cell: (row) => <StatusBadge status={row.priority} />,
     },
     {
       header: 'Next Follow-up',

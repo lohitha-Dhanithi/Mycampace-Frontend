@@ -116,7 +116,7 @@ export function CounsellingForm({ onSubmit }) {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => navigate('/admissions/counselling')}
+          onClick={() => navigate('/app/admissions/counselling')}
           className="gap-1.5 text-xs"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back to Counselling

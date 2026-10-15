@@ -10,11 +10,23 @@ export const enquiryService = {
     let result = [...enquiries]
 
     if (filters.campusId && filters.campusId !== 'all') {
-      result = result.filter((e) => e.campusId === filters.campusId || !e.campusId)
+      result = result.filter(
+        (e) =>
+          !e.campusId ||
+          e.campusId === filters.campusId ||
+          ((filters.campusId === 'camp-1' || filters.campusId === 'campus-main') &&
+            (e.campusId === 'camp-1' || e.campusId === 'campus-main'))
+      )
     }
 
     if (filters.academicYearId && filters.academicYearId !== 'all') {
-      result = result.filter((e) => e.academicYearId === filters.academicYearId || !e.academicYearId)
+      result = result.filter(
+        (e) =>
+          !e.academicYearId ||
+          e.academicYearId === filters.academicYearId ||
+          ((filters.academicYearId === 'ay-2026' || filters.academicYearId === 'ay-2026-27') &&
+            (e.academicYearId === 'ay-2026' || e.academicYearId === 'ay-2026-27'))
+      )
     }
 
     if (filters.search) {

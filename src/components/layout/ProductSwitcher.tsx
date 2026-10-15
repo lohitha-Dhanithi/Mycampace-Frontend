@@ -1,8 +1,9 @@
 // src/components/layout/ProductSwitcher.jsx
 import React, { useState, useRef, useEffect } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   ChevronDown,
+  Grid,
   GraduationCap,
   MonitorPlay,
   DollarSign,
@@ -17,14 +18,8 @@ import {
   Award,
   BarChart3,
   Sparkles,
-  Building2,
-  Settings,
-  LogOut,
-  Layers,
-  ArrowRight,
 } from 'lucide-react'
 import { productService } from '@/services/productService'
-import { useAuth } from '@/store/AuthContext'
 
 const ICON_MAP = {
   academics: GraduationCap,
@@ -47,7 +42,6 @@ export function ProductSwitcher({ currentProductId }) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef(null)
   const navigate = useNavigate()
-  const { logout } = useAuth()
   const activeProducts = productService.getOrganizationProducts()
 
   const currentProduct = productService.getProductById(currentProductId)
@@ -68,31 +62,20 @@ export function ProductSwitcher({ currentProductId }) {
     navigate(product.route)
   }
 
-  const CurrentIcon = currentProduct ? ICON_MAP[currentProduct.id] || Layers : Layers
-
   return (
     <div className="relative" ref={menuRef}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-2xs group"
+        className="h-9 flex items-center gap-2 px-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-2xs group focus:outline-none"
+        title="Switch MyCampace Product"
       >
-        <div className="flex items-center gap-2">
-          <div className="h-6 w-6 rounded-lg bg-blue-600 flex items-center justify-center font-black text-xs text-white">
-            M
-          </div>
-          <span className="text-xs font-black tracking-wide text-slate-900 uppercase">
-            MYCAMPACE
-          </span>
+        <div className="h-5 w-5 rounded-md bg-blue-600 flex items-center justify-center text-white shrink-0">
+          <Grid className="h-3 w-3" />
         </div>
-
-        {currentProduct && (
-          <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
-            <span className="text-xs font-bold text-slate-800">{currentProduct.name}</span>
-          </div>
-        )}
-
+        <span className="text-xs font-bold text-slate-800">
+          {currentProduct ? currentProduct.name : 'Apps'}
+        </span>
         <ChevronDown className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-600 transition-transform" />
       </button>
 
@@ -104,7 +87,7 @@ export function ProductSwitcher({ currentProductId }) {
             </p>
           </div>
 
-          <div className="space-y-0.5 max-h-60 overflow-y-auto py-1">
+          <div className="space-y-0.5 max-h-80 overflow-y-auto py-1">
             {activeProducts.map((p) => {
               const Icon = ICON_MAP[p.id] || Sparkles
               const isCurrent = p.id === currentProductId
@@ -120,16 +103,16 @@ export function ProductSwitcher({ currentProductId }) {
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${p.iconBg}`}>
+                    <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${p.iconBg}`}>
                       <Icon className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="text-xs">{p.name}</p>
-                      <span className="text-[10px] text-slate-400 font-normal">{p.tagline.slice(0, 26)}...</span>
+                      <p className="text-xs font-semibold">{p.name}</p>
+                      <span className="text-[10px] text-slate-400 font-normal line-clamp-1">{p.tagline}</span>
                     </div>
                   </div>
                   {isCurrent && (
-                    <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
+                    <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded shrink-0">
                       Current
                     </span>
                   )}
@@ -137,71 +120,6 @@ export function ProductSwitcher({ currentProductId }) {
               )
             })}
           </div>
-
-          <div className="my-1.5 border-t border-slate-100" />
-
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false)
-              navigate('/app')
-            }}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors text-left"
-          >
-            <Layers className="h-4 w-4 text-slate-400" />
-            <span className="font-semibold">MyCampace Product Hub</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false)
-              navigate('/app/products')
-            }}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors text-left"
-          >
-            <span className="font-medium">All Products & Marketplace</span>
-            <ArrowRight className="h-3.5 w-3.5 text-slate-400" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false)
-              navigate('/app/organization')
-            }}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors text-left"
-          >
-            <Building2 className="h-4 w-4 text-slate-400" />
-            <span>Organization Profile</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false)
-              navigate('/app/settings')
-            }}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors text-left"
-          >
-            <Settings className="h-4 w-4 text-slate-400" />
-            <span>Platform Settings</span>
-          </button>
-
-          <div className="my-1.5 border-t border-slate-100" />
-
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false)
-              logout()
-              navigate('/auth')
-            }}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors text-left font-medium"
-          >
-            <LogOut className="h-4 w-4 text-red-500" />
-            <span>Sign Out</span>
-          </button>
         </div>
       )}
     </div>

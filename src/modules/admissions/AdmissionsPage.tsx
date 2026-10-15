@@ -1,7 +1,6 @@
 // src/modules/admissions/AdmissionsPage.jsx
 import React, { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/common/PageHeader'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { AdmissionsDashboard } from './components/AdmissionsDashboard'
 import { LeadTable } from './components/LeadTable'
 import { LeadPipeline } from './components/LeadPipeline'
@@ -9,8 +8,10 @@ import { EnquiryTable } from './components/EnquiryTable'
 import { CounsellingTable } from './components/CounsellingTable'
 import { ApplicationTable } from './components/ApplicationTable'
 import { DocumentTable } from './components/DocumentTable'
+import { StudentDocumentVerificationWorkspace } from './components/StudentDocumentVerificationWorkspace'
 import { FollowUpTable } from './components/FollowUpTable'
 import { AdmissionsReports } from './components/AdmissionsReports'
+import { AdmissionsFeeTrackingTable } from './components/AdmissionsFeeTrackingTable'
 import { Button } from '@/components/ui/button'
 import {
   UserPlus,
@@ -19,8 +20,11 @@ import {
   Layers,
   List,
   CheckCircle,
-  FileCheck,
   Plus,
+  CreditCard,
+  ShieldCheck,
+  BarChart3,
+  ExternalLink,
 } from 'lucide-react'
 import { useTenantContext } from '@/store/TenantContext'
 import { leadService } from './services/leadService'
@@ -38,20 +42,20 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 
 export function AdmissionsPage({ defaultTab = 'dashboard' }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { selectedCampus, selectedAcademicYear } = useTenantContext()
 
-  // Determine active tab from url or prop
+  // Determine active view from URL path or prop
   const getTabFromPath = () => {
     const p = location.pathname
     if (p.includes('/admissions/leads')) return 'leads'
     if (p.includes('/admissions/enquiries')) return 'enquiries'
     if (p.includes('/admissions/counselling')) return 'counselling'
     if (p.includes('/admissions/applications')) return 'applications'
+    if (p.includes('/admissions/fees') || p.includes('/admissions/fee-collection')) return 'fees'
     if (p.includes('/admissions/documents')) return 'documents'
     if (p.includes('/admissions/follow-ups')) return 'followups'
     if (p.includes('/admissions/reports')) return 'reports'
@@ -114,19 +118,7 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
 
   useEffect(() => {
     setActiveTab(getTabFromPath())
-  }, [location.pathname])
-
-  const handleTabChange = (val) => {
-    setActiveTab(val)
-    if (val === 'dashboard') navigate('/admissions')
-    else if (val === 'leads') navigate('/admissions/leads')
-    else if (val === 'enquiries') navigate('/admissions/enquiries')
-    else if (val === 'counselling') navigate('/admissions/counselling')
-    else if (val === 'applications') navigate('/admissions/applications')
-    else if (val === 'documents') navigate('/admissions/documents')
-    else if (val === 'followups') navigate('/admissions/follow-ups')
-    else if (val === 'reports') navigate('/admissions/reports')
-  }
+  }, [location.pathname, defaultTab])
 
   // Stage advancement in leads pipeline
   const handleStageChange = async (leadId, nextStage) => {
@@ -289,70 +281,82 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
         </div>
       )}
 
-      {/* Header */}
-      <PageHeader
-        title="Admissions"
-        description="Manage enquiries, applications and student admissions from one place."
-      />
-
-      {/* Navigation Tabs */}
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-2">
-          <TabsList className="bg-slate-100 p-1 flex-wrap h-auto">
-            <TabsTrigger value="dashboard">Admissions</TabsTrigger>
-            <TabsTrigger value="leads">Leads ({leads.length})</TabsTrigger>
-            <TabsTrigger value="enquiries">Enquiries ({enquiries.length})</TabsTrigger>
-            <TabsTrigger value="counselling">Counselling ({counselling.length})</TabsTrigger>
-            <TabsTrigger value="applications">Applications ({applications.length})</TabsTrigger>
-            <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
-            <TabsTrigger value="followups">Follow-ups ({followUps.length})</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-          </TabsList>
-
-          {/* Contextual actions */}
-          <div className="flex items-center gap-2 self-end sm:self-auto">
-            {activeTab === 'leads' && (
-              <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-md border border-slate-200">
+      {/* 1. ADMISSIONS ANALYTICS DASHBOARD */}
+      {activeTab === 'dashboard' && (
+        <div className="space-y-6">
+          <PageHeader
+            title="Admissions Analytics"
+            subtitle="Executive overview of student intake metrics, recruitment funnel conversions, and source intelligence."
+            badge={
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                Live Funnel
+              </span>
+            }
+            actions={
+              <div className="flex items-center gap-2">
                 <Button
                   size="sm"
-                  variant={leadsViewMode === 'table' ? 'default' : 'ghost'}
-                  onClick={() => setLeadsViewMode('table')}
-                  className="h-7 text-xs px-2 gap-1"
+                  variant="outline"
+                  onClick={() => navigate('/app/admissions/reports')}
+                  className="gap-1.5 text-xs h-8 border-slate-200 hover:bg-slate-50"
                 >
-                  <List className="h-3 w-3" /> Table
+                  <BarChart3 className="h-3.5 w-3.5 text-slate-500" /> View Detailed Reports
                 </Button>
                 <Button
                   size="sm"
-                  variant={leadsViewMode === 'pipeline' ? 'default' : 'ghost'}
-                  onClick={() => setLeadsViewMode('pipeline')}
-                  className="h-7 text-xs px-2 gap-1"
+                  onClick={() => navigate('/app/admissions/applications')}
+                  className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs h-8"
                 >
-                  <Layers className="h-3 w-3" /> Pipeline
+                  <FileText className="h-3.5 w-3.5" /> Manage Applications
                 </Button>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* 1. DASHBOARD */}
-        <TabsContent value="dashboard" className="pt-2">
+            }
+          />
           <AdmissionsDashboard />
-        </TabsContent>
+        </div>
+      )}
 
-        {/* 2. LEADS */}
-        <TabsContent value="leads" className="pt-2 space-y-4">
-          <div className="flex justify-between items-center">
-            <div className="text-xs text-slate-500">
-              Prospective candidates interested in enrolling for the upcoming academic cycle.
-            </div>
-            <Button
-              size="sm"
-              onClick={() => navigate('/admissions/leads/new')}
-              className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs"
-            >
-              <UserPlus className="h-3.5 w-3.5" /> Add New Lead
-            </Button>
-          </div>
+      {/* 2. LEADS MANAGEMENT */}
+      {activeTab === 'leads' && (
+        <div className="space-y-5">
+          <PageHeader
+            title="Leads Pipeline"
+            subtitle="Prospective candidates interested in enrolling for the upcoming academic cycle."
+            badge={
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                {leads.length} Leads
+              </span>
+            }
+            actions={
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                  <Button
+                    size="sm"
+                    variant={leadsViewMode === 'table' ? 'default' : 'ghost'}
+                    onClick={() => setLeadsViewMode('table')}
+                    className="h-7 text-xs px-2.5 gap-1 shadow-none"
+                  >
+                    <List className="h-3 w-3" /> Table
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={leadsViewMode === 'pipeline' ? 'default' : 'ghost'}
+                    onClick={() => setLeadsViewMode('pipeline')}
+                    className="h-7 text-xs px-2.5 gap-1 shadow-none"
+                  >
+                    <Layers className="h-3 w-3" /> Pipeline
+                  </Button>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => navigate('/app/admissions/leads/new')}
+                  className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs h-8"
+                >
+                  <UserPlus className="h-3.5 w-3.5" /> Add New Lead
+                </Button>
+              </div>
+            }
+          />
 
           {leadsViewMode === 'table' ? (
             <LeadTable
@@ -364,22 +368,30 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
           ) : (
             <LeadPipeline leads={leads} onStageChange={handleStageChange} />
           )}
-        </TabsContent>
+        </div>
+      )}
 
-        {/* 3. ENQUIRIES */}
-        <TabsContent value="enquiries" className="pt-2 space-y-4">
-          <div className="flex justify-between items-center">
-            <div className="text-xs text-slate-500">
-              Qualified applicant inquiries ready for academic counseling and formal application.
-            </div>
-            <Button
-              size="sm"
-              onClick={() => navigate('/admissions/leads/new')}
-              className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs"
-            >
-              <Plus className="h-3.5 w-3.5" /> Log Enquiry
-            </Button>
-          </div>
+      {/* 3. ENQUIRIES */}
+      {activeTab === 'enquiries' && (
+        <div className="space-y-5">
+          <PageHeader
+            title="Student Enquiries"
+            subtitle="Qualified applicant queries ready for academic counseling, campus visits, and formal applications."
+            badge={
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                {enquiries.length} Enquiries
+              </span>
+            }
+            actions={
+              <Button
+                size="sm"
+                onClick={() => navigate('/app/admissions/leads/new')}
+                className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs h-8"
+              >
+                <Plus className="h-3.5 w-3.5" /> Log Enquiry
+              </Button>
+            }
+          />
 
           <EnquiryTable
             enquiries={enquiries}
@@ -387,79 +399,177 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
             onScheduleFollowup={handleOpenScheduleFollowUp}
             onConvertToApplication={handleConvertEnquiryToApplication}
           />
-        </TabsContent>
+        </div>
+      )}
 
-        {/* 4. COUNSELLING */}
-        <TabsContent value="counselling" className="pt-2 space-y-4">
-          <div className="flex justify-between items-center">
-            <div className="text-xs text-slate-500">
-              Campus visits, video calls and 1-on-1 career counselling sessions.
-            </div>
-            <Button
-              size="sm"
-              onClick={() => navigate('/admissions/counselling/new')}
-              className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs"
-            >
-              <Calendar className="h-3.5 w-3.5" /> Schedule Counselling
-            </Button>
-          </div>
+      {/* 4. COUNSELLING */}
+      {activeTab === 'counselling' && (
+        <div className="space-y-5">
+          <PageHeader
+            title="Counselling Sessions"
+            subtitle="Manage 1-on-1 career guidance sessions, campus visit evaluations, and counsellor allocations."
+            badge={
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                {counselling.length} Sessions
+              </span>
+            }
+            actions={
+              <Button
+                size="sm"
+                onClick={() => navigate('/app/admissions/counselling/new')}
+                className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs h-8"
+              >
+                <Calendar className="h-3.5 w-3.5" /> Schedule Counselling
+              </Button>
+            }
+          />
 
           <CounsellingTable
             sessions={counselling}
             loading={loading}
             onCompleteSession={handleCompleteCounselling}
           />
-        </TabsContent>
+        </div>
+      )}
 
-        {/* 5. APPLICATIONS */}
-        <TabsContent value="applications" className="pt-2 space-y-4">
-          <div className="flex justify-between items-center">
-            <div className="text-xs text-slate-500">
-              Official student applications submitted for review, decision, and admission confirmation.
-            </div>
-            <Button
-              size="sm"
-              onClick={() => navigate('/admissions/applications/new')}
-              className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs"
-            >
-              <FileText className="h-3.5 w-3.5" /> + Create Application
-            </Button>
-          </div>
+      {/* 5. APPLICATIONS */}
+      {activeTab === 'applications' && (
+        <div className="space-y-5">
+          <PageHeader
+            title="Student Applications"
+            subtitle="Review formal candidate applications, evaluate verification documents, track fee clearance, and confirm admissions."
+            badge={
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                {applications.length} Applications
+              </span>
+            }
+            actions={
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate('/app/admissions/fees')}
+                  className="gap-1.5 text-emerald-700 border-emerald-200 hover:bg-emerald-50 text-xs h-8"
+                >
+                  <CreditCard className="h-3.5 w-3.5 text-emerald-600" /> Fee Tracking
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => navigate('/app/admissions/applications/new')}
+                  className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs h-8"
+                >
+                  <FileText className="h-3.5 w-3.5" /> New Application
+                </Button>
+              </div>
+            }
+          />
 
           <ApplicationTable
             applications={applications}
             loading={loading}
             onConfirmAdmission={handleConfirmAdmission}
+            onDataRefresh={loadModuleData}
           />
-        </TabsContent>
+        </div>
+      )}
 
-        {/* 6. DOCUMENTS */}
-        <TabsContent value="documents" className="pt-2 space-y-4">
-          <div className="text-xs text-slate-500">
-            Institutional document repository for identity verification, certificates, and qualification marks.
-          </div>
-          <DocumentTable
-            documents={documents}
-            onVerify={handleVerifyDocument}
-            onReject={handleRejectDocument}
-            allowActions={true}
+      {/* 6. FEE CLEARANCE (FINANCE VIEW STATE) */}
+      {activeTab === 'fees' && (
+        <div className="space-y-5">
+          <PageHeader
+            title="Candidate Fee Clearance"
+            subtitle="Real-time view state of candidate payment clearance and pending dues synchronized from Fee Management."
+            badge={
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                Finance View State
+              </span>
+            }
+            actions={
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigate('/app/finance/student-fees')}
+                className="gap-1.5 text-indigo-700 border-indigo-200 hover:bg-indigo-50 text-xs h-8"
+              >
+                <CreditCard className="h-3.5 w-3.5 text-indigo-600" /> Open Fee Management Module
+                <ExternalLink className="h-3 w-3 ml-0.5 text-indigo-400" />
+              </Button>
+            }
           />
-        </TabsContent>
 
-        {/* 7. FOLLOW-UPS */}
-        <TabsContent value="followups" className="pt-2 space-y-4">
-          <div className="flex justify-between items-center">
-            <div className="text-xs text-slate-500">
-              Upcoming, overdue and completed follow-up interactions across the admissions team.
-            </div>
-            <Button
-              size="sm"
-              onClick={() => handleOpenScheduleFollowUp(leads[0] || enquiries[0])}
-              className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs"
-            >
-              <Plus className="h-3.5 w-3.5" /> + Schedule Follow-up
-            </Button>
-          </div>
+          <AdmissionsFeeTrackingTable
+            applications={applications}
+            loading={loading}
+            onDataRefresh={loadModuleData}
+          />
+        </div>
+      )}
+
+      {/* 7. DOCUMENTS & VERIFICATION (STUDENT-SPECIFIC DOSSIER) */}
+      {activeTab === 'documents' && (
+        <div className="space-y-5">
+          <PageHeader
+            title="Student Document Verification"
+            subtitle="Student-specific credential verification workspace. Audit mandatory certificates, request parent clarifications, and satisfy admission gate conditions."
+            badge={
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                Student-Specific Dossier
+              </span>
+            }
+            actions={
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate('/app/admissions/applications')}
+                  className="text-xs gap-1.5 h-8 border-slate-200 text-slate-700 hover:bg-slate-50"
+                >
+                  <FileText className="h-3.5 w-3.5 text-slate-400" /> View All Applications
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => navigate('/app/admissions/fees')}
+                  className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs h-8 shadow-xs"
+                >
+                  <CreditCard className="h-3.5 w-3.5 text-slate-300" /> Check Fee Clearance
+                </Button>
+              </div>
+            }
+          />
+
+          <StudentDocumentVerificationWorkspace
+            applications={applications}
+            initialSelectedApplicationId={
+              new URLSearchParams(location.search).get('appId') ||
+              new URLSearchParams(location.search).get('studentId') ||
+              undefined
+            }
+            onDataRefresh={loadModuleData}
+          />
+        </div>
+      )}
+
+      {/* 8. FOLLOW-UPS */}
+      {activeTab === 'followups' && (
+        <div className="space-y-5">
+          <PageHeader
+            title="Admissions Follow-ups"
+            subtitle="Upcoming, overdue, and completed counselling reminders and prospect communications."
+            badge={
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                {followUps.length} Scheduled
+              </span>
+            }
+            actions={
+              <Button
+                size="sm"
+                onClick={() => handleOpenScheduleFollowUp(leads[0] || enquiries[0])}
+                className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs h-8"
+              >
+                <Plus className="h-3.5 w-3.5" /> Schedule Follow-up
+              </Button>
+            }
+          />
 
           <FollowUpTable
             followUps={followUps}
@@ -470,13 +580,34 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
               loadModuleData()
             }}
           />
-        </TabsContent>
+        </div>
+      )}
 
-        {/* 8. REPORTS */}
-        <TabsContent value="reports" className="pt-2">
+      {/* 9. REPORTS */}
+      {activeTab === 'reports' && (
+        <div className="space-y-5">
+          <PageHeader
+            title="Admissions Reports & Conversion Intelligence"
+            subtitle="Detailed enrollment breakdown by program, counselor performance metrics, and funnel drop-off analysis."
+            badge={
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                Analytics
+              </span>
+            }
+            actions={
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigate('/app/admissions')}
+                className="text-xs gap-1.5 h-8 border-slate-200 hover:bg-slate-50"
+              >
+                <BarChart3 className="h-3.5 w-3.5 text-slate-500" /> Back to Live Analytics
+              </Button>
+            }
+          />
           <AdmissionsReports />
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
 
       {/* Quick Follow-up Dialog */}
       <Dialog open={followUpModalOpen} onOpenChange={setFollowUpModalOpen}>

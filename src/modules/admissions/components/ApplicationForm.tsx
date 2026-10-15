@@ -143,7 +143,7 @@ export function ApplicationForm({ initialData = null, onSaveDraft, onSubmitAppli
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => navigate('/admissions/applications')}
+          onClick={() => navigate('/app/admissions/applications')}
           className="gap-1.5 text-xs self-start"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back to Applications

@@ -67,6 +67,16 @@ export function ProductHubPage() {
       status: 'Active',
       route: '/app/finance',
     },
+    {
+      id: 'hrms',
+      name: 'HRMS',
+      category: 'Finance & Administration',
+      description: 'Unified personnel management, staff profiles, leave policies, onboarding and shift rosters.',
+      icon: Users,
+      iconBg: 'bg-indigo-50 text-indigo-600',
+      status: 'Active',
+      route: '/app/hrms',
+    },
   ]
 
   // Products for "Explore Products" section

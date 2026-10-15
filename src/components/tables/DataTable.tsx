@@ -286,7 +286,7 @@ export function DataTable<T = any>({
                         </td>
                       )}
                       {columns.map((col, cIdx) => (
-                        <td key={cIdx} className={`px-4 py-3 text-slate-800 ${col.cellClassName || ''}`}>
+                        <td key={cIdx} className={`px-4 py-3 text-slate-800 ${col.className || ''} ${col.cellClassName || ''}`}>
                           {col.cell ? col.cell(row) : row[col.accessor] ?? '—'}
                         </td>
                       ))}

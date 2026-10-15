@@ -64,16 +64,31 @@ class EntitlementService {
           id: 'ent-hrms-1',
           organizationId: 'org-1',
           productId: 'hrms',
-          status: 'Trial',
-          plan: '14-Day Free Trial',
+          status: 'Active',
+          plan: 'Professional Suite',
           startDate: '2026-10-01',
-          endDate: '2026-10-15',
-          limits: { maxStaff: 50 },
+          endDate: '2027-12-31',
+          limits: { maxStaff: 500 },
           createdAt: '2026-10-01T00:00:00Z',
           updatedAt: '2026-10-01T00:00:00Z',
         },
       ]
       localStorage.setItem(this.storageKey, JSON.stringify(defaultEntitlements))
+    } else {
+      // Ensure HRMS entitlement is active if present
+      try {
+        const stored = localStorage.getItem(this.storageKey)
+        const list = stored ? JSON.parse(stored) : []
+        const hrmsEnt = list.find((e: any) => e.productId === 'hrms')
+        if (hrmsEnt && hrmsEnt.status !== 'Active') {
+          hrmsEnt.status = 'Active'
+          hrmsEnt.plan = 'Professional Suite'
+          hrmsEnt.endDate = '2027-12-31'
+          localStorage.setItem(this.storageKey, JSON.stringify(list))
+        }
+      } catch (e) {
+        // ignore
+      }
     }
   }
 

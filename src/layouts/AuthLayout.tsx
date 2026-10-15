@@ -10,9 +10,11 @@ export function AuthLayout() {
       <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-12 text-white flex-col justify-between border-r border-slate-800">
         <div>
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center font-black text-xl text-white shadow-lg shadow-blue-500/30">
-              M
-            </div>
+            <img
+              src="/mycampace-logo.png"
+              alt="MyCampace"
+              className="h-10 w-10 object-contain drop-shadow-md"
+            />
             <div>
               <h2 className="text-xl font-bold tracking-tight">MyCampace</h2>
               <p className="text-xs text-blue-300 font-medium">Enterprise Education Operating System</p>
@@ -55,9 +57,11 @@ export function AuthLayout() {
         <div className="w-full max-w-md">
           {/* Mobile Brand */}
           <div className="md:hidden flex items-center gap-2.5 mb-8 justify-center">
-            <div className="h-9 w-9 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white shadow-md">
-              M
-            </div>
+            <img
+              src="/mycampace-logo.png"
+              alt="MyCampace"
+              className="h-9 w-9 object-contain drop-shadow-md"
+            />
             <div className="text-left">
               <h2 className="text-lg font-bold text-slate-900 leading-none">MyCampace</h2>
               <span className="text-[11px] text-slate-500">Education Operating System</span>

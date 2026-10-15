@@ -8,7 +8,11 @@ import { CommunicationTimeline } from './CommunicationTimeline'
 import { DocumentTable } from './DocumentTable'
 import {
   calculateApplicationCompletion,
+  getCourseFeeStructure,
+  applicationService,
 } from '../services/applicationService'
+import { AdmissionOfferPolicyModal } from './AdmissionOfferPolicyModal'
+import { ParentAdmissionPortalSimulatorModal } from './ParentAdmissionPortalSimulatorModal'
 import {
   Dialog,
   DialogContent,
@@ -33,8 +37,25 @@ import {
   Calendar,
   AlertCircle,
   FileText,
+  CreditCard,
+  Receipt,
+  ExternalLink,
+  DollarSign,
+  ShieldCheck,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { CandidateFeeClearanceModal } from './CandidateFeeClearanceModal'
+
+export interface ApplicationProfileProps {
+  application: any
+  documents?: any[]
+  onConfirmAdmission?: (id: any, data: any) => Promise<void> | void
+  onEnrollToStudent?: (id: any) => Promise<void> | void
+  onSendMessage?: (msg: any) => Promise<void> | void
+  onVerifyDoc?: (docId: any) => Promise<void> | void
+  onRejectDoc?: (docId: any, reason: any) => Promise<void> | void
+  onRecordPayment?: (appId: string, paymentData: any) => Promise<void> | void
+}
 
 export function ApplicationProfile({
   application,
@@ -44,9 +65,11 @@ export function ApplicationProfile({
   onSendMessage,
   onVerifyDoc,
   onRejectDoc,
-}) {
+  onRecordPayment,
+}: ApplicationProfileProps) {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overview')
+  const [feeModalOpen, setFeeModalOpen] = useState(false)
 
   // Admission confirmation dialog
   const [admissionDialogOpen, setAdmissionDialogOpen] = useState(false)
@@ -60,10 +83,16 @@ export function ApplicationProfile({
 
   // Enrolment dialog (converts to Student SIS record)
   const [enrollDialogOpen, setEnrollDialogOpen] = useState(false)
+  const [offerModalOpen, setOfferModalOpen] = useState(false)
+  const [parentPortalModalOpen, setParentPortalModalOpen] = useState(false)
 
   if (!application) return null
 
   const { percentage, sections } = calculateApplicationCompletion(application)
+  const courseFee = getCourseFeeStructure(
+    application.academicInterest?.courseName || application.academicInterest?.courseId,
+    application.academicInterest?.programName
+  )
 
   const handleAdmissionConfirmSubmit = (e) => {
     e.preventDefault()
@@ -87,13 +116,36 @@ export function ApplicationProfile({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate('/admissions/applications')}
+          onClick={() => navigate('/app/admissions/applications')}
           className="gap-1.5 text-xs self-start"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back to Applications
         </Button>
 
         <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            size="sm"
+            onClick={() => setFeeModalOpen(true)}
+            className="gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+          >
+            <CreditCard className="h-3.5 w-3.5" /> Record Fee Payment
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              navigate(
+                application.studentId
+                  ? `/app/finance/student-fees/${application.studentId}`
+                  : '/app/finance/student-fees'
+              )
+            }
+            className="gap-1 text-xs text-indigo-700 border-indigo-200 hover:bg-indigo-50"
+          >
+            <ExternalLink className="h-3.5 w-3.5" /> Finance Ledger
+          </Button>
+
           {['Submitted', 'Under Review', 'Documents Required'].includes(application.status) && (
             <Button
               size="sm"
@@ -108,10 +160,31 @@ export function ApplicationProfile({
           {application.status === 'Approved' && (
             <Button
               size="sm"
-              onClick={() => setAdmissionDialogOpen(true)}
+              onClick={() => setOfferModalOpen(true)}
+              className="gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+            >
+              <GraduationCap className="h-3.5 w-3.5" /> Admit / Share Policy Document
+            </Button>
+          )}
+
+          {application.status === 'Policy Shared' && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setParentPortalModalOpen(true)}
+              className="gap-1 text-xs text-purple-700 border-purple-200 hover:bg-purple-50 font-semibold"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> Open Parent Portal (Simulator)
+            </Button>
+          )}
+
+          {application.status === 'Docs Uploaded' && (
+            <Button
+              size="sm"
+              onClick={() => setActiveTab('documents')}
               className="gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
             >
-              <GraduationCap className="h-3.5 w-3.5" /> Confirm Admission
+              <FileCheck className="h-3.5 w-3.5" /> Verify Documents & Handover to Finance
             </Button>
           )}
 
@@ -144,6 +217,30 @@ export function ApplicationProfile({
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-lg font-bold text-slate-900">{application.applicantName}</h2>
                 <StatusBadge status={application.status} />
+
+                {/* Fee Status Badge */}
+                {application.feeDetails && (
+                  <span
+                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-bold ${
+                      application.feeDetails.feeStatus === 'Paid'
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                        : application.feeDetails.feeStatus === 'Partially Paid'
+                        ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                        : 'bg-rose-100 text-rose-800 border border-rose-200'
+                    }`}
+                  >
+                    <CreditCard className="h-3 w-3" />
+                    Fee: {application.feeDetails.feeStatus}
+                  </span>
+                )}
+
+                {/* Doc Verification Badge */}
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                  <ShieldCheck className="h-3 w-3" />
+                  Docs:{' '}
+                  {documents.filter((d) => d.verificationStatus === 'Verified').length} /{' '}
+                  {documents.length || 4} Verified
+                </span>
               </div>
               <div className="text-xs text-slate-500 flex items-center gap-4 flex-wrap">
                 <span>App #: <strong className="text-slate-800 font-mono">{application.applicationNumber}</strong></span>
@@ -179,13 +276,14 @@ export function ApplicationProfile({
 
       {/* Profile Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-slate-100 p-1">
+        <TabsList className="bg-slate-100 p-1 flex-wrap h-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="finance">Fee & Finance</TabsTrigger>
+          <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
           <TabsTrigger value="personal">Personal Info</TabsTrigger>
           <TabsTrigger value="academic">Academic Info</TabsTrigger>
           <TabsTrigger value="program">Program</TabsTrigger>
           <TabsTrigger value="guardian">Parent / Guardian</TabsTrigger>
-          <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
           <TabsTrigger value="review">Review Evaluation</TabsTrigger>
           <TabsTrigger value="communication">Communication</TabsTrigger>
         </TabsList>
@@ -279,6 +377,270 @@ export function ApplicationProfile({
               </CardContent>
             </Card>
           </div>
+
+          {/* Admission Policy & Document Undertaking Lifecycle Card */}
+          <Card className="border-slate-200 shadow-xs bg-white">
+            <CardHeader className="pb-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <CardTitle className="text-xs font-bold uppercase text-slate-700 flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-indigo-600" />
+                  Admission Policy & Parent Document Undertaking Lifecycle
+                </CardTitle>
+                <p className="text-[11px] text-slate-400">
+                  Pre-admission document verification and terms agreement tracking
+                </p>
+              </div>
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  application.admissionPolicy?.termsAccepted
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                    : application.admissionPolicy?.policySentDate
+                    ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                    : 'bg-slate-100 text-slate-600 border border-slate-200'
+                }`}
+              >
+                {application.admissionPolicy?.termsAccepted
+                  ? '✓ Terms & Conditions Signed'
+                  : application.admissionPolicy?.policySentDate
+                  ? 'Policy Shared (Awaiting Signature)'
+                  : 'Policy Not Shared Yet'}
+              </span>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-3 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Policy Delivery</span>
+                  <div className="font-semibold text-slate-800">
+                    {application.admissionPolicy?.policySentDate ? (
+                      <span className="text-purple-700">Sent on {application.admissionPolicy.policySentDate}</span>
+                    ) : (
+                      <span className="text-slate-400">Not shared with parent yet</span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-mono truncate">
+                    {application.admissionPolicy?.policySentToEmail || application.guardian?.email || application.contact?.email}
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Parent Terms Acceptance</span>
+                  <div className="font-semibold text-slate-800">
+                    {application.admissionPolicy?.termsAccepted ? (
+                      <span className="text-emerald-700">Signed by {application.admissionPolicy.termsAcceptedBy || application.guardian?.name || 'Parent'}</span>
+                    ) : (
+                      <span className="text-amber-700">Awaiting parent digital signature</span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-mono">
+                    {application.admissionPolicy?.termsAcceptedDate ? `Date: ${application.admissionPolicy.termsAcceptedDate}` : 'Pending submission'}
+                  </div>
+                </div>
+
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-1 text-blue-900">
+                  <span className="text-[10px] uppercase font-bold text-blue-500 block">Course Fee Schedule</span>
+                  <div className="font-bold text-xs truncate">
+                    {courseFee.feeStructureName}
+                  </div>
+                  <div className="text-[11px] font-mono font-bold text-blue-700">
+                    ₹{courseFee.totalFees.toLocaleString('en-IN')} / year
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-1 gap-2 border-t border-slate-100">
+                <div className="text-[11px] text-slate-500">
+                  {application.status === 'Admitted' ? (
+                    <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" /> Candidate is officially admitted & dispatched to Finance under {courseFee.feeStructureName}.
+                    </span>
+                  ) : application.admissionPolicy?.termsAccepted ? (
+                    <span className="text-indigo-700 font-medium">
+                      Terms signed by parent. Inspect and verify all uploaded documents to enable Finance handover.
+                    </span>
+                  ) : (
+                    <span>Share the official policy document to parent email to initiate formal onboarding.</span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {!application.admissionPolicy?.policySentDate && application.status === 'Approved' && (
+                    <Button
+                      size="sm"
+                      onClick={() => setOfferModalOpen(true)}
+                      className="h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white gap-1"
+                    >
+                      <Mail className="h-3 w-3" /> Share Policy to Parent
+                    </Button>
+                  )}
+                  {application.admissionPolicy?.policySentDate && !application.admissionPolicy?.termsAccepted && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setParentPortalModalOpen(true)}
+                      className="h-7 text-xs text-purple-700 border-purple-200 hover:bg-purple-50 gap-1"
+                    >
+                      <ExternalLink className="h-3 w-3" /> Open Parent Portal Simulator
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Fee & Finance Management Tab */}
+        <TabsContent value="finance" className="mt-4 space-y-4">
+          {/* Fee Overview Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <Card className="border-slate-200 shadow-xs">
+              <CardContent className="p-4">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                  Assigned Fee Schedule
+                </span>
+                <div className="text-sm font-bold text-slate-800 mt-1 truncate">
+                  {application.feeDetails?.feeStructureName || 'Standard Institutional Schedule'}
+                </div>
+                <div className="text-[10px] text-slate-400 mt-0.5">
+                  Academic Year: {application.academicInterest?.academicYearName || '2026-2027'}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 shadow-xs">
+              <CardContent className="p-4">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                  Net Course Fees
+                </span>
+                <div className="text-lg font-black text-slate-900 font-mono mt-1">
+                  ₹{(application.feeDetails?.netPayable || application.feeDetails?.totalFees || 120000).toLocaleString('en-IN')}
+                </div>
+                <div className="text-[10px] text-slate-400 mt-0.5">
+                  Admission Fee Component: ₹{(application.feeDetails?.admissionFee || 25000).toLocaleString('en-IN')}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-emerald-200 shadow-xs bg-emerald-50/40">
+              <CardContent className="p-4">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">
+                  Amount Realized / Paid
+                </span>
+                <div className="text-lg font-black text-emerald-700 font-mono mt-1">
+                  ₹{(application.feeDetails?.paidAmount || 0).toLocaleString('en-IN')}
+                </div>
+                <div className="text-[10px] text-emerald-600 mt-0.5 font-semibold">
+                  Status: {application.feeDetails?.feeStatus || 'Pending'}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-amber-200 shadow-xs bg-amber-50/40">
+              <CardContent className="p-4">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 block">
+                  Balance Outstanding
+                </span>
+                <div className="text-lg font-black text-amber-700 font-mono mt-1">
+                  ₹{(application.feeDetails?.outstandingAmount ?? 120000).toLocaleString('en-IN')}
+                </div>
+                <div className="text-[10px] text-amber-600 mt-0.5">
+                  Due: {application.feeDetails?.dueDate || 'On Admission'}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Fee Actions & Institutional Ledger Integration */}
+          <Card className="border-slate-200 shadow-xs">
+            <CardHeader className="pb-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-xs font-bold uppercase text-slate-700 flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-emerald-600" />
+                  Fee Invoices, Receipts & Transactions
+                </CardTitle>
+                <p className="text-[11px] text-slate-400">
+                  Transactions recorded here are automatically reconciled with the Institutional Finance & Accounts ledger
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setFeeModalOpen(true)}
+                  className="h-8 text-xs text-indigo-700 border-indigo-200 hover:bg-indigo-50 gap-1.5"
+                >
+                  <Receipt className="h-3.5 w-3.5" /> View Finance Clearance
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    navigate(
+                      application.studentId
+                        ? `/app/finance/student-fees/${application.studentId}`
+                        : '/app/finance/student-fees'
+                    )
+                  }
+                  className="h-8 text-xs bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" /> Manage in Fee Management Module
+                </Button>
+              </div>
+            </CardHeader>
+
+            <CardContent className="pt-4">
+              {application.feeDetails?.receiptNumber || application.feeDetails?.invoiceNumber ? (
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
+                      <tr>
+                        <th className="px-3.5 py-2.5">Invoice / Receipt</th>
+                        <th className="px-3.5 py-2.5">Payment Mode</th>
+                        <th className="px-3.5 py-2.5">Transaction Ref</th>
+                        <th className="px-3.5 py-2.5">Date</th>
+                        <th className="px-3.5 py-2.5 text-right">Amount Paid</th>
+                        <th className="px-3.5 py-2.5 text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      <tr className="hover:bg-slate-50">
+                        <td className="px-3.5 py-3">
+                          <div className="font-mono font-bold text-slate-800">
+                            {application.feeDetails?.receiptNumber || 'Receipt Pending'}
+                          </div>
+                          {application.feeDetails?.invoiceNumber && (
+                            <div className="text-[10px] text-slate-400 font-mono">
+                              Inv: {application.feeDetails.invoiceNumber}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-3.5 py-3 text-slate-700 font-medium">
+                          {application.feeDetails?.paymentMode || 'Net Banking / UPI'}
+                        </td>
+                        <td className="px-3.5 py-3 font-mono text-[11px] text-slate-500">
+                          {application.feeDetails?.transactionRef || 'N/A'}
+                        </td>
+                        <td className="px-3.5 py-3 text-slate-600">
+                          {application.feeDetails?.lastPaymentDate || application.applicationDate}
+                        </td>
+                        <td className="px-3.5 py-3 text-right font-mono font-bold text-emerald-700">
+                          ₹{(application.feeDetails?.paidAmount || 0).toLocaleString('en-IN')}
+                        </td>
+                        <td className="px-3.5 py-3 text-center">
+                          <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                            Cleared
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-6 text-center text-slate-400 text-xs border border-dashed border-slate-200 rounded-xl">
+                  No payment transactions recorded yet for this applicant. Click "Record Payment" to process admission fees.
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* 2. Personal */}
@@ -604,6 +966,33 @@ export function ApplicationProfile({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Fee Clearance Dialog */}
+      <CandidateFeeClearanceModal
+        open={feeModalOpen}
+        onOpenChange={setFeeModalOpen}
+        application={application}
+      />
+
+      {/* Admission Offer Policy Modal */}
+      <AdmissionOfferPolicyModal
+        open={offerModalOpen}
+        onOpenChange={setOfferModalOpen}
+        application={application}
+        onPolicySent={(updated) => {
+          if (onConfirmAdmission) onConfirmAdmission(application.id, updated)
+        }}
+      />
+
+      {/* Parent Admission Portal Simulator Modal */}
+      <ParentAdmissionPortalSimulatorModal
+        open={parentPortalModalOpen}
+        onOpenChange={setParentPortalModalOpen}
+        application={application}
+        onSubmissionComplete={() => {
+          if (onConfirmAdmission) onConfirmAdmission(application.id, application)
+        }}
+      />
     </div>
   )
 }

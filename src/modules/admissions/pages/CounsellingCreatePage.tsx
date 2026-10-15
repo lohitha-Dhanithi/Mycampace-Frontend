@@ -11,7 +11,7 @@ export function CounsellingCreatePage() {
   const handleSubmit = async (formData) => {
     try {
       await counsellingService.scheduleCounselling(formData)
-      navigate('/admissions/counselling')
+      navigate('/app/admissions/counselling')
     } catch (err) {
       alert(err.message)
     }
