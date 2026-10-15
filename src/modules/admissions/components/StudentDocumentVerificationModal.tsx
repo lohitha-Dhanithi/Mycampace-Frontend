@@ -32,8 +32,11 @@ import {
   Mail,
   Lock,
   ArrowRight,
+  CreditCard,
+  Receipt,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { PaymentCollectionModal } from '@/modules/finance/components/PaymentCollectionModal'
 
 export interface StudentDocumentVerificationModalProps {
   open: boolean
@@ -49,6 +52,7 @@ export function StudentDocumentVerificationModal({
   onVerificationUpdated,
 }: StudentDocumentVerificationModalProps) {
   const navigate = useNavigate()
+  const [currentApp, setCurrentApp] = useState<any>(application)
   const [documents, setDocuments] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [rejectModalOpen, setRejectModalOpen] = useState(false)
@@ -61,6 +65,11 @@ export function StudentDocumentVerificationModal({
   const [offerPolicyModalOpen, setOfferPolicyModalOpen] = useState(false)
   const [parentPortalModalOpen, setParentPortalModalOpen] = useState(false)
   const [financeHandoverLoading, setFinanceHandoverLoading] = useState(false)
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+
+  useEffect(() => {
+    setCurrentApp(application)
+  }, [application])
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -68,11 +77,13 @@ export function StudentDocumentVerificationModal({
   }
 
   const handleApproveAllAndSendToFinance = async () => {
-    if (!application?.id) return
+    const targetApp = currentApp || application
+    if (!targetApp?.id) return
     setFinanceHandoverLoading(true)
     try {
-      await applicationService.approveAllDocumentsAndSendToFinance(application.id)
-      showToast('All documents approved! Student admitted & dispatched to Finance Management.')
+      const updated = await applicationService.approveAllDocumentsAndSendToFinance(targetApp.id)
+      setCurrentApp(updated)
+      showToast('All documents approved! Candidate dispatched to Finance for payment collection.')
       await loadStudentDocs()
       if (onVerificationUpdated) {
         onVerificationUpdated()
@@ -213,21 +224,22 @@ export function StudentDocumentVerificationModal({
     showToast(`${doc.type} (${doc.code}) attached and verified to Success!`)
   }
 
-  if (!application) return null
+  const activeApp = currentApp || application
+  if (!activeApp) return null
 
   const courseFee = getCourseFeeStructure(
-    application.academicInterest?.courseName || application.academicInterest?.courseId,
-    application.academicInterest?.programName
+    activeApp.academicInterest?.courseName || activeApp.academicInterest?.courseId,
+    activeApp.academicInterest?.programName
   )
 
   const verifiedCount = documents.filter((d) => d.verificationStatus === 'Verified').length
   const totalCount = documents.length
   const progressPercent = totalCount > 0 ? Math.round((verifiedCount / totalCount) * 100) : 0
   const allDocsVerified = verifiedCount === totalCount && totalCount > 0
-  const termsAccepted = Boolean(application.admissionPolicy?.termsAccepted)
-  const policySent = Boolean(application.admissionPolicy?.policySentDate)
-  const isAdmitted = application.status === 'Admitted' || Boolean(application.sentToFinance)
-  const canSendToFinance = allDocsVerified && termsAccepted && !isAdmitted
+  const termsAccepted = Boolean(activeApp.admissionPolicy?.termsAccepted)
+  const policySent = Boolean(activeApp.admissionPolicy?.policySentDate)
+  const isAdmitted = activeApp.status === 'Admitted' || Boolean(activeApp.sentToFinance)
+  const canSendToFinance = allDocsVerified && !isAdmitted
 
   return (
     <>
@@ -556,33 +568,92 @@ export function StudentDocumentVerificationModal({
             )}
           </div>
 
-          {/* Gating Status Alert Banner */}
+          {/* Handover Readiness Banner */}
           {!isAdmitted && (
-            !allDocsVerified || !termsAccepted ? (
-              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 text-[11px] flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <div className="font-semibold text-amber-950">Finance Handover Gating Active (Locked):</div>
-                  <div>In accordance with institution rules, candidate can ONLY be sent to Finance Management upon:</div>
-                  <div className="flex items-center gap-3 mt-1 flex-wrap font-medium">
-                    <span className={termsAccepted ? 'text-emerald-700' : 'text-amber-800'}>
-                      {termsAccepted ? '✓' : '✗'} Parent Acceptance of Terms & Policy
-                    </span>
-                    <span className="text-slate-300">•</span>
-                    <span className={allDocsVerified ? 'text-emerald-700' : 'text-amber-800'}>
-                      {allDocsVerified ? '✓' : '✗'} Approval of All Required Documents ({verifiedCount}/{totalCount || 4} Verified)
-                    </span>
+            allDocsVerified ? (
+              <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl text-emerald-950 text-xs flex items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-7 w-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="h-4 w-4" />
                   </div>
+                  <div>
+                    <div className="font-bold text-xs text-emerald-950">
+                      All Required Documents Verified (100%)
+                    </div>
+                    <div className="text-[11px] text-emerald-800">
+                      Candidate dossier is complete and authenticated. Ready for immediate handover to Finance Department to collect admission payments under <strong>{courseFee.feeStructureName}</strong>.
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right shrink-0 bg-white/70 px-2.5 py-1.5 rounded-lg border border-emerald-100">
+                  <div className="text-[10px] uppercase font-bold tracking-wider text-emerald-800">Assessed Fee</div>
+                  <div className="text-xs font-bold text-emerald-950 font-mono">₹{courseFee.totalFees.toLocaleString('en-IN')}</div>
                 </div>
               </div>
             ) : (
-              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-900 text-[11px] flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                <div>
-                  <strong className="text-emerald-950">All Conditions Met:</strong> Parent terms signed and 100% of credentials verified. Candidate is cleared for immediate Finance Handover under <strong>{courseFee.feeStructureName}</strong>.
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-xs flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-slate-400 shrink-0" />
+                  <span className="text-[11px]">
+                    <strong>Document Verification in Progress:</strong> {verifiedCount} of {totalCount} documents verified. Handover to Finance unlocks once all required credentials are authenticated.
+                  </span>
                 </div>
+                <span className="text-[11px] font-semibold text-slate-500 shrink-0 bg-white px-2 py-0.5 rounded border border-slate-200">
+                  {totalCount - verifiedCount} remaining
+                </span>
               </div>
             )
+          )}
+
+          {/* Post-Handover Finance State Card */}
+          {isAdmitted && (
+            <div className="p-3.5 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-2.5 text-xs">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-emerald-950">Candidate Dispatched to Finance Department</span>
+                    <div className="text-[11px] text-emerald-800">
+                      Admission No: <strong className="font-mono text-emerald-950">{activeApp.admissionDetails?.admissionNumber || 'ADM-2026-081'}</strong> • Student ID: <strong className="font-mono text-emerald-950">{activeApp.studentId || 'STU-2026-9021'}</strong>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                    activeApp.feeDetails?.feeStatus === 'Paid'
+                      ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                      : 'bg-amber-100 text-amber-900 border border-amber-300'
+                  }`}>
+                    {activeApp.feeDetails?.feeStatus === 'Paid' ? 'Fee Cleared • Paid' : 'Awaiting Admission Payment'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px] bg-white/80 p-2.5 rounded-lg border border-emerald-100">
+                <div>
+                  <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">INVOICE NUMBER</div>
+                  <div className="font-mono font-semibold text-slate-900">{activeApp.feeDetails?.invoiceNumber || 'INV-2026-4892'}</div>
+                </div>
+                <div>
+                  <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">FEE SCHEDULE</div>
+                  <div className="font-medium text-slate-800 truncate" title={activeApp.feeDetails?.feeStructureName || courseFee.feeStructureName}>
+                    {activeApp.feeDetails?.feeStructureName || courseFee.feeStructureName}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">TOTAL ASSESSED</div>
+                  <div className="font-bold text-slate-900">₹{(activeApp.feeDetails?.netPayable || courseFee.totalFees || 120000).toLocaleString('en-IN')}</div>
+                </div>
+                <div>
+                  <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">OUTSTANDING</div>
+                  <div className={`font-bold ${activeApp.feeDetails?.outstandingAmount === 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    ₹{(activeApp.feeDetails?.outstandingAmount ?? (courseFee.totalFees || 120000)).toLocaleString('en-IN')}
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           <DialogFooter className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-slate-100">
@@ -593,17 +664,28 @@ export function StudentDocumentVerificationModal({
             <div className="flex items-center gap-2">
               {isAdmitted ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                    Admitted & Dispatched to Finance ({courseFee.feeStructureName})
-                  </span>
+                  {activeApp.feeDetails?.feeStatus !== 'Paid' ? (
+                    <Button
+                      size="sm"
+                      onClick={() => setPaymentModalOpen(true)}
+                      className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 shadow-sm"
+                    >
+                      <CreditCard className="h-3.5 w-3.5" /> Collect Payment Now (₹{(activeApp.feeDetails?.outstandingAmount ?? courseFee.totalFees).toLocaleString('en-IN')})
+                    </Button>
+                  ) : (
+                    <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                      Receipt Issued: {activeApp.feeDetails?.receiptNumber}
+                    </span>
+                  )}
                   <Button
                     size="sm"
+                    variant="outline"
                     onClick={() => {
                       onOpenChange(false)
-                      navigate(application.studentId ? `/app/finance/student-fees/${application.studentId}` : '/app/finance/student-fees')
+                      navigate(activeApp.studentId ? `/app/finance/student-fees/${activeApp.studentId}` : '/app/finance/student-fees')
                     }}
-                    className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white gap-1"
+                    className="text-xs border-slate-200 text-slate-700 hover:bg-slate-50 gap-1"
                   >
                     View in Finance Module <ExternalLink className="h-3 w-3" />
                   </Button>
@@ -615,24 +697,24 @@ export function StudentDocumentVerificationModal({
                   onClick={handleApproveAllAndSendToFinance}
                   className={`text-xs gap-1.5 font-bold transition-all shadow-sm ${
                     canSendToFinance
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white ring-2 ring-emerald-300'
+                      ? 'bg-slate-900 hover:bg-slate-800 text-white'
                       : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                   }`}
                   title={
                     canSendToFinance
-                      ? 'Approve all credentials and send to Finance Management'
-                      : 'Locked until parent accepts terms and all documents are verified'
+                      ? 'Send candidate to Finance Department for collecting admission payment'
+                      : 'Locked until all required documents are verified'
                   }
                 >
                   {financeHandoverLoading ? (
                     'Dispatching to Finance...'
                   ) : canSendToFinance ? (
                     <>
-                      <GraduationCap className="h-3.5 w-3.5" /> Approve Documents & Send to Finance (₹{courseFee.totalFees.toLocaleString('en-IN')})
+                      <ArrowRight className="h-3.5 w-3.5 text-emerald-400" /> Send to Finance for Payment Collection (₹{courseFee.totalFees.toLocaleString('en-IN')})
                     </>
                   ) : (
                     <>
-                      <Lock className="h-3.5 w-3.5" /> Send to Finance (Locked)
+                      <Lock className="h-3.5 w-3.5" /> Send to Finance (Locked: Verify All Docs)
                     </>
                   )}
                 </Button>
@@ -729,6 +811,35 @@ export function StudentDocumentVerificationModal({
         onSubmissionComplete={async () => {
           showToast('Parent accepted terms and submitted documents!')
           await loadStudentDocs()
+          if (onVerificationUpdated) onVerificationUpdated()
+        }}
+      />
+
+      {/* Finance Payment Collection Modal */}
+      <PaymentCollectionModal
+        isOpen={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        student={{
+          studentId: activeApp.studentId || 'STU-2026-9021',
+          studentName: activeApp.applicantName,
+          rollNumber: activeApp.admissionDetails?.rollNumber || activeApp.studentId,
+        }}
+        invoice={{
+          id: activeApp.feeDetails?.invoiceNumber || 'INV-2026-4892',
+          outstandingAmount: activeApp.feeDetails?.outstandingAmount ?? courseFee.totalFees,
+          netAmount: activeApp.feeDetails?.netPayable ?? courseFee.totalFees,
+          studentName: activeApp.applicantName,
+        }}
+        onSuccess={async (res) => {
+          const payAmount = res?.receipt?.amount || activeApp.feeDetails?.outstandingAmount || courseFee.totalFees
+          const updated = await applicationService.recordFeePayment(activeApp.id, {
+            amount: payAmount,
+            paymentMode: res?.receipt?.paymentMethod || 'UPI / QR Code',
+            transactionRef: res?.payment?.id || res?.receipt?.transactionId,
+            notes: 'Collected upon Admissions Handover',
+          })
+          setCurrentApp(updated)
+          showToast(`Admission payment of ₹${payAmount.toLocaleString('en-IN')} collected! Receipt: ${updated.feeDetails?.receiptNumber}`)
           if (onVerificationUpdated) onVerificationUpdated()
         }}
       />

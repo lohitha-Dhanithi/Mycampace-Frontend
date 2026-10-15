@@ -156,4 +156,54 @@ export const studentFeeService = {
     if (s.outstandingAmount === 0) s.status = 'Paid'
     return s
   },
+
+  syncCandidateFromAdmissions: (candidate: any) => {
+    const studentId = candidate.studentId || `STU-2026-${candidate.id?.slice(-4) || '9001'}`
+    const existingIndex = studentFeeAssignments.findIndex(
+      (s) => s.studentId === studentId || s.studentName === candidate.applicantName
+    )
+    const fee = candidate.feeDetails || {}
+    const net = fee.netPayable || fee.totalFees || 120000
+    const paid = fee.paidAmount || 0
+    const outstanding = fee.outstandingAmount ?? Math.max(0, net - paid)
+
+    const assignment = {
+      id: existingIndex >= 0 ? studentFeeAssignments[existingIndex].id : `sfa-${Date.now()}`,
+      studentId,
+      studentName: candidate.applicantName,
+      rollNumber: candidate.admissionDetails?.rollNumber || studentId,
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      campusId: candidate.campusId || 'CAMPUS-01',
+      campusName: candidate.campusName || 'Main Campus',
+      programName: candidate.academicInterest?.programName || 'Higher Secondary',
+      className: candidate.academicInterest?.courseName || 'Class 11',
+      sectionName: candidate.admissionDetails?.allocatedSection || 'Section A',
+      feeStructureId: fee.feeStructureId || 'fs-std',
+      feeStructureName: fee.feeStructureName || 'Senior Secondary Composite Fee',
+      academicYearName: '2026–27',
+      totalFees: fee.totalFees || 120000,
+      discountsApplied: fee.discountAmount || 0,
+      scholarshipsApplied: 0,
+      netPayable: net,
+      paidAmount: paid,
+      outstandingAmount: outstanding,
+      overdueAmount: 0,
+      nextDueDate: fee.dueDate || '2026-11-15',
+      status: outstanding === 0 ? 'Paid' : paid > 0 ? 'Partially Paid' : 'Unpaid',
+      assignedDate: candidate.admissionDetails?.admissionDate || new Date().toISOString().split('T')[0],
+      invoiceNumber: fee.invoiceNumber,
+      breakdown: {
+        admission: fee.admissionFee || 25000,
+        tuition: fee.tuitionFee || 95000,
+      },
+    }
+
+    if (existingIndex >= 0) {
+      studentFeeAssignments[existingIndex] = { ...studentFeeAssignments[existingIndex], ...assignment }
+    } else {
+      studentFeeAssignments.unshift(assignment)
+    }
+
+    return assignment
+  },
 }

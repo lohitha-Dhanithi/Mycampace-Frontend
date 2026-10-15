@@ -2,6 +2,8 @@
 import { INITIAL_APPLICATIONS } from '../data/applicationMockData'
 import { APPLICATION_WORKFLOW_TRANSITIONS } from '../config/admissionStatusConfig'
 import { documentService } from './documentService'
+import { studentFeeService } from '@/modules/finance/services/studentFeeService'
+import { invoiceService } from '@/modules/finance/services/invoiceService'
 
 let applications: any[] = [...INITIAL_APPLICATIONS]
 const delay = (ms = 120) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -502,7 +504,9 @@ export const applicationService = {
     const invoiceNumber = `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`
     const admissionNumber = app.admissionDetails?.admissionNumber || `ADM-2026-${Math.floor(100 + Math.random() * 900)}`
     const rollNumber = app.admissionDetails?.rollNumber || `ROLL-${Math.floor(10 + Math.random() * 90)}`
+    const studentId = app.studentId || `STU-2026-${Math.floor(1000 + Math.random() * 9000)}`
 
+    app.studentId = studentId
     app.status = 'Admitted'
     app.sentToFinance = true
     app.feeDetails = {
@@ -533,6 +537,31 @@ export const applicationService = {
       admissionNotes:
         reviewerNotes ||
         `All verification documents approved by Admissions. Handed over to Finance under ${courseFee.feeStructureName}.`,
+    }
+
+    // Sync to Finance Module Ledgers
+    try {
+      studentFeeService.syncCandidateFromAdmissions(app)
+      invoiceService.syncInvoiceFromAdmissions({
+        id: invoiceNumber,
+        studentId: app.studentId,
+        studentName: app.applicantName,
+        rollNumber,
+        feeStructureName: courseFee.feeStructureName,
+        academicYearName: '2026–27',
+        campusName: 'Main Campus',
+        grossAmount: courseFee.totalFees,
+        discountAmount: 0,
+        taxAmount: 0,
+        netAmount: courseFee.netPayable,
+        paidAmount: 0,
+        outstandingAmount: courseFee.netPayable,
+        status: 'Unpaid',
+        dueDate: '2026-11-15',
+        installmentName: 'Admission Composite Fee',
+      })
+    } catch (syncErr) {
+      console.warn('Finance sync warning:', syncErr)
     }
 
     app.communications = [
@@ -741,6 +770,20 @@ export const applicationService = {
       },
       ...(app.communications || []),
     ]
+
+    // Sync back to Finance Module Ledgers
+    try {
+      studentFeeService.syncCandidateFromAdmissions(app)
+      if (app.feeDetails?.invoiceNumber) {
+        if (newOutstanding === 0) {
+          invoiceService.updateInvoiceStatus(app.feeDetails.invoiceNumber, 'Paid')
+        } else if (newPaid > 0) {
+          invoiceService.updateInvoiceStatus(app.feeDetails.invoiceNumber, 'Partially Paid')
+        }
+      }
+    } catch (syncErr) {
+      console.warn('Finance payment sync warning:', syncErr)
+    }
 
     return { ...app }
   },

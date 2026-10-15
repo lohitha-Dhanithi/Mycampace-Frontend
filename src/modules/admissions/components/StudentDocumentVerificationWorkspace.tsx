@@ -25,6 +25,7 @@ import {
   RefreshCw,
   Copy,
   Check,
+  CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -775,22 +776,34 @@ export function StudentDocumentVerificationWorkspace({
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   <div className="flex items-center gap-2.5 text-slate-700">
                     <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                    <span>
-                      <strong>Dispatched to Finance Team:</strong> Candidate credentials verified and fee collection is actively handled in Fee Management.
-                    </span>
+                    <div>
+                      <div className="font-bold text-slate-800">Dispatched to Finance Department</div>
+                      <div className="text-[11px] text-slate-500">
+                        Candidate credentials verified and fee collection is actively handled in Finance.
+                      </div>
+                    </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => navigate('/app/admissions/fees')}
-                    className="h-7 text-xs border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium shrink-0 shadow-2xs"
-                  >
-                    View Fee Clearance
-                  </Button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      size="sm"
+                      onClick={() => setFullModalOpen(true)}
+                      className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-none gap-1"
+                    >
+                      <CreditCard className="h-3 w-3" /> Collect Payment
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(selectedApp?.studentId ? `/app/finance/student-fees/${selectedApp.studentId}` : '/app/finance/student-fees')}
+                      className="h-7 text-xs border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium shadow-2xs gap-1"
+                    >
+                      View in Finance <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               ) : allVerified ? (
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-2.5 text-slate-700">
+                <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2.5 text-emerald-950">
                     <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                     <span>
                       <strong>Verification Complete:</strong> All certificates authenticated. Candidate is cleared for Finance handover.
@@ -800,9 +813,9 @@ export function StudentDocumentVerificationWorkspace({
                     <Button
                       size="sm"
                       onClick={() => setFullModalOpen(true)}
-                      className="h-7 text-xs bg-slate-900 hover:bg-slate-800 text-white font-medium shadow-none"
+                      className="h-7 text-xs bg-slate-900 hover:bg-slate-800 text-white font-medium shadow-none gap-1"
                     >
-                      Dispatch to Finance
+                      Send to Finance
                     </Button>
                     <Button
                       size="sm"
