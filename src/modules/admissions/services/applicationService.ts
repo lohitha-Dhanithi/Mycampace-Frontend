@@ -406,15 +406,21 @@ export const applicationService = {
       digitalSignatureHash: `SIG-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
     }
 
-    // If documents were uploaded in this parent submission, upload them to documentService
+    // If documents were uploaded in this parent submission, upload and verify them in documentService
     if (submissionData.uploadedDocs && Array.isArray(submissionData.uploadedDocs)) {
       for (const d of submissionData.uploadedDocs) {
+        const normalizedType =
+          d.type === 'Transfer Certificate & Migration' ? 'Transfer Certificate' : d.type
         await documentService.uploadDocument(id, {
           id: d.id,
-          type: d.type,
+          type: normalizedType,
           code: d.code || 'DOC',
-          fileName: d.fileName || `${d.type.replace(/\s+/g, '_')}_Parent_Upload.pdf`,
-          fileSize: d.fileSize || '1.8 MB',
+          fileName: d.fileName || `${normalizedType.replace(/\s+/g, '_')}_Signed.pdf`,
+          fileSize: d.fileSize || '1.4 MB',
+          verificationStatus: 'Verified',
+          simulateSuccess: true,
+          verifiedBy: 'Admissions Reviewer',
+          verifiedDate: new Date().toISOString().split('T')[0],
         })
       }
     }
@@ -427,11 +433,15 @@ export const applicationService = {
     app.documentVerificationSummary = {
       totalRequired: total,
       verifiedCount: verified,
-      pendingCount: total - verified,
+      pendingCount: Math.max(0, total - verified),
       rejectedCount: 0,
       status: verified === total && total > 0 ? 'Verified' : 'Pending Verification',
       lastUpdated: new Date().toISOString().split('T')[0],
-      verifiedBy: app.documentVerificationSummary?.verifiedBy || null,
+      verifiedBy: app.documentVerificationSummary?.verifiedBy || 'Admissions Reviewer',
+    }
+
+    if (verified === total && total > 0) {
+      app.documentVerificationStatus = 'Verified'
     }
 
     app.communications = [

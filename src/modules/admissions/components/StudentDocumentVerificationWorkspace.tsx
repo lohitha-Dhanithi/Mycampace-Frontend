@@ -37,6 +37,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { documentService } from '../services/documentService'
+import { applicationService } from '../services/applicationService'
 import { StudentDocumentVerificationModal } from './StudentDocumentVerificationModal'
 import { useNavigate } from 'react-router-dom'
 
@@ -176,6 +177,32 @@ export function StudentDocumentVerificationWorkspace({
     })
     setUploadDialogOpen(false)
     showToast('Document uploaded successfully for candidate.')
+    loadStudentDocuments(selectedAppId)
+    if (onDataRefresh) onDataRefresh()
+  }
+
+  const handleSimulateAllAttachedSuccess = async () => {
+    if (!selectedAppId) return
+    await documentService.attachAndVerifyAllDocuments(selectedAppId, 'Admissions Reviewer')
+    await applicationService.updateDocumentVerification(selectedAppId, {
+      status: 'Verified',
+      verifiedCount: totalDocs || 4,
+      pendingCount: 0,
+      rejectedCount: 0,
+    })
+    showToast('All credentials (including TC) attached & verified to Success!')
+    loadStudentDocuments(selectedAppId)
+    if (onDataRefresh) onDataRefresh()
+  }
+
+  const handleAttachAndVerifySingle = async (doc: any) => {
+    if (!selectedAppId) return
+    await documentService.attachAndVerifyDocument(
+      selectedAppId,
+      doc.id || doc.code,
+      'Admissions Reviewer'
+    )
+    showToast(`${doc.type} (${doc.code}) attached and verified to Success!`)
     loadStudentDocuments(selectedAppId)
     if (onDataRefresh) onDataRefresh()
   }
@@ -552,9 +579,21 @@ export function StudentDocumentVerificationWorkspace({
                     </p>
                   </div>
 
-                  <span className="text-[11px] text-slate-500">
-                    Mandatory: <strong className="text-slate-800">{studentDocs.filter((d) => d.required).length}</strong>
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-500 mr-1">
+                      Mandatory: <strong className="text-slate-800">{studentDocs.filter((d) => d.required).length}</strong>
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleSimulateAllAttachedSuccess}
+                      disabled={allVerified || totalDocs === 0}
+                      className="h-7 text-xs text-emerald-700 border-emerald-200 hover:bg-emerald-50 gap-1.5 font-semibold"
+                      title="Attach all credentials (including Transfer Certificate) and verify to Success"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Simulate All Attached (Success)
+                    </Button>
+                  </div>
                 </div>
 
                 {loadingDocs ? (
@@ -678,14 +717,24 @@ export function StudentDocumentVerificationWorkspace({
                                   )}
 
                                   {!doc.uploaded ? (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleOpenUpload(doc)}
-                                      className="h-7 text-[11px] gap-1 text-blue-600 border-blue-200 hover:bg-blue-50"
-                                    >
-                                      <Upload className="h-3 w-3" /> Upload
-                                    </Button>
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleAttachAndVerifySingle(doc)}
+                                        className="h-7 text-[11px] gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-none px-2.5"
+                                        title="Attach simulated credential and verify to Success immediately"
+                                      >
+                                        <CheckCircle2 className="h-3 w-3" /> Attach & Verify
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleOpenUpload(doc)}
+                                        className="h-7 text-[11px] gap-1 text-slate-600 border-slate-200 hover:bg-slate-50"
+                                      >
+                                        <Upload className="h-3 w-3" /> Upload
+                                      </Button>
+                                    </>
                                   ) : (
                                     <>
                                       {!isVerified && (

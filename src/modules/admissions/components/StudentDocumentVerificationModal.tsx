@@ -190,25 +190,27 @@ export function StudentDocumentVerificationModal({
   }
 
   const handleVerifyAll = async () => {
-    for (const d of documents) {
-      if (d.uploaded && d.verificationStatus !== 'Verified') {
-        await documentService.verifyDocument(d.id, 'Admissions Committee')
-      }
-    }
-    const updated = documents.map((d) =>
-      d.uploaded
-        ? {
-            ...d,
-            verificationStatus: 'Verified',
-            verifiedBy: 'Admissions Committee',
-            verifiedDate: new Date().toISOString().split('T')[0],
-            rejectionReason: null,
-          }
-        : d
+    if (!application?.id) return
+    const updated = await documentService.attachAndVerifyAllDocuments(
+      application.id,
+      'Admissions Committee'
     )
     setDocuments(updated)
     await syncApplicationDocSummary(updated)
-    showToast('All eligible documents verified.')
+    showToast('All credentials (including TC) attached and verified to Success!')
+  }
+
+  const handleAttachAndVerifySingle = async (doc: any) => {
+    if (!application?.id) return
+    await documentService.attachAndVerifyDocument(
+      application.id,
+      doc.id || doc.code,
+      'Admissions Committee'
+    )
+    const updated = await documentService.getApplicationDocuments(application.id)
+    setDocuments(updated)
+    await syncApplicationDocSummary(updated)
+    showToast(`${doc.type} (${doc.code}) attached and verified to Success!`)
   }
 
   if (!application) return null
@@ -413,10 +415,11 @@ export function StudentDocumentVerificationModal({
                 size="sm"
                 variant="outline"
                 onClick={handleVerifyAll}
-                disabled={verifiedCount === totalCount || totalCount === 0}
-                className="h-7 text-xs text-emerald-700 border-emerald-200 hover:bg-emerald-50 gap-1"
+                disabled={verifiedCount === totalCount && totalCount > 0}
+                className="h-7 text-xs text-emerald-700 border-emerald-200 hover:bg-emerald-50 gap-1.5 font-semibold"
+                title="Attach all credentials (including Transfer Certificate) and verify to Success"
               >
-                <CheckCircle2 className="h-3.5 w-3.5" /> Verify All Uploaded
+                <CheckCircle2 className="h-3.5 w-3.5" /> Simulate All Attached (Success)
               </Button>
             </div>
           </div>
@@ -502,16 +505,25 @@ export function StudentDocumentVerificationModal({
 
                         <td className="px-3.5 py-3 text-right align-middle">
                           <div className="flex items-center justify-end gap-1.5">
-                            {doc.uploaded && !isVerified && (
+                            {!doc.uploaded ? (
+                              <Button
+                                size="sm"
+                                onClick={() => handleAttachAndVerifySingle(doc)}
+                                className="h-6 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white px-2 gap-1 font-medium"
+                                title="Attach simulated credential and verify to Success immediately"
+                              >
+                                <CheckCircle2 className="h-3 w-3" /> Attach & Verify
+                              </Button>
+                            ) : !isVerified ? (
                               <Button
                                 size="sm"
                                 onClick={() => handleVerify(doc.id)}
-                                className="h-6 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white px-2 gap-1"
+                                className="h-6 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white px-2 gap-1 font-medium"
                                 title="Approve & Verify"
                               >
                                 <CheckCircle2 className="h-3 w-3" /> Approve
                               </Button>
-                            )}
+                            ) : null}
 
                             {doc.uploaded && !isRejected && (
                               <Button
