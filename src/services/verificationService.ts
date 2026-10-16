@@ -2,6 +2,7 @@
 // Typed wrappers for institution verification: applicant side and superadmin side.
 import { apiClient, API_BASE_URL, ApiError, CSRF_HEADER_NAME } from './apiClient'
 import type {
+  DecisionResponse,
   DocumentMeta,
   QueueResponse,
   RequirementsResponse,
@@ -48,7 +49,9 @@ export const verificationService = {
     return uploadWithProgress<DocumentMeta>('/verification/documents', form, onProgress)
   },
   remove: (id: string) => apiClient.delete<{ success: boolean }>(`/verification/documents/${id}`),
-  submit: () => apiClient.post<VerificationStatusView>('/verification/submit', {}),
+  submit: () => apiClient.post<VerificationStatusView & { demoReview?: boolean }>('/verification/submit', {}),
+  /** TEST MODE ONLY: the backend answers 404 unless it is enabled. */
+  demoDecide: (kind: 'approve' | 'decline') => apiClient.post<DecisionResponse>(`/verification/demo/${kind}`, {}),
   /** Authenticated preview; returns a Blob (the file is never publicly reachable). */
   documentBlob: (id: string) => apiClient.get<Blob>(`/verification/documents/${id}/download`, { responseType: 'blob' }),
 }
@@ -68,7 +71,7 @@ export const superadminVerificationService = {
   reviewDocument: (orgId: string, docId: string, decision: 'Accepted' | 'Rejected', note?: string) =>
     apiClient.post<{ success: boolean }>(`/superadmin/verifications/${orgId}/documents/${docId}/review`, { decision, note }),
   approve: (orgId: string, round: number, note?: string) =>
-    apiClient.post<VerificationStatusView>(`/superadmin/verifications/${orgId}/approve`, { round, note }),
+    apiClient.post<DecisionResponse>(`/superadmin/verifications/${orgId}/approve`, { round, note }),
   reject: (orgId: string, reason: string, round: number) =>
-    apiClient.post<VerificationStatusView>(`/superadmin/verifications/${orgId}/reject`, { reason, round }),
+    apiClient.post<DecisionResponse>(`/superadmin/verifications/${orgId}/reject`, { reason, round }),
 }

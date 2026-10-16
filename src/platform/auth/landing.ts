@@ -14,7 +14,7 @@ const STEP_ROUTE: Record<number, string> = {
 export function landingPathFor(user: Record<string, any> | null | undefined): string {
   if (!user) return '/auth'
   const level = user.accessLevel as AccessLevel | undefined
-  if (level === 'SUPERADMIN') return '/superadmin/verifications'
+  if (level === 'SUPERADMIN') return '/admin/superadmin'
   if (level === 'APPLICANT_RESTRICTED') {
     const status = user.verification?.status as string | undefined
     if (status && status !== 'Draft') return '/onboarding/verification-status'

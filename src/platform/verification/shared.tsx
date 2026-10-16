@@ -1,7 +1,7 @@
 // src/platform/verification/shared.tsx
 // Small presentational pieces shared by the applicant flow and the superadmin panel.
 import React, { useEffect, useRef, useState } from 'react'
-import { AlertTriangle, CheckCircle2, Clock, Loader2, X, XCircle } from 'lucide-react'
+import { AlertTriangle, Check, CheckCircle2, Clock, Copy, Loader2, X, XCircle } from 'lucide-react'
 import type { DocumentReviewStatus, VerificationStatus } from '@/types/verification'
 
 export function formatBytes(n: number) {
@@ -63,6 +63,44 @@ export function InlineError({ message }: { message?: string | null }) {
     <div role="alert" className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
       <span>{message}</span>
+    </div>
+  )
+}
+
+/** Copies text to the clipboard and briefly confirms. Falls back to a hidden textarea on non-secure origins. */
+export function CopyButton({ text, label = 'Copy', className = '' }: { text: string; label?: string; className?: string }) {
+  const [copied, setCopied] = useState(false)
+  const copy = async () => {
+    try {
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text)
+      else {
+        const ta = document.createElement('textarea')
+        ta.value = text
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
+      }
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setCopied(false)
+    }
+  }
+  return (
+    <button type="button" onClick={copy} className={`inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 ${className}`}>
+      {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+      {copied ? 'Copied' : label}
+    </button>
+  )
+}
+
+export function NoticeBanner({ tone, message, onDismiss }: { tone: 'success' | 'warning'; message: string; onDismiss: () => void }) {
+  const cls = tone === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-300 bg-amber-50 text-amber-900'
+  return (
+    <div role="status" className={`mb-4 flex items-start justify-between gap-3 rounded-xl border px-3 py-2 text-xs ${cls}`}>
+      <span>{message}</span>
+      <button type="button" onClick={onDismiss} aria-label="Dismiss" className="shrink-0 rounded p-0.5 hover:bg-black/5"><X className="h-3.5 w-3.5" /></button>
     </div>
   )
 }

@@ -8,7 +8,7 @@ import { useAuth } from '@/store/AuthContext'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchRequirements } from '@/store/slices/verificationSlice'
 import { refreshProfileThunk } from '@/store/slices/authSlice'
-import { InlineError, formatDateTime } from '@/platform/verification/shared'
+import { CopyButton, InlineError, formatDateTime } from '@/platform/verification/shared'
 
 const POLL_MS = 30_000
 
@@ -74,6 +74,10 @@ export function VerificationStatusPage() {
                 Our verification team is checking your organization details and documents. You can use MyCampace as soon as it is approved. This page updates automatically.
               </p>
               <dl className="mx-auto mt-6 grid max-w-sm grid-cols-2 gap-3 text-left text-xs">
+                <div className="col-span-2 flex items-center justify-between gap-2 rounded-xl bg-slate-50 p-3">
+                  <div><dt className="text-slate-400">Application ID</dt><dd className="mt-0.5 select-all font-mono font-semibold text-slate-900">{status.applicationId ?? '—'}</dd></div>
+                  {status.applicationId && <CopyButton text={status.applicationId} label="Copy" />}
+                </div>
                 <div className="rounded-xl bg-slate-50 p-3"><dt className="text-slate-400">Submitted</dt><dd className="mt-0.5 font-semibold text-slate-900">{formatDateTime(status.submittedAt)}</dd></div>
                 <div className="rounded-xl bg-slate-50 p-3"><dt className="text-slate-400">Status</dt><dd className="mt-0.5 font-semibold text-amber-700">Awaiting verification</dd></div>
               </dl>

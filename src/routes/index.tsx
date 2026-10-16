@@ -211,6 +211,10 @@ export const router = createBrowserRouter(gateRoutes([
 
   // 2b. Superadmin verification console (SuperAdmin role only; enforced by the backend)
   {
+    path: '/admin/superadmin',
+    element: <RequireSuperadmin><VerificationQueuePage /></RequireSuperadmin>,
+  },
+  {
     path: '/superadmin/verifications',
     element: <RequireSuperadmin><VerificationQueuePage /></RequireSuperadmin>,
   },

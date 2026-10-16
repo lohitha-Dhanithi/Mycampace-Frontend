@@ -6,9 +6,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Check, Eye, FileText, Loader2, RefreshCw, ThumbsDown, ThumbsUp, X } from 'lucide-react'
 import { superadminVerificationService } from '@/services/verificationService'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { decideApplication, openApplication, reviewClosed, reviewDocument, reviewErrorCleared } from '@/store/slices/superadminVerificationSlice'
+import { decideApplication, noticeDismissed, openApplication, reviewClosed, reviewDocument, reviewErrorCleared } from '@/store/slices/superadminVerificationSlice'
 import type { RequirementItem } from '@/types/verification'
-import { ActionDialog, DocumentPreviewModal, InlineError, RequiredBadge, ReviewBadge, VerificationBadge, formatBytes, formatDateTime } from '@/platform/verification/shared'
+import { ActionDialog, DocumentPreviewModal, InlineError, NoticeBanner, RequiredBadge, ReviewBadge, VerificationBadge, formatBytes, formatDateTime } from '@/platform/verification/shared'
 
 const Field = ({ label, value }: { label: string; value?: string | null }) => (
   <p className="text-xs"><span className="text-slate-400">{label}: </span><span className="font-medium text-slate-900">{value || '—'}</span></p>
@@ -18,7 +18,7 @@ export function VerificationDetailPage() {
   const { organizationId = '' } = useParams()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const { current: app, currentLoad, acting, conflict, error } = useAppSelector((s) => s.superadminVerification)
+  const { current: app, currentLoad, acting, conflict, error, notice } = useAppSelector((s) => s.superadminVerification)
 
   const [preview, setPreview] = useState<RequirementItem | null>(null)
   const [rejectingDoc, setRejectingDoc] = useState<RequirementItem | null>(null)
@@ -28,7 +28,7 @@ export function VerificationDetailPage() {
 
   useEffect(() => {
     dispatch(openApplication(organizationId))
-    return () => { dispatch(reviewClosed()) }
+    return () => { dispatch(reviewClosed()); dispatch(noticeDismissed()) }
   }, [dispatch, organizationId])
 
   const status = app?.status.status
@@ -40,7 +40,8 @@ export function VerificationDetailPage() {
   const canApprove = reviewable && requiredNotAccepted.length === 0 && !anyRejected && (app?.summary.missing.length ?? 1) === 0
 
   const decide = async (kind: 'approve' | 'reject') => {
-    const res = await dispatch(decideApplication(kind === 'approve' ? { orgId: organizationId, kind } : { orgId: organizationId, kind, reason: reason.trim() }))
+    const label = app?.organization.name
+    const res = await dispatch(decideApplication(kind === 'approve' ? { orgId: organizationId, kind, label } : { orgId: organizationId, kind, reason: reason.trim(), label }))
     if (decideApplication.fulfilled.match(res)) { setConfirm(null); setReason('') }
     else setConfirm(null) // the error banner explains (e.g. conflict)
   }
@@ -83,7 +84,7 @@ export function VerificationDetailPage() {
     <div className="min-h-screen bg-slate-50 text-slate-800">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-          <button type="button" onClick={() => navigate('/superadmin/verifications')} className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900"><ArrowLeft className="h-4 w-4" /> Back to queue</button>
+          <button type="button" onClick={() => navigate('/admin/superadmin')} className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900"><ArrowLeft className="h-4 w-4" /> Back to queue</button>
           {status && <VerificationBadge status={status} />}
         </div>
       </header>
@@ -97,8 +98,12 @@ export function VerificationDetailPage() {
             <div className="space-y-6">
               <div>
                 <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">{app.organization.name}</h1>
-                <p className="mt-1 text-xs text-slate-500">Submission round {app.status.round} · submitted {formatDateTime(app.status.submittedAt)}</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Application ID <span className="font-mono font-semibold text-slate-800">{app.status.applicationId ?? '—'}</span> · round {app.status.round} · submitted {formatDateTime(app.status.submittedAt)}
+                </p>
               </div>
+
+              {notice && <NoticeBanner tone={notice.tone} message={notice.message} onDismiss={() => dispatch(noticeDismissed())} />}
 
               {conflict && (
                 <div role="alert" className="flex items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">

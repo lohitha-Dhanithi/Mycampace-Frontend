@@ -24,6 +24,8 @@ export interface SuperadminVerificationState {
   acting: boolean
   conflict: boolean
   error: ErrorInfo | null
+  /** Result of the last decision. `warning` = decision saved but the notification email could not be sent. */
+  notice: { tone: 'success' | 'warning'; message: string } | null
 }
 
 const initialState: SuperadminVerificationState = {
@@ -34,6 +36,7 @@ const initialState: SuperadminVerificationState = {
   acting: false,
   conflict: false,
   error: null,
+  notice: null,
 }
 
 type Cfg = { state: { superadminVerification: SuperadminVerificationState }; rejectValue: ErrorInfo }
@@ -71,21 +74,31 @@ export const reviewDocument = createAsyncThunk<
 })
 
 /** Final decisions. The UI only dispatches these after an explicit confirmation dialog. */
-export const decideApplication = createAsyncThunk<
-  void,
-  { orgId: string; kind: 'approve' } | { orgId: string; kind: 'reject'; reason: string },
-  Cfg
->('superadminVerification/decide', async (d, { getState, dispatch, rejectWithValue }) => {
-  const round = getState().superadminVerification.current?.status.round
-  if (round === undefined) return rejectWithValue({ message: 'Application is not loaded' })
-  try {
-    if (d.kind === 'approve') await api.approve(d.orgId, round)
-    else await api.reject(d.orgId, d.reason, round)
-    await dispatch(openApplication(d.orgId))
-  } catch (e) {
-    return rejectWithValue(toErrorInfo(e))
-  }
-})
+export type DecideArg = (
+  | { orgId: string; kind: 'approve' }
+  | { orgId: string; kind: 'reject'; reason: string }
+) & {
+  /** Where the decision was made. The queue passes the round it listed; the detail page uses the round it loaded. */
+  from?: 'queue' | 'detail'
+  round?: number
+  label?: string
+}
+
+export const decideApplication = createAsyncThunk<{ emailSent: boolean }, DecideArg, Cfg>(
+  'superadminVerification/decide',
+  async (d, { getState, dispatch, rejectWithValue }) => {
+    const round = d.round ?? getState().superadminVerification.current?.status.round
+    if (round === undefined) return rejectWithValue({ message: 'Application is not loaded' })
+    try {
+      const res = d.kind === 'approve' ? await api.approve(d.orgId, round) : await api.reject(d.orgId, d.reason, round)
+      if (d.from === 'queue') await dispatch(fetchQueue())
+      else await dispatch(openApplication(d.orgId))
+      return { emailSent: res.emailSent }
+    } catch (e) {
+      return rejectWithValue(toErrorInfo(e))
+    }
+  },
+)
 
 const slice = createSlice({
   name: 'superadminVerification',
@@ -105,10 +118,15 @@ const slice = createSlice({
       state.error = null
       state.conflict = false
     },
+    noticeDismissed(state) {
+      state.notice = null
+      state.error = null
+    },
   },
   extraReducers: (b) => {
     b.addCase(fetchQueue.pending, (s) => {
       s.queue.load = 'loading'
+      s.error = null
     })
       .addCase(fetchQueue.fulfilled, (s, a) => {
         s.queue = { items: a.payload.items, total: a.payload.total, counts: a.payload.counts, load: 'succeeded' }
@@ -135,9 +153,15 @@ const slice = createSlice({
         s.acting = true
         s.error = null
         s.conflict = false
+        s.notice = null
       })
-      .addCase(decideApplication.fulfilled, (s) => {
+      .addCase(decideApplication.fulfilled, (s, a) => {
         s.acting = false
+        const what = a.meta.arg.kind === 'approve' ? 'approved' : 'declined'
+        const who = a.meta.arg.label ? `${a.meta.arg.label} ` : 'Application '
+        s.notice = a.payload.emailSent
+          ? { tone: 'success', message: `${who}${what}. The administrator has been notified by email.` }
+          : { tone: 'warning', message: `${who}${what} and saved, but the notification email could not be sent. Please inform the administrator manually.` }
       })
       .addCase(decideApplication.rejected, (s, a) => {
         s.acting = false
@@ -147,5 +171,5 @@ const slice = createSlice({
   },
 })
 
-export const { filtersChanged, reviewClosed, reviewErrorCleared } = slice.actions
+export const { filtersChanged, reviewClosed, reviewErrorCleared, noticeDismissed } = slice.actions
 export default slice.reducer

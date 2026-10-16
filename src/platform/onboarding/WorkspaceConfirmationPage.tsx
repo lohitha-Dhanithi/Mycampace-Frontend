@@ -8,8 +8,9 @@ import { usePlatformApi } from '@/services/onboardingService'
 import { verificationService } from '@/services/verificationService'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchReview, submitApplication, verificationErrorCleared } from '@/store/slices/verificationSlice'
+import { useAuth } from '@/store/AuthContext'
 import type { RequirementItem } from '@/types/verification'
-import { ActionDialog, DocumentPreviewModal, InlineError, ReviewBadge, formatBytes } from '@/platform/verification/shared'
+import { ActionDialog, CopyButton, DocumentPreviewModal, InlineError, ReviewBadge, formatBytes } from '@/platform/verification/shared'
 
 function Section({ title, icon, editTo, children }: { title: string; icon: React.ReactNode; editTo: string; children: React.ReactNode }) {
   const navigate = useNavigate()
@@ -34,10 +35,37 @@ export function WorkspaceConfirmationPage() {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const platform = usePlatformApi()
+  const { logout } = useAuth()
   const { review, reviewLoad, submitting, error } = useAppSelector((s) => s.verification)
   const [agreed, setAgreed] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [preview, setPreview] = useState<RequirementItem | null>(null)
+  const [submittedId, setSubmittedId] = useState<string | null>(null)
+  // TEST MODE: second popup with Approve / Decline for the applicant themselves (only when the backend allows it).
+  const [demoReview, setDemoReview] = useState(false)
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const [reviewBusy, setReviewBusy] = useState<'approve' | 'decline' | null>(null)
+  const [reviewError, setReviewError] = useState('')
+  const [declinedEmail, setDeclinedEmail] = useState<boolean | null>(null)
+
+  const demoDecide = async (kind: 'approve' | 'decline') => {
+    setReviewBusy(kind)
+    setReviewError('')
+    try {
+      const res = await verificationService.demoDecide(kind)
+      if (kind === 'approve') {
+        // Approved: end this session and go to sign-in; signing in again now opens the workspace.
+        await logout()
+        navigate('/auth', { replace: true })
+      } else {
+        setDeclinedEmail(res.emailSent)
+      }
+    } catch (e: any) {
+      setReviewError(e?.message || 'Could not complete this action.')
+    } finally {
+      setReviewBusy(null)
+    }
+  }
 
   useEffect(() => {
     if (platform) dispatch(fetchReview())
@@ -52,7 +80,11 @@ export function WorkspaceConfirmationPage() {
   const send = async () => {
     setConfirmOpen(false)
     const result = await dispatch(submitApplication())
-    if (submitApplication.fulfilled.match(result)) navigate('/onboarding/verification-status', { replace: true })
+    // Show the backend-issued Application ID before moving on to the status page.
+    if (submitApplication.fulfilled.match(result)) {
+      setSubmittedId(result.payload.applicationId ?? '')
+      setDemoReview(!!result.payload.demoReview)
+    }
     else dispatch(fetchReview()) // refresh what is missing
   }
 
@@ -147,7 +179,7 @@ export function WorkspaceConfirmationPage() {
 
               <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 p-3 text-xs text-slate-600">
                 <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-slate-300" />
-                <span>I confirm the information and documents are accurate and that I am authorised to register this institution. I understand access to MyCampace is granted only after verification.</span>
+                <span>I confirm the information and documents are accurate and that I am authorised to register this organization. I understand access to MyCampace is granted only after verification.</span>
               </label>
 
               {error && reviewLoad !== 'failed' && <InlineError message={error.message} />}
@@ -181,6 +213,69 @@ export function WorkspaceConfirmationPage() {
         onCancel={() => setConfirmOpen(false)}
         onConfirm={send}
       />
+
+      {submittedId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="submitted-title">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600"><CheckCircle2 className="h-7 w-7" /></div>
+            <h3 id="submitted-title" className="text-lg font-extrabold text-slate-900">Registration submitted</h3>
+            <p className="mt-2 text-sm text-slate-500">Your organization registration has been received and is awaiting verification. Keep your Application ID for any follow-up.</p>
+            <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Application ID</p>
+              <p className="mt-1 select-all font-mono text-xl font-bold tracking-wide text-slate-900">{submittedId || 'Unavailable'}</p>
+              <p className="mt-2 inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700">Pending Verification</p>
+            </div>
+            <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+              {submittedId && <CopyButton text={submittedId} label="Copy Application ID" className="justify-center" />}
+              <button
+                type="button"
+                onClick={() => (demoReview ? setReviewOpen(true) : navigate('/onboarding/verification-status', { replace: true }))}
+                className="h-9 rounded-lg bg-blue-600 px-5 text-xs font-semibold text-white hover:bg-blue-500"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reviewOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 p-4" role="dialog" aria-modal="true" aria-labelledby="demo-review-title">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl">
+            <p className="mb-3 inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-amber-700">Test mode</p>
+            <h3 id="demo-review-title" className="text-lg font-extrabold text-slate-900">
+              {declinedEmail === null ? 'Review your registration' : 'Verification failed'}
+            </h3>
+            {declinedEmail === null ? (
+              <>
+                <p className="mt-2 text-sm text-slate-500">Approve takes you to the sign-in page, where you can sign in to the workspace; Decline sends a “verification failed” email to your registered email.
+                  
+                </p>
+                {reviewError && <div className="mt-4"><InlineError message={reviewError} /></div>}
+                <div className="mt-6 flex justify-center gap-2">
+                  <button type="button" disabled={!!reviewBusy} onClick={() => demoDecide('approve')} className="flex h-10 items-center gap-2 rounded-lg bg-emerald-600 px-5 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50">
+                    {reviewBusy === 'approve' && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Approve
+                  </button>
+                  <button type="button" disabled={!!reviewBusy} onClick={() => demoDecide('decline')} className="flex h-10 items-center gap-2 rounded-lg border border-rose-200 px-5 text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:opacity-50">
+                    {reviewBusy === 'decline' && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Decline
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="mt-2 text-sm text-slate-500">
+                  {declinedEmail
+                    ? 'The application was declined and a “verification failed” email has been sent to your registered email.'
+                    : 'The application was declined, but the email could not be sent. Check the SMTP settings in the backend .env.'}
+                </p>
+                <button type="button" onClick={() => navigate('/onboarding/verification-status', { replace: true })} className="mt-6 h-10 rounded-lg bg-blue-600 px-5 text-xs font-semibold text-white hover:bg-blue-500">
+                  Go to status page
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {preview?.document && (
         <DocumentPreviewModal

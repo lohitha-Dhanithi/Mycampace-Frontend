@@ -229,7 +229,7 @@ export function DocumentUploadPage() {
           <div className="mb-6">
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Upload Documents for Your Organization</h1>
             <p className="mt-2 text-sm text-slate-500">
-              These documents are used by our verification team to approve your institution. Files are stored privately and are visible only to you and the verification team.
+              These documents are used by our verification team to approve your organization. Files are stored privately and are visible only to you and the verification team.
             </p>
           </div>
 

@@ -45,7 +45,7 @@ export function OrganizationSetupPage() {
     'University',
     'Coaching Institute',
     'Training Institute',
-    'Other',
+    // 'Other',
   ]
 
   const [saving, setSaving] = useState(false)
@@ -172,6 +172,21 @@ export function OrganizationSetupPage() {
               </div>
             </div>
 
+              <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Registered Address *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="Street, area, landmark"
+                className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              />
+            </div>
+
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -191,7 +206,7 @@ export function OrganizationSetupPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  State / Province *
+                  State *
                 </label>
                 <select
                   required
@@ -225,20 +240,7 @@ export function OrganizationSetupPage() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Registered Address *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="Street, area, landmark"
-                className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              />
-            </div>
-
+          
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">Postal Code *</label>
@@ -252,7 +254,7 @@ export function OrganizationSetupPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">GST / Tax ID *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">GST Number *</label>
                 <input
                   type="text"
                   required
@@ -293,13 +295,7 @@ export function OrganizationSetupPage() {
                   onChange={(e) => setFormData({ ...formData, primaryContactPhone: e.target.value })}
                   className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 />
-                <input
-                  type="text"
-                  readOnly
-                  aria-readonly="true"
-                  value="Organization Admin"
-                  className="h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-600 sm:col-span-3 cursor-default focus:outline-none"
-                />
+                
               </div>
             </div>
 

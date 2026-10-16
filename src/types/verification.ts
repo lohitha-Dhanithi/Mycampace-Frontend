@@ -46,6 +46,8 @@ export interface RequirementsSummary {
 }
 
 export interface VerificationStatusView {
+  /** Issued by the backend on first submission; null before that. */
+  applicationId: string | null
   status: VerificationStatus
   submittedAt: string | null
   reviewedAt: string | null
@@ -53,6 +55,8 @@ export interface VerificationStatusView {
   round: number
   editable: boolean
   onboardingStep: number
+  /** Only present on the submit response: true when the backend is in test mode and allows self approve/decline. */
+  demoReview?: boolean
 }
 
 export interface RequirementsResponse {
@@ -93,8 +97,12 @@ export interface ReviewPack {
   admin?: { name: string; email: string; mobile: string | null } | null
 }
 
+/** Returned by approve / decline: the saved status plus whether the notification email was accepted by the mail provider. */
+export type DecisionResponse = VerificationStatusView & { emailSent: boolean }
+
 export interface QueueItem {
   id: string
+  applicationId: string | null
   name: string
   type: string
   city: string
