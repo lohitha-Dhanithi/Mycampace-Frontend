@@ -122,7 +122,7 @@ export function OrganizationSetupPage() {
         <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-10 shadow-xl shadow-slate-200/70">
           <div className="mb-8">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Tell us about your institution
+              Tell us about your organization
             </h1>
             <p className="mt-2 text-sm text-slate-500">
               Enter the legal organization that will own this workspace. Institutions and campuses are collected on the next step.
@@ -132,7 +132,7 @@ export function OrganizationSetupPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Institution / Organization Name *
+               Organization Name *
               </label>
               <div className="relative">
                 <Building2 className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
@@ -147,23 +147,11 @@ export function OrganizationSetupPage() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Legal / Trust Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.legalName}
-                onChange={(e) => setFormData({ ...formData, legalName: e.target.value })}
-                placeholder="Registered legal name"
-                className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              />
-            </div>
+        
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-2">
-                Institution Type *
+                Organization Type *
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 {institutionTypes.map((type) => (
@@ -278,7 +266,7 @@ export function OrganizationSetupPage() {
 
             <div className="pt-4 border-t border-slate-200">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
-                Primary Institutional Contact
+                Primary Organization Contact
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <input

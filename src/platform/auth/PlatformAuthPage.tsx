@@ -35,11 +35,12 @@ import {
 } from 'lucide-react'
 import { authService } from '@/services/authService'
 import { useAuth } from '@/store/AuthContext'
+import { landingPathFor } from '@/platform/auth/landing'
 
 export function PlatformAuthPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { login, adoptSession } = useAuth()
+  const { adoptSession } = useAuth()
 
   // Mode: 'signin' | 'signup' | '2fa'
   const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : searchParams.get('mode') === '2fa' ? '2fa' : 'signin'
@@ -94,8 +95,9 @@ export function PlatformAuthPage() {
       }
 
       const user = await authService.signInWithEmail(email, password)
-      if (login) await login({ email, password })
-      navigate(localStorage.getItem('mycampace_pending_onboarding') === 'true' ? '/onboarding/organization' : '/app')
+      adoptSession()
+      // The server decides what this account may use: approved admin -> ERP, unapproved -> onboarding/status, superadmin -> console.
+      navigate(landingPathFor(user))
     } catch (err) {
       setError(err.message || 'Authentication failed. Please verify credentials.')
     } finally {
@@ -149,8 +151,8 @@ export function PlatformAuthPage() {
         adoptSession()
         navigate('/onboarding/organization')
       } else {
-        if (login) await login({ email: user.email })
-        navigate('/app')
+        adoptSession()
+        navigate(landingPathFor(user))
       }
     } catch (err) {
       setError(isSignup ? 'Google Sign-Up failed. Please try again.' : 'Google Sign-In failed. Please try again.')
@@ -595,7 +597,7 @@ export function PlatformAuthPage() {
                       Create your MyCampace account
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Start building your institution workspace
+                      Start building your organization workspace
                     </p>
                   </div>
 

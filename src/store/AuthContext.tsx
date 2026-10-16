@@ -1,73 +1,71 @@
 // src/store/AuthContext.tsx
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authService } from '../services/authService';
-import { usePlatformApi } from '../services/onboardingService';
-import type { AuthUser, LoginCredentials } from '../types/auth';
+// Compatibility layer: `useAuth()` keeps its original shape, but state now lives in Redux
+// (see slices/authSlice.ts). Existing consumers need no changes.
+import React, { useEffect, type ReactNode } from 'react'
+import { Provider } from 'react-redux'
+import { store } from './index'
+import { useAppDispatch, useAppSelector } from './hooks'
+import { loginThunk, logoutThunk, refreshProfileThunk, sessionAdopted, sessionExpired } from './slices/authSlice'
+import { setUnauthorizedHandler } from '../services/apiClient'
+import { authService } from '../services/authService'
+import type { AuthUser, LoginCredentials } from '../types/auth'
 
 export interface AuthContextType {
-  user: AuthUser | null;
-  isAuthenticated: boolean;
-  login: (credentials: LoginCredentials) => Promise<AuthUser>;
-  logout: () => Promise<void>;
-  adoptSession: () => AuthUser;
-  loading: boolean;
+  user: AuthUser | null
+  isAuthenticated: boolean
+  login: (credentials: LoginCredentials) => Promise<AuthUser>
+  logout: () => Promise<void>
+  adoptSession: () => AuthUser
+  loading: boolean
+  /** false until the server has confirmed whether a cookie session exists */
+  initialized: boolean
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
-
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AuthUser | null>(() => authService.getCurrentUser());
-  const [loading, setLoading] = useState<boolean>(false);
-
-  const login = async (credentials: LoginCredentials): Promise<AuthUser> => {
-    setLoading(true);
-    try {
-      const loggedUser = await authService.login(credentials);
-      setUser(loggedUser);
-      return loggedUser;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = async (): Promise<void> => {
-    await authService.logout();
-    setUser(null);
-  };
-
-  const adoptSession = (): AuthUser => {
-    const current = authService.getCurrentUser();
-    setUser(current);
-    return current;
-  };
-
+function SessionBootstrap({ children }: { children: ReactNode }) {
+  const dispatch = useAppDispatch()
   useEffect(() => {
-    if (!usePlatformApi()) return;
-    let active = true;
-    authService.refreshProfile().then((profile) => {
-      if (active && profile) setUser(profile);
-    });
+    // Any 401 from the API drops every screen to signed-out.
+    setUnauthorizedHandler(() => {
+      authService.clearLocal()
+      dispatch(sessionExpired())
+    })
+    // Keep Redux in step when authService changes the profile itself (e.g. onboarding's refreshProfile()).
+    const unsubscribe = authService.subscribe(() => dispatch(sessionAdopted()))
+    // The cookie is HttpOnly: ask the server who (if anyone) is signed in.
+    dispatch(refreshProfileThunk())
     return () => {
-      active = false;
-    };
-  }, []);
+      unsubscribe()
+      setUnauthorizedHandler(null)
+    }
+  }, [dispatch])
+  return <>{children}</>
+}
 
-  const value: AuthContextType = {
-    user,
-    isAuthenticated: !!user,
-    login,
-    logout,
-    adoptSession,
-    loading,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+/** Mounts the Redux store. Kept under the old name so App.tsx stays unchanged in shape. */
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <Provider store={store}>
+    <SessionBootstrap>{children}</SessionBootstrap>
+  </Provider>
+)
 
 export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  const dispatch = useAppDispatch()
+  const user = useAppSelector((s) => s.auth.user)
+  const loading = useAppSelector((s) => s.auth.loading)
+  const initialized = useAppSelector((s) => s.auth.initialized)
+
+  return {
+    user,
+    initialized,
+    isAuthenticated: !!user,
+    loading,
+    login: (credentials) => dispatch(loginThunk(credentials)).unwrap(),
+    logout: async () => {
+      await dispatch(logoutThunk()).unwrap()
+    },
+    adoptSession: () => {
+      dispatch(sessionAdopted())
+      return store.getState().auth.user as AuthUser
+    },
   }
-  return context;
-};
+}

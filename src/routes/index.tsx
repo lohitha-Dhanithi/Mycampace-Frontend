@@ -17,6 +17,11 @@ import { InstitutionsSetupPage } from '@/platform/onboarding/InstitutionsSetupPa
 import { ProductSelectionPage } from '@/platform/onboarding/ProductSelectionPage'
 import { TeamInvitePage } from '@/platform/onboarding/TeamInvitePage'
 import { WorkspaceConfirmationPage } from '@/platform/onboarding/WorkspaceConfirmationPage'
+import { DocumentUploadPage } from '@/platform/onboarding/DocumentUploadPage'
+import { VerificationStatusPage } from '@/platform/onboarding/VerificationStatusPage'
+import { VerificationQueuePage } from '@/platform/superadmin/VerificationQueuePage'
+import { VerificationDetailPage } from '@/platform/superadmin/VerificationDetailPage'
+import { RequireSuperadmin, gateRoutes } from '@/routes/guards'
 
 // Platform Central Pages
 import { ProductHubPage } from '@/platform/hub/ProductHubPage'
@@ -151,7 +156,7 @@ function AdmissionsLegacyRedirect() {
   return <Navigate to={rest ? `/app/admissions/${rest}` : '/app/admissions'} replace />
 }
 
-export const router = createBrowserRouter([
+export const router = createBrowserRouter(gateRoutes([
   // 1. Authentication Experience
   {
     path: '/auth',
@@ -194,6 +199,24 @@ export const router = createBrowserRouter([
   {
     path: '/onboarding/products/confirmation',
     element: <WorkspaceConfirmationPage />,
+  },
+  {
+    path: '/onboarding/documents',
+    element: <DocumentUploadPage />,
+  },
+  {
+    path: '/onboarding/verification-status',
+    element: <VerificationStatusPage />,
+  },
+
+  // 2b. Superadmin verification console (SuperAdmin role only; enforced by the backend)
+  {
+    path: '/superadmin/verifications',
+    element: <RequireSuperadmin><VerificationQueuePage /></RequireSuperadmin>,
+  },
+  {
+    path: '/superadmin/verifications/:organizationId',
+    element: <RequireSuperadmin><VerificationDetailPage /></RequireSuperadmin>,
   },
 
   // 3. Central MyCampace Product Hub & Platform Governance
@@ -405,4 +428,4 @@ export const router = createBrowserRouter([
 
   // Catch-all
   { path: '*', element: <Navigate to="/app" replace /> },
-])
+]))

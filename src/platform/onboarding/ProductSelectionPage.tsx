@@ -88,7 +88,7 @@ export function ProductSelectionPage() {
             <span className="text-xs font-bold text-blue-600 tracking-wider uppercase">
               Step 3 of 5: Product Selection
             </span>
-            <span className="text-xs text-slate-500 font-medium">Next: Invite Team</span>
+            <span className="text-xs text-slate-500 font-medium">Next: Upload Documents</span>
           </div>
           <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
             <div className="bg-blue-600 h-full w-3/5 rounded-full transition-all duration-300" />
@@ -101,7 +101,7 @@ export function ProductSelectionPage() {
             <Layers className="h-3.5 w-3.5" /> MyCampace Product Ecosystem
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            Choose the products your institution needs
+            Choose the products your organization needs
           </h1>
           <p className="mt-2 text-sm sm:text-base text-slate-500">
             You can add or activate products anytime. Each product operates independently with dedicated dashboards, workflows, and role permissions.
@@ -252,7 +252,7 @@ export function ProductSelectionPage() {
               onClick={handleContinue}
               className="h-11 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-blue-600/20 disabled:opacity-50"
             >
-              <span>Continue to Invite Team</span>
+              <span>Continue to Upload Documents</span>
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
