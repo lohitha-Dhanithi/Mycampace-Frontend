@@ -38,6 +38,7 @@ export function CandidateFeeClearanceModal({
   const navigate = useNavigate()
   const [sendingToFinance, setSendingToFinance] = useState(false)
   const [sentSuccess, setSentSuccess] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   if (!application) return null
 
@@ -52,6 +53,7 @@ export function CandidateFeeClearanceModal({
     feeStructureName: 'Standard Composite Fee',
   }
 
+  const isDocsVerified = application.documentVerificationSummary?.status === 'Verified'
   const isCleared = fee.feeStatus === 'Paid' || fee.outstandingAmount === 0
   const isPartial = fee.feeStatus === 'Partially Paid' || (fee.paidAmount > 0 && !isCleared)
   const isPending = !isCleared && !isPartial
@@ -59,12 +61,19 @@ export function CandidateFeeClearanceModal({
   const isSentToFinance = Boolean(application.sentToFinance || fee.invoiceNumber || isAdmitted || sentSuccess)
 
   const handleSendToFinanceClick = async () => {
+    if (!isDocsVerified) {
+      setErrorMessage('Validation Error: Documents must be verified before sending candidate to Finance.')
+      return
+    }
     setSendingToFinance(true)
+    setErrorMessage('')
     try {
       if (onSendToFinance) {
         await onSendToFinance(application.id)
       }
       setSentSuccess(true)
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to send to Finance')
     } finally {
       setSendingToFinance(false)
     }
@@ -245,6 +254,13 @@ export function CandidateFeeClearanceModal({
               <strong>Admissions View State Only:</strong> All payment modifications, ledger postings, concession adjustments, and reminder follow-ups must be executed in the Fee Management module.
             </div>
           </div>
+
+          {errorMessage && (
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
         </div>
 
         {/* Footer Actions */}
@@ -266,8 +282,13 @@ export function CandidateFeeClearanceModal({
                 variant="outline"
                 size="sm"
                 onClick={handleSendToFinanceClick}
-                disabled={sendingToFinance}
-                className="gap-1.5 text-xs text-indigo-700 border-indigo-200 hover:bg-indigo-50"
+                disabled={sendingToFinance || !isDocsVerified}
+                className="gap-1.5 text-xs text-indigo-700 border-indigo-200 hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={
+                  !isDocsVerified
+                    ? 'Document verification must be completed before sending candidate to Finance'
+                    : 'Send candidate to Fee Management'
+                }
               >
                 <Send className="h-3.5 w-3.5" />
                 {sendingToFinance ? 'Sending...' : 'Send to Fee Management'}

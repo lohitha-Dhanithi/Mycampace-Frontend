@@ -1,6 +1,22 @@
-const STORAGE_KEY = 'mycampace_classrooms'
+const STORAGE_KEY = 'mycampace_classrooms_v2'
 
-export const DEFAULT_CLASSROOMS = ['Physics Lab', 'Chemistry Lab', 'Computer Lab']
+export const DEFAULT_CLASSROOMS = [
+  'Room 301, Block C',
+  'Room 302, Block C',
+  'Room 201, Block C',
+  'Room 202, Block C',
+  'Room 105, Block B',
+  'Room 106, Block B',
+  'Turing Hall, Tech Block',
+  'Babbage Hall, Tech Block',
+  'Physics Lab',
+  'Chemistry Lab',
+  'Biology Lab',
+  'Computer Lab 1',
+  'Computer Lab 2',
+  'Seminar Hall A',
+  'Language Lab',
+]
 
 function readClassrooms() {
   if (typeof window === 'undefined') return [...DEFAULT_CLASSROOMS]

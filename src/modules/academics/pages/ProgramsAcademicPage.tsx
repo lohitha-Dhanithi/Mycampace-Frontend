@@ -12,6 +12,7 @@ export function ProgramsAcademicPage() {
   const [programs, setPrograms] = useState([])
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState(null)
 
   const fetchPrograms = async () => {
     setLoading(true)
@@ -29,20 +30,54 @@ export function ProgramsAcademicPage() {
     fetchPrograms()
   }, [])
 
+  const handleEdit = (prog) => {
+    setEditingItem(prog)
+    setOpen(true)
+  }
+
+  const handleCreate = () => {
+    setEditingItem(null)
+    setOpen(true)
+  }
+
+  const handleToggleStatus = async (prog) => {
+    const nextStatus = prog.status === 'Active' ? 'Inactive' : 'Active'
+    await academicService.updateAcademicProgram(prog.id, { status: nextStatus })
+    fetchPrograms()
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Programs Management"
-        description="Operational view of curriculum frameworks, durations, and course streams."
+        description="Overall academic pathways, curriculum frameworks, durations, and qualification structures."
         actions={
-          <Button size="sm" onClick={() => setOpen(true)} className="text-xs">
-            <Plus className="h-3.5 w-3.5 mr-1.5" /> Add program
+          <Button size="sm" onClick={handleCreate} className="text-xs bg-blue-600 hover:bg-blue-700 text-white">
+            <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Program
           </Button>
         }
       />
 
-      {loading ? <LoadingState message="Loading operational academic programs..." /> : <ProgramAcademicTable programs={programs} loading={loading} />}
-      <StructureFormDialog kind="program" open={open} onOpenChange={setOpen} onCreated={fetchPrograms} />
+      {loading ? (
+        <LoadingState message="Loading operational academic programs..." />
+      ) : (
+        <ProgramAcademicTable
+          programs={programs}
+          loading={loading}
+          onEdit={handleEdit}
+          onToggleStatus={handleToggleStatus}
+        />
+      )}
+      <StructureFormDialog
+        kind="program"
+        open={open}
+        initialData={editingItem}
+        onOpenChange={(isOpen) => {
+          setOpen(isOpen)
+          if (!isOpen) setEditingItem(null)
+        }}
+        onCreated={fetchPrograms}
+      />
     </div>
   )
 }

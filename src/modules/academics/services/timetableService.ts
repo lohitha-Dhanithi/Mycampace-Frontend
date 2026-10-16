@@ -1,6 +1,6 @@
 import { DAYS, PERIODS } from '../config/timetableConfig'
 
-const STORAGE_KEY = 'mycampace_timetable_v1'
+const STORAGE_KEY = 'mycampace_timetable_v2'
 
 export interface TimetableSlot {
   id: string
@@ -38,16 +38,23 @@ const TEACHERS = [
   { facultyId: 'usr-fac-3', facultyName: 'Arvind Swamy', subjectId: 'sub-math', subjectName: 'Mathematics (041)' },
   { facultyId: 'usr-fac-4', facultyName: 'Kavita Chawla', subjectId: 'sub-chem', subjectName: 'Chemistry (043)' },
   { facultyId: 'usr-fac-5', facultyName: 'Manoj Pillai', subjectId: 'sub-bio', subjectName: 'Biology (044)' },
+  { facultyId: 'usr-1', facultyName: 'Vikram Aditya', subjectId: 'sub-cs', subjectName: 'Computer Science (083)' },
 ]
 
 function seedSlots(): TimetableSlot[] {
   const sections = [
     { sectionId: 'sec-12A', sectionName: 'Section A (PCM)', classId: 'cls-12', className: 'Class 12', room: 'Room 301, Block C' },
     { sectionId: 'sec-12B', sectionName: 'Section B (PCB)', classId: 'cls-12', className: 'Class 12', room: 'Room 302, Block C' },
+    { sectionId: 'sec-11A', sectionName: 'Section A (PCM)', classId: 'cls-11', className: 'Class 11', room: 'Room 201, Block C' },
+    { sectionId: 'sec-11B', sectionName: 'Section B (PCB)', classId: 'cls-11', className: 'Class 11', room: 'Room 202, Block C' },
+    { sectionId: 'sec-10A', sectionName: 'Section A', classId: 'cls-10', className: 'Class 10', room: 'Room 105, Block B' },
+    { sectionId: 'sec-10B', sectionName: 'Section B', classId: 'cls-10', className: 'Class 10', room: 'Room 106, Block B' },
+    { sectionId: 'sec-cse-1a', sectionName: 'Section 1A', classId: 'cls-sem1-cse', className: 'Semester 1 (First Year)', room: 'Turing Hall, Tech Block' },
+    { sectionId: 'sec-cse-1b', sectionName: 'Section 1B', classId: 'cls-sem1-cse', className: 'Semester 1 (First Year)', room: 'Babbage Hall, Tech Block' },
   ]
   const slots: TimetableSlot[] = []
   DAYS.forEach((day, dayIndex) => {
-    PERIODS.slice(0, 4).forEach((period) => {
+    PERIODS.slice(0, 5).forEach((period) => {
       sections.forEach((section, sectionIndex) => {
         const teacher = TEACHERS[(dayIndex + period.number + sectionIndex * 2) % TEACHERS.length]
         slots.push({

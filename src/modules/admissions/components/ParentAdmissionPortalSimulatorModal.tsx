@@ -22,6 +22,7 @@ import {
   Laptop,
 } from 'lucide-react'
 import { getCourseFeeStructure, applicationService } from '../services/applicationService'
+import { documentService } from '../services/documentService'
 
 export interface ParentAdmissionPortalSimulatorModalProps {
   open: boolean
@@ -74,7 +75,7 @@ export function ParentAdmissionPortalSimulatorModal({
     },
     {
       id: 'doc-tc',
-      type: 'Transfer Certificate & Migration',
+      type: 'Transfer Certificate',
       code: 'TC',
       required: true,
       fileName: 'Transfer_Certificate_Signed.pdf',
@@ -127,8 +128,14 @@ export function ParentAdmissionPortalSimulatorModal({
     )
   }
 
-  const handleUploadAll = () => {
+  const handleUploadAll = async () => {
     setDocList((prev) => prev.map((d) => ({ ...d, uploaded: true })))
+    if (application?.id) {
+      await documentService.attachAndVerifyAllDocuments(
+        application.id,
+        'Parent Portal Auto-Clearance'
+      )
+    }
   }
 
   const allRequiredUploaded = docList
@@ -142,12 +149,19 @@ export function ParentAdmissionPortalSimulatorModal({
     setSubmitting(true)
     try {
       const uploadedDocs = docList.filter((d) => d.uploaded)
+      if (application?.id) {
+        await documentService.attachAndVerifyAllDocuments(
+          application.id,
+          'Parent Portal Auto-Clearance'
+        )
+      }
       await applicationService.parentSubmitPolicyAndDocuments(application.id, {
         parentName,
         parentSignature: parentName,
         termsAccepted: true,
         parentNotes,
         uploadedDocs,
+        simulateSuccess: true,
       })
       setSubmittedSuccess(true)
       if (onSubmissionComplete) {

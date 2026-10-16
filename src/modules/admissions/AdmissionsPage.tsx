@@ -4,7 +4,8 @@ import { PageHeader } from '@/components/common/PageHeader'
 import { AdmissionsDashboard } from './components/AdmissionsDashboard'
 import { LeadTable } from './components/LeadTable'
 import { LeadPipeline } from './components/LeadPipeline'
-import { EnquiryTable } from './components/EnquiryTable'
+import { CloseLeadModal } from './components/CloseLeadModal'
+import { ScheduleFollowUpModal } from './components/ScheduleFollowUpModal'
 import { CounsellingTable } from './components/CounsellingTable'
 import { ApplicationTable } from './components/ApplicationTable'
 import { DocumentTable } from './components/DocumentTable'
@@ -25,6 +26,9 @@ import {
   ShieldCheck,
   BarChart3,
   ExternalLink,
+  FileCheck2,
+  X,
+  ArrowRight,
 } from 'lucide-react'
 import { useTenantContext } from '@/store/TenantContext'
 import { leadService } from './services/leadService'
@@ -52,7 +56,7 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
   const getTabFromPath = () => {
     const p = location.pathname
     if (p.includes('/admissions/leads')) return 'leads'
-    if (p.includes('/admissions/enquiries')) return 'enquiries'
+    if (p.includes('/admissions/enquiries')) return 'leads'
     if (p.includes('/admissions/counselling')) return 'counselling'
     if (p.includes('/admissions/applications')) return 'applications'
     if (p.includes('/admissions/fees') || p.includes('/admissions/fee-collection')) return 'fees'
@@ -66,24 +70,32 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
   const [leadsViewMode, setLeadsViewMode] = useState('table') // 'table' or 'pipeline'
 
   // Data states
-  const [leads, setLeads] = useState([])
-  const [enquiries, setEnquiries] = useState([])
-  const [counselling, setCounselling] = useState([])
-  const [applications, setApplications] = useState([])
-  const [documents, setDocuments] = useState([])
-  const [followUps, setFollowUps] = useState([])
+  const [leads, setLeads] = useState<any[]>([])
+  const [enquiries, setEnquiries] = useState<any[]>([])
+  const [counselling, setCounselling] = useState<any[]>([])
+  const [applications, setApplications] = useState<any[]>([])
+  const [documents, setDocuments] = useState<any[]>([])
+  const [followUps, setFollowUps] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [toastMessage, setToastMessage] = useState('')
+  const [conversionNotification, setConversionNotification] = useState<{
+    applicationId: string
+    applicationNumber: string
+    applicantName: string
+    leadNumber: string
+  } | null>(null)
 
-  // Quick follow-up scheduling dialog
-  const [followUpModalOpen, setFollowUpModalOpen] = useState(false)
-  const [followUpTarget, setFollowUpTarget] = useState(null)
-  const [followUpPurpose, setFollowUpPurpose] = useState('')
-  const [followUpDate, setFollowUpDate] = useState(new Date().toISOString().split('T')[0])
+  // Schedule follow-up dialog state
+  const [scheduleFollowUpModalOpen, setScheduleFollowUpModalOpen] = useState(false)
+  const [selectedProspectForFollowUp, setSelectedProspectForFollowUp] = useState<any>(null)
 
-  const showToast = (msg) => {
+  // Close lead dialog state
+  const [closeLeadModalOpen, setCloseLeadModalOpen] = useState(false)
+  const [selectedLeadForClose, setSelectedLeadForClose] = useState<any>(null)
+
+  const showToast = (msg: string) => {
     setToastMessage(msg)
-    setTimeout(() => setToastMessage(''), 3500)
+    setTimeout(() => setToastMessage(''), 4500)
   }
 
   const loadModuleData = async () => {
@@ -118,76 +130,94 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
 
   useEffect(() => {
     setActiveTab(getTabFromPath())
-  }, [location.pathname, defaultTab])
+    if (location.state?.conversionNotification) {
+      setConversionNotification(location.state.conversionNotification)
+      showToast(`Application #${location.state.conversionNotification.applicationNumber} created. Lead removed from leads pipeline.`)
+    }
+  }, [location.pathname, defaultTab, location.state])
 
   // Stage advancement in leads pipeline
-  const handleStageChange = async (leadId, nextStage) => {
+  const handleStageChange = async (leadId: string, nextStage: string) => {
     try {
+      if (nextStage === 'Converted') {
+        const targetLead = leads.find((l) => l.id === leadId)
+        if (targetLead) {
+          await handleConvertLeadToApplication(targetLead)
+          return
+        }
+      }
       await leadService.updateLeadStage(leadId, nextStage)
       showToast(`Lead stage progressed to: ${nextStage}`)
       loadModuleData()
-    } catch (err) {
+    } catch (err: any) {
       alert(err.message)
     }
   }
 
-  // Convert lead to enquiry
-  const handleConvertToEnquiry = async (leadId) => {
-    const lead = leads.find((l) => l.id === leadId)
-    if (!lead) return
-    const newEnq = await enquiryService.createEnquiry({
-      leadId: lead.id,
-      applicantName: lead.fullName,
-      email: lead.email,
-      phone: lead.phone,
-      campusId: lead.campusId,
-      campusName: lead.campusName,
-      academicYearId: lead.academicYearId,
-      academicYearName: lead.academicYearName,
-      programId: lead.programId,
-      programName: lead.programName,
-      courseId: lead.courseId,
-      courseName: lead.courseName,
-      counsellorId: lead.counsellorId,
-      counsellorName: lead.counsellorName,
-      notes: lead.notes,
-    })
-    await leadService.convertLeadToEnquiry(leadId)
-    showToast(`Lead converted to Enquiry ${newEnq.enquiryNumber}`)
+  // Follow-up scheduling handlers
+  const handleOpenScheduleFollowUp = (target: any) => {
+    setSelectedProspectForFollowUp(target)
+    setScheduleFollowUpModalOpen(true)
+  }
+
+  const handleSaveFollowUp = async (followUpData: any) => {
+    await followUpService.createFollowUp(followUpData)
+    if (followUpData.leadId) {
+      await leadService.updateLead(followUpData.leadId, {
+        nextFollowup: followUpData.followupDate,
+      })
+    }
+    showToast(`Follow-up scheduled with ${followUpData.applicantName} for ${followUpData.followupDate}`)
     loadModuleData()
   }
 
-  // Convert enquiry to application
-  const handleConvertEnquiryToApplication = async (enquiryId) => {
-    const enq = enquiries.find((e) => e.id === enquiryId)
-    if (!enq) return
+  // Lead closure handlers
+  const handleOpenCloseLead = (lead: any) => {
+    setSelectedLeadForClose(lead)
+    setCloseLeadModalOpen(true)
+  }
+
+  const handleConfirmCloseLead = async (leadId: string, closureData: any) => {
+    await leadService.closeLead(leadId, closureData)
+    showToast('Lead marked as Closed (Lost).')
+    loadModuleData()
+  }
+
+  const handleReopenLead = async (lead: any) => {
+    await leadService.reopenLead(lead.id, 'Candidate re-engaged via admissions desk')
+    showToast('Lead re-opened successfully.')
+    loadModuleData()
+  }
+
+  // Convert lead directly to application
+  const handleConvertLeadToApplication = async (targetLead: any) => {
+    if (!targetLead) return
     const newApp = await applicationService.createApplication({
-      enquiryId: enq.id,
-      leadId: enq.leadId,
+      leadId: targetLead.id,
       personal: {
-        firstName: enq.applicantName.split(' ')[0] || '',
-        lastName: enq.applicantName.split(' ').slice(1).join(' ') || '',
-        dob: '2009-01-01',
-        gender: 'Male',
+        firstName: targetLead.firstName || targetLead.fullName.split(' ')[0] || '',
+        lastName: targetLead.lastName || targetLead.fullName.split(' ').slice(1).join(' ') || '',
+        dob: targetLead.dob || '2009-01-01',
+        gender: targetLead.gender || 'Male',
         nationality: 'Indian',
       },
       contact: {
-        email: enq.email,
-        mobile: enq.phone,
+        email: targetLead.email,
+        mobile: targetLead.phone,
         address: 'Residential Campus Address',
         city: 'Hyderabad',
         state: 'Telangana',
         country: 'India',
       },
       academicInterest: {
-        campusId: enq.campusId,
-        campusName: enq.campusName,
-        academicYearId: enq.academicYearId,
-        academicYearName: enq.academicYearName,
-        programId: enq.programId,
-        programName: enq.programName,
-        courseId: enq.courseId,
-        courseName: enq.courseName,
+        campusId: targetLead.campusId || 'camp-1',
+        campusName: targetLead.campusName || 'Hyderabad Main Campus',
+        academicYearId: targetLead.academicYearId || 'ay-2026',
+        academicYearName: targetLead.academicYearName || '2026–27',
+        programId: targetLead.programId || 'prog-1',
+        programName: targetLead.programName || 'Senior Secondary Education',
+        courseId: targetLead.courseId || 'crs-1',
+        courseName: targetLead.courseName || 'Science Stream (PCM / PCB)',
       },
       previousAcademic: {
         previousInstitution: 'Previous School Board',
@@ -198,21 +228,32 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
       guardian: {
         name: 'Parent / Guardian',
         relationship: 'Father',
-        mobile: enq.phone,
-        email: enq.email,
+        mobile: targetLead.phone,
+        email: targetLead.email,
       },
       declaration: {
         confirmed: true,
-        applicantSignature: enq.applicantName,
+        applicantSignature: targetLead.fullName,
       },
     })
-    await enquiryService.convertEnquiryToApplication(enquiryId)
-    showToast(`Enquiry transformed to Application ${newApp.applicationNumber}`)
-    loadModuleData()
+    await leadService.convertLeadToApplication(targetLead.id, newApp.id)
+
+    const notif = {
+      applicationId: newApp.id,
+      applicationNumber: newApp.applicationNumber,
+      applicantName: targetLead.fullName || `${targetLead.firstName} ${targetLead.lastName}`,
+      leadNumber: targetLead.leadNumber,
+    }
+    setConversionNotification(notif)
+    setTimeout(() => {
+      setConversionNotification((curr) => (curr?.applicationId === notif.applicationId ? null : curr))
+    }, 5000)
+
+    await loadModuleData()
   }
 
   // Complete counselling
-  const handleCompleteCounselling = async (id, outcome, nextAction, notes) => {
+  const handleCompleteCounselling = async (id: string, outcome: string, nextAction: string, notes: string) => {
     await counsellingService.completeCounselling(id, outcome, nextAction, notes)
     showToast('Counselling outcome recorded successfully.')
     loadModuleData()
@@ -244,39 +285,51 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
     loadModuleData()
   }
 
-  // Quick schedule follow-up trigger
-  const handleOpenScheduleFollowUp = (target) => {
-    setFollowUpTarget(target)
-    setFollowUpPurpose(`Follow up on enquiry/application requirements`)
-    setFollowUpModalOpen(true)
-  }
-
-  const handleSaveQuickFollowUp = async (e) => {
-    e.preventDefault()
-    if (!followUpTarget) return
-    await followUpService.createFollowUp({
-      leadId: followUpTarget.leadId || followUpTarget.id,
-      applicantName: followUpTarget.fullName || followUpTarget.applicantName,
-      applicantContact: followUpTarget.phone || followUpTarget.applicantContact,
-      assignedToId: 'usr-3',
-      assignedToName: 'Ananya Sharma',
-      followupDate: followUpDate,
-      followupTime: '02:00 PM',
-      type: 'Call',
-      purpose: followUpPurpose,
-      reminder: true,
-    })
-    setFollowUpModalOpen(false)
-    showToast('Follow-up scheduled successfully.')
-    loadModuleData()
-  }
 
   return (
     <div className="space-y-6">
-      {/* Toast Alert */}
-      {toastMessage && (
+      {/* Side Notification for Lead Conversion */}
+      {conversionNotification && (
+        <div className="fixed bottom-5 right-5 z-50 max-w-sm bg-slate-900 text-white p-3 rounded-xl shadow-2xl border border-slate-700 animate-in fade-in-0 slide-in-from-bottom-5 space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 rounded-md bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                <FileCheck2 className="h-3.5 w-3.5" />
+              </div>
+              <span className="font-bold text-xs text-white">Converted to Application</span>
+            </div>
+            <button
+              onClick={() => setConversionNotification(null)}
+              className="text-slate-400 hover:text-white p-0.5 rounded hover:bg-slate-800 transition-colors"
+              title="Dismiss"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="text-[11px] text-slate-300">
+            <strong className="text-white">{conversionNotification.applicantName}</strong> &rarr; Application ID:{' '}
+            <span className="font-mono font-bold text-emerald-400">{conversionNotification.applicationNumber}</span>
+          </div>
+          <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-800">
+            <span className="text-[10px] text-slate-400">Removed from active leads</span>
+            <Button
+              size="sm"
+              onClick={() => {
+                setConversionNotification(null)
+                navigate('/app/admissions/applications')
+              }}
+              className="h-6 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 gap-1 font-semibold"
+            >
+              View Application <ArrowRight className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Standard Toast (when no conversion notification is active) */}
+      {toastMessage && !conversionNotification && (
         <div className="fixed bottom-5 right-5 z-50 bg-slate-900 text-white text-xs px-4 py-3 rounded-lg shadow-xl border border-slate-700 flex items-center gap-2 animate-in fade-in-0 slide-in-from-bottom-5">
-          <CheckCircle className="h-4 w-4 text-emerald-400" />
+          <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -324,7 +377,7 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
             subtitle="Prospective candidates interested in enrolling for the upcoming academic cycle."
             badge={
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                {leads.length} Leads
+                {leads.filter((l) => l.stage !== 'Converted' && !l.applicationId && l.status !== 'Converted').length} Active Leads
               </span>
             }
             actions={
@@ -350,7 +403,7 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
                 <Button
                   size="sm"
                   onClick={() => navigate('/app/admissions/leads/new')}
-                  className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs h-8"
+                  className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs h-8 font-medium shadow-xs"
                 >
                   <UserPlus className="h-3.5 w-3.5" /> Add New Lead
                 </Button>
@@ -363,7 +416,9 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
               leads={leads}
               loading={loading}
               onScheduleFollowup={handleOpenScheduleFollowUp}
-              onConvertToEnquiry={handleConvertToEnquiry}
+              onCloseLead={handleOpenCloseLead}
+              onReopenLead={handleReopenLead}
+              onConvertToApplication={handleConvertLeadToApplication}
             />
           ) : (
             <LeadPipeline leads={leads} onStageChange={handleStageChange} />
@@ -371,38 +426,7 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
         </div>
       )}
 
-      {/* 3. ENQUIRIES */}
-      {activeTab === 'enquiries' && (
-        <div className="space-y-5">
-          <PageHeader
-            title="Student Enquiries"
-            subtitle="Qualified applicant queries ready for academic counseling, campus visits, and formal applications."
-            badge={
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
-                {enquiries.length} Enquiries
-              </span>
-            }
-            actions={
-              <Button
-                size="sm"
-                onClick={() => navigate('/app/admissions/leads/new')}
-                className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs h-8"
-              >
-                <Plus className="h-3.5 w-3.5" /> Log Enquiry
-              </Button>
-            }
-          />
-
-          <EnquiryTable
-            enquiries={enquiries}
-            loading={loading}
-            onScheduleFollowup={handleOpenScheduleFollowUp}
-            onConvertToApplication={handleConvertEnquiryToApplication}
-          />
-        </div>
-      )}
-
-      {/* 4. COUNSELLING */}
+      {/* 3. COUNSELLING */}
       {activeTab === 'counselling' && (
         <div className="space-y-5">
           <PageHeader
@@ -563,8 +587,8 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
             actions={
               <Button
                 size="sm"
-                onClick={() => handleOpenScheduleFollowUp(leads[0] || enquiries[0])}
-                className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs h-8"
+                onClick={() => handleOpenScheduleFollowUp(leads[0])}
+                className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs h-8 font-medium shadow-xs"
               >
                 <Plus className="h-3.5 w-3.5" /> Schedule Follow-up
               </Button>
@@ -609,44 +633,21 @@ export function AdmissionsPage({ defaultTab = 'dashboard' }) {
         </div>
       )}
 
-      {/* Quick Follow-up Dialog */}
-      <Dialog open={followUpModalOpen} onOpenChange={setFollowUpModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Quick Schedule Follow-up</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSaveQuickFollowUp} className="space-y-3 text-xs">
-            <p className="text-slate-600">
-              Schedule follow-up for <strong>{followUpTarget?.fullName || followUpTarget?.applicantName}</strong>.
-            </p>
-            <div className="space-y-1">
-              <label className="font-semibold text-slate-700">Follow-up Date *</label>
-              <Input
-                type="date"
-                required
-                value={followUpDate}
-                onChange={(e) => setFollowUpDate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="font-semibold text-slate-700">Purpose / Objective *</label>
-              <Input
-                required
-                value={followUpPurpose}
-                onChange={(e) => setFollowUpPurpose(e.target.value)}
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" size="sm" onClick={() => setFollowUpModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-                Save Follow-up
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Schedule Follow-up Modal */}
+      <ScheduleFollowUpModal
+        open={scheduleFollowUpModalOpen}
+        onOpenChange={setScheduleFollowUpModalOpen}
+        targetProspect={selectedProspectForFollowUp}
+        onSaveFollowUp={handleSaveFollowUp}
+      />
+
+      {/* Close Lead Modal */}
+      <CloseLeadModal
+        open={closeLeadModalOpen}
+        onOpenChange={setCloseLeadModalOpen}
+        lead={selectedLeadForClose}
+        onConfirmClose={handleConfirmCloseLead}
+      />
     </div>
   )
 }

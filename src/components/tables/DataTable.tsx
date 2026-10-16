@@ -220,10 +220,10 @@ export function DataTable<T = any>({
                 {columns.map((col, idx) => (
                   <th
                     key={idx}
-                    className={`px-4 py-3 select-none ${col.sortable ? 'cursor-pointer hover:bg-slate-100/70' : ''} ${col.className || ''}`}
+                    className={`px-4 py-3 select-none whitespace-nowrap text-[11px] font-bold text-slate-700 tracking-wider ${col.sortable ? 'cursor-pointer hover:bg-slate-100/80 transition-colors' : ''} ${col.className || ''}`}
                     onClick={() => col.sortable && col.accessor && handleSort(col.accessor)}
                   >
-                    <div className="flex items-center gap-1.5">
+                    <div className={`flex items-center gap-1.5 ${col.className?.includes('text-right') ? 'justify-end' : col.className?.includes('text-center') ? 'justify-center' : 'justify-start'}`}>
                       <span>{col.header}</span>
                       {col.sortable && (
                         <span className="text-slate-400">
@@ -286,7 +286,7 @@ export function DataTable<T = any>({
                         </td>
                       )}
                       {columns.map((col, cIdx) => (
-                        <td key={cIdx} className={`px-4 py-3 text-slate-800 ${col.className || ''} ${col.cellClassName || ''}`}>
+                        <td key={cIdx} className={`px-4 py-3.5 text-slate-800 align-middle ${col.className || ''} ${col.cellClassName || ''}`}>
                           {col.cell ? col.cell(row) : row[col.accessor] ?? '—'}
                         </td>
                       ))}

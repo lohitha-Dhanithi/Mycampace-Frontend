@@ -6,10 +6,31 @@ export interface DialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
+  side?: 'center' | 'right';
+  className?: string;
 }
 
-const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
+const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children, side = 'center', className }) => {
   if (!open) return null
+
+  if (side === 'right') {
+    return (
+      <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
+        <div
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity animate-in fade-in-0 duration-200"
+          onClick={() => onOpenChange(false)}
+        />
+        <div
+          className={cn(
+            'relative z-50 w-full max-w-2xl sm:max-w-3xl bg-white shadow-2xl border-l border-slate-200 h-full flex flex-col animate-in slide-in-from-right duration-300 ease-out',
+            className
+          )}
+        >
+          {children}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
@@ -17,7 +38,12 @@ const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
         className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
         onClick={() => onOpenChange(false)}
       />
-      <div className="relative z-50 w-full max-w-lg bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in-0 zoom-in-95">
+      <div
+        className={cn(
+          'relative z-50 w-full max-w-lg bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in-0 zoom-in-95',
+          className
+        )}
+      >
         {children}
       </div>
     </div>

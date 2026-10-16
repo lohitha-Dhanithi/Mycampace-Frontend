@@ -26,20 +26,21 @@ export function StudentEnrolmentTable({
       header: 'Student',
       accessor: 'studentName',
       sortable: true,
-      cell: (r) => (
+      className: 'min-w-[200px]',
+      cell: (r: any) => (
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+          <div className="p-2 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
             <Users className="w-4 h-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <button
               type="button"
-              onClick={() => navigate(`/students/${r.studentId}`)}
-              className="font-bold text-xs text-slate-900 hover:text-blue-600 text-left transition-colors"
+              onClick={() => navigate(`/app/students/${r.studentId}`)}
+              className="font-bold text-xs text-slate-900 hover:text-blue-600 text-left transition-colors whitespace-nowrap block"
             >
               {r.studentName}
             </button>
-            <div className="text-[10px] text-slate-400 font-mono">
+            <div className="text-[10px] text-slate-400 font-mono whitespace-nowrap">
               Roll: {r.rollNumber || '—'}
             </div>
           </div>
@@ -50,21 +51,24 @@ export function StudentEnrolmentTable({
       header: 'Student ID',
       accessor: 'studentNumber',
       sortable: true,
-      cell: (r) => <span className="font-mono text-xs font-bold text-blue-600">{r.studentNumber}</span>,
+      className: 'whitespace-nowrap min-w-[120px]',
+      cell: (r: any) => <span className="font-mono text-xs font-bold text-blue-600 whitespace-nowrap">{r.studentNumber}</span>,
     },
     {
       header: 'Academic Year',
       accessor: 'academicYearName',
       sortable: true,
-      cell: (r) => <span className="text-xs text-slate-600">{r.academicYearName}</span>,
+      className: 'whitespace-nowrap min-w-[110px]',
+      cell: (r: any) => <span className="text-xs text-slate-600 whitespace-nowrap">{r.academicYearName}</span>,
     },
     {
       header: 'Program & Course',
       accessor: 'programName',
-      cell: (r) => (
-        <div className="text-xs max-w-[170px]">
-          <span className="font-semibold text-slate-800 block truncate">{r.programName}</span>
-          <span className="text-[10px] text-slate-400 block truncate">{r.courseName}</span>
+      className: 'min-w-[220px]',
+      cell: (r: any) => (
+        <div className="text-xs">
+          <span className="font-semibold text-slate-800 block whitespace-nowrap">{r.programName}</span>
+          <span className="text-[10px] text-slate-500 block whitespace-nowrap">{r.courseName}</span>
         </div>
       ),
     },
@@ -72,14 +76,16 @@ export function StudentEnrolmentTable({
       header: 'Class',
       accessor: 'className',
       sortable: true,
-      cell: (r) => <span className="text-xs font-semibold text-slate-800">{r.className}</span>,
+      className: 'whitespace-nowrap min-w-[110px]',
+      cell: (r: any) => <span className="text-xs font-semibold text-slate-800 whitespace-nowrap">{r.className}</span>,
     },
     {
       header: 'Section',
       accessor: 'sectionName',
       sortable: true,
-      cell: (r) => (
-        <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200">
+      className: 'whitespace-nowrap min-w-[140px]',
+      cell: (r: any) => (
+        <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200 whitespace-nowrap">
           {r.sectionName}
         </span>
       ),
@@ -87,17 +93,19 @@ export function StudentEnrolmentTable({
     {
       header: 'Campus',
       accessor: 'campusName',
-      cell: (r) => <span className="text-xs text-slate-600">{r.campusName}</span>,
+      className: 'whitespace-nowrap min-w-[160px]',
+      cell: (r: any) => <span className="text-xs text-slate-600 whitespace-nowrap">{r.campusName}</span>,
     },
     {
       header: 'Status',
       accessor: 'status',
       sortable: true,
-      cell: (r) => <StatusBadge status={r.status} />,
+      className: 'whitespace-nowrap min-w-[90px]',
+      cell: (r: any) => <StatusBadge status={r.status} />,
     },
     {
       header: 'Actions',
-      className: 'text-right',
+      className: 'text-right whitespace-nowrap min-w-[130px]',
       cell: (r) => (
         <div className="flex items-center justify-end gap-1.5">
           <Button

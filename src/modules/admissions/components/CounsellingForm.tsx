@@ -7,14 +7,13 @@ import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { userService } from '@/services/userService'
 import { leadService } from '../services/leadService'
-import { enquiryService } from '../services/enquiryService'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Calendar, Save } from 'lucide-react'
 
-export function CounsellingForm({ onSubmit }) {
+export function CounsellingForm({ onSubmit }: { onSubmit?: (data: any) => void }) {
   const navigate = useNavigate()
-  const [candidates, setCandidates] = useState([])
-  const [counsellors, setCounsellors] = useState([])
+  const [candidates, setCandidates] = useState<any[]>([])
+  const [counsellors, setCounsellors] = useState<any[]>([])
   const [selectedCandidateId, setSelectedCandidateId] = useState('')
 
   const [formData, setFormData] = useState({
@@ -35,34 +34,22 @@ export function CounsellingForm({ onSubmit }) {
 
   useEffect(() => {
     const loadResources = async () => {
-      const [leads, enquiries, users] = await Promise.all([
+      const [leads, users] = await Promise.all([
         leadService.getLeads(),
-        enquiryService.getEnquiries(),
         userService.getUsers({ status: 'Active' }),
       ])
 
-      const candidateList = [
-        ...enquiries.map((e) => ({
-          type: 'Enquiry',
-          id: e.id,
-          enquiryId: e.id,
-          leadId: e.leadId,
-          name: e.applicantName,
-          phone: e.phone,
-          program: e.programName,
-          campus: e.campusName,
-        })),
-        ...leads.map((l) => ({
+      const candidateList = leads
+        .filter((l: any) => l.status !== 'Closed' && l.stage !== 'Lost')
+        .map((l: any) => ({
           type: 'Lead',
           id: l.id,
           leadId: l.id,
-          enquiryId: l.enquiryId,
           name: l.fullName,
           phone: l.phone,
           program: l.programName,
           campus: l.campusName,
-        })),
-      ]
+        }))
 
       setCandidates(candidateList)
       setCounsellors(users)
@@ -73,7 +60,6 @@ export function CounsellingForm({ onSubmit }) {
         setFormData((prev) => ({
           ...prev,
           leadId: first.leadId || '',
-          enquiryId: first.enquiryId || '',
           applicantName: first.name,
           applicantContact: first.phone,
           programName: first.program || 'Senior Secondary Education',
@@ -86,14 +72,13 @@ export function CounsellingForm({ onSubmit }) {
     loadResources()
   }, [])
 
-  const handleCandidateChange = (candId) => {
+  const handleCandidateChange = (candId: string) => {
     setSelectedCandidateId(candId)
     const cand = candidates.find((c) => c.id === candId)
     if (cand) {
       setFormData((prev) => ({
         ...prev,
         leadId: cand.leadId || '',
-        enquiryId: cand.enquiryId || '',
         applicantName: cand.name,
         applicantContact: cand.phone,
         programName: cand.program || '',

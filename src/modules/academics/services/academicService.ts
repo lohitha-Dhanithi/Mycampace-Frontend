@@ -113,11 +113,32 @@ export const academicService = {
   },
 
   createAcademicProgram: (data) => coreAcademicService.addProgram(data),
+  updateAcademicProgram: (id, data) => coreAcademicService.updateProgram(id, data),
+  deactivateAcademicProgram: (id) => coreAcademicService.deactivateProgram(id),
+
   createAcademicCourse: (data) => coreAcademicService.addCourse(data),
+  updateAcademicCourse: (id, data) => coreAcademicService.updateCourse(id, data),
+  deactivateAcademicCourse: (id) => coreAcademicService.deactivateCourse(id),
+
   createAcademicClass: (data) => coreAcademicService.addClass(data),
+  updateAcademicClass: (id, data) => coreAcademicService.updateClass(id, data),
+  deactivateAcademicClass: (id) => coreAcademicService.deactivateClass(id),
+
   createAcademicSection: (data) => coreAcademicService.addSection(data),
   updateAcademicSection: (id, data) => coreAcademicService.updateSection(id, data),
+  deactivateAcademicSection: (id) => coreAcademicService.deactivateSection(id),
+
   createAcademicSubject: (data) => coreAcademicService.addSubject(data),
+  updateAcademicSubject: (id, data) => coreAcademicService.updateSubject(id, data),
+  deactivateAcademicSubject: (id) => coreAcademicService.deactivateSubject(id),
+
+  // Curriculum & Subject Mappings
+  getCurriculum: (filters) => coreAcademicService.getCurriculum(filters),
+  addCurriculumMapping: (data) => coreAcademicService.addCurriculumMapping(data),
+  removeCurriculumMapping: (id) => coreAcademicService.removeCurriculumMapping(id),
+  getCompulsorySubjects: (courseId, classId) => coreAcademicService.getCompulsorySubjects(courseId, classId),
+  getElectiveSubjects: (courseId, classId) => coreAcademicService.getElectiveSubjects(courseId, classId),
+  validateAcademicHierarchy: (selection) => coreAcademicService.validateAcademicHierarchy(selection),
 
   // Facade delegation for specialized services
   ...facultyAssignmentService,

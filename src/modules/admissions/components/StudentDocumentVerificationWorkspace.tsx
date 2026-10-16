@@ -25,6 +25,7 @@ import {
   RefreshCw,
   Copy,
   Check,
+  CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,6 +38,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { documentService } from '../services/documentService'
+import { applicationService } from '../services/applicationService'
 import { StudentDocumentVerificationModal } from './StudentDocumentVerificationModal'
 import { useNavigate } from 'react-router-dom'
 
@@ -176,6 +178,32 @@ export function StudentDocumentVerificationWorkspace({
     })
     setUploadDialogOpen(false)
     showToast('Document uploaded successfully for candidate.')
+    loadStudentDocuments(selectedAppId)
+    if (onDataRefresh) onDataRefresh()
+  }
+
+  const handleSimulateAllAttachedSuccess = async () => {
+    if (!selectedAppId) return
+    await documentService.attachAndVerifyAllDocuments(selectedAppId, 'Admissions Reviewer')
+    await applicationService.updateDocumentVerification(selectedAppId, {
+      status: 'Verified',
+      verifiedCount: totalDocs || 4,
+      pendingCount: 0,
+      rejectedCount: 0,
+    })
+    showToast('All credentials (including TC) attached & verified to Success!')
+    loadStudentDocuments(selectedAppId)
+    if (onDataRefresh) onDataRefresh()
+  }
+
+  const handleAttachAndVerifySingle = async (doc: any) => {
+    if (!selectedAppId) return
+    await documentService.attachAndVerifyDocument(
+      selectedAppId,
+      doc.id || doc.code,
+      'Admissions Reviewer'
+    )
+    showToast(`${doc.type} (${doc.code}) attached and verified to Success!`)
     loadStudentDocuments(selectedAppId)
     if (onDataRefresh) onDataRefresh()
   }
@@ -552,9 +580,21 @@ export function StudentDocumentVerificationWorkspace({
                     </p>
                   </div>
 
-                  <span className="text-[11px] text-slate-500">
-                    Mandatory: <strong className="text-slate-800">{studentDocs.filter((d) => d.required).length}</strong>
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-500 mr-1">
+                      Mandatory: <strong className="text-slate-800">{studentDocs.filter((d) => d.required).length}</strong>
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleSimulateAllAttachedSuccess}
+                      disabled={allVerified || totalDocs === 0}
+                      className="h-7 text-xs text-emerald-700 border-emerald-200 hover:bg-emerald-50 gap-1.5 font-semibold"
+                      title="Attach all credentials (including Transfer Certificate) and verify to Success"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Simulate All Attached (Success)
+                    </Button>
+                  </div>
                 </div>
 
                 {loadingDocs ? (
@@ -678,14 +718,24 @@ export function StudentDocumentVerificationWorkspace({
                                   )}
 
                                   {!doc.uploaded ? (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleOpenUpload(doc)}
-                                      className="h-7 text-[11px] gap-1 text-blue-600 border-blue-200 hover:bg-blue-50"
-                                    >
-                                      <Upload className="h-3 w-3" /> Upload
-                                    </Button>
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleAttachAndVerifySingle(doc)}
+                                        className="h-7 text-[11px] gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-none px-2.5"
+                                        title="Attach simulated credential and verify to Success immediately"
+                                      >
+                                        <CheckCircle2 className="h-3 w-3" /> Attach & Verify
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleOpenUpload(doc)}
+                                        className="h-7 text-[11px] gap-1 text-slate-600 border-slate-200 hover:bg-slate-50"
+                                      >
+                                        <Upload className="h-3 w-3" /> Upload
+                                      </Button>
+                                    </>
                                   ) : (
                                     <>
                                       {!isVerified && (
@@ -726,22 +776,34 @@ export function StudentDocumentVerificationWorkspace({
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   <div className="flex items-center gap-2.5 text-slate-700">
                     <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                    <span>
-                      <strong>Dispatched to Finance Team:</strong> Candidate credentials verified and fee collection is actively handled in Fee Management.
-                    </span>
+                    <div>
+                      <div className="font-bold text-slate-800">Dispatched to Finance Department</div>
+                      <div className="text-[11px] text-slate-500">
+                        Candidate credentials verified and fee collection is actively handled in Finance.
+                      </div>
+                    </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => navigate('/app/admissions/fees')}
-                    className="h-7 text-xs border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium shrink-0 shadow-2xs"
-                  >
-                    View Fee Clearance
-                  </Button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      size="sm"
+                      onClick={() => setFullModalOpen(true)}
+                      className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-none gap-1"
+                    >
+                      <CreditCard className="h-3 w-3" /> Collect Payment
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(selectedApp?.studentId ? `/app/finance/student-fees/${selectedApp.studentId}` : '/app/finance/student-fees')}
+                      className="h-7 text-xs border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium shadow-2xs gap-1"
+                    >
+                      View in Finance <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               ) : allVerified ? (
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-2.5 text-slate-700">
+                <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2.5 text-emerald-950">
                     <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                     <span>
                       <strong>Verification Complete:</strong> All certificates authenticated. Candidate is cleared for Finance handover.
@@ -751,9 +813,9 @@ export function StudentDocumentVerificationWorkspace({
                     <Button
                       size="sm"
                       onClick={() => setFullModalOpen(true)}
-                      className="h-7 text-xs bg-slate-900 hover:bg-slate-800 text-white font-medium shadow-none"
+                      className="h-7 text-xs bg-slate-900 hover:bg-slate-800 text-white font-medium shadow-none gap-1"
                     >
-                      Dispatch to Finance
+                      Send to Finance
                     </Button>
                     <Button
                       size="sm"

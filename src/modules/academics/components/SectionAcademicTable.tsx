@@ -1,12 +1,21 @@
-// src/modules/academics/components/SectionAcademicTable.jsx
 import React from 'react'
 import { DataTable } from '@/components/tables/DataTable'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
-import { Eye, Users2 } from 'lucide-react'
+import { Eye, Users2, Edit, Power } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
-export function SectionAcademicTable({ sections = [], loading = false }) {
+export function SectionAcademicTable({
+  sections = [],
+  loading = false,
+  onEdit,
+  onToggleStatus,
+}: {
+  sections?: any[]
+  loading?: boolean
+  onEdit?: (section: any) => void
+  onToggleStatus?: (section: any) => void
+}) {
   const navigate = useNavigate()
 
   const columns = [
@@ -14,50 +23,44 @@ export function SectionAcademicTable({ sections = [], loading = false }) {
       header: 'Section',
       accessor: 'name',
       sortable: true,
-      cell: (r) => (
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-teal-50 text-teal-700 border border-teal-200">
+      className: 'min-w-[220px]',
+      cell: (r: any) => (
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-teal-50 text-teal-700 border border-teal-200 shrink-0">
             <Users2 className="w-4 h-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <button
               type="button"
-              onClick={() => navigate(`/academics/sections/${r.id}`)}
-              className="font-bold text-xs text-slate-900 hover:text-blue-600 text-left transition-colors"
+              onClick={() => navigate(`/app/academics/sections/${r.id}`)}
+              className="font-bold text-xs text-slate-900 hover:text-blue-600 text-left transition-colors whitespace-nowrap block"
             >
               {r.name}
             </button>
-            <div className="text-[10px] text-slate-400">{r.room || 'Standard Classroom'}</div>
+            <div className="text-[10px] text-slate-400 font-mono">{r.room || 'Standard Classroom'}</div>
           </div>
         </div>
       ),
     },
     {
-      header: 'Class / Grade',
+      header: 'Class / Academic Level',
       accessor: 'className',
       sortable: true,
-      cell: (r) => <span className="text-xs font-semibold text-slate-800">{r.className}</span>,
-    },
-    {
-      header: 'Academic Year',
-      accessor: 'academicYear',
-      cell: () => <span className="text-xs text-slate-600">2026–2027</span>,
-    },
-    {
-      header: 'Campus',
-      accessor: 'campus',
-      cell: () => <span className="text-xs text-slate-600">Hyderabad Main</span>,
+      className: 'whitespace-nowrap min-w-[170px]',
+      cell: (r: any) => <span className="text-xs font-semibold text-slate-800 whitespace-nowrap">{r.className}</span>,
     },
     {
       header: 'Class Teacher',
       accessor: 'classTeacher',
       sortable: true,
-      cell: (r) => <span className="text-xs text-slate-800 font-medium">{r.classTeacher || 'Assigned Mentor'}</span>,
+      className: 'whitespace-nowrap min-w-[170px]',
+      cell: (r: any) => <span className="text-xs text-slate-800 font-medium whitespace-nowrap">{r.classTeacher || 'Assigned Mentor'}</span>,
     },
     {
-      header: 'Student Capacity',
+      header: 'Capacity & Enrolment',
       accessor: 'currentStrength',
-      cell: (r) => {
+      className: 'whitespace-nowrap min-w-[150px]',
+      cell: (r: any) => {
         const current = r.currentStrength ?? 0
         const max = r.capacity ?? 40
         const percentage = Math.round((current / max) * 100)
@@ -80,29 +83,56 @@ export function SectionAcademicTable({ sections = [], loading = false }) {
       },
     },
     {
-      header: 'Subjects',
-      accessor: 'subjectsCount',
-      cell: () => <span className="text-xs font-mono text-slate-700">5 Subjects</span>,
+      header: 'Classroom',
+      accessor: 'room',
+      className: 'whitespace-nowrap min-w-[150px]',
+      cell: (r: any) => <span className="text-xs font-mono text-slate-700 whitespace-nowrap">{r.room || 'TBD'}</span>,
     },
     {
       header: 'Status',
       accessor: 'status',
       sortable: true,
-      cell: (r) => <StatusBadge status={r.status} />,
+      className: 'whitespace-nowrap min-w-[90px]',
+      cell: (r: any) => <StatusBadge status={r.status} />,
     },
     {
       header: 'Actions',
-      className: 'text-right',
-      cell: (r) => (
+      className: 'text-right whitespace-nowrap min-w-[150px]',
+      cell: (r: any) => (
         <div className="flex items-center justify-end gap-1.5">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate(`/academics/sections/${r.id}`)}
-            className="h-7 text-xs px-2"
+            onClick={() => navigate(`/app/academics/sections/${r.id}`)}
+            className="h-7 text-xs px-2 text-slate-700"
+            title="View Section Details"
           >
-            <Eye className="w-3.5 h-3.5 mr-1" /> View Operational
+            <Eye className="w-3.5 h-3.5 mr-1" /> View
           </Button>
+
+          {onEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(r)}
+              className="h-7 text-xs px-2 text-slate-700 hover:bg-slate-50"
+              title="Edit Section"
+            >
+              <Edit className="w-3.5 h-3.5 mr-1" /> Edit
+            </Button>
+          )}
+
+          {onToggleStatus && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onToggleStatus(r)}
+              className={`h-7 text-xs px-2 ${r.status === 'Active' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
+              title={r.status === 'Active' ? 'Deactivate Section' : 'Activate Section'}
+            >
+              <Power className="w-3.5 h-3.5" />
+            </Button>
+          )}
         </div>
       ),
     },
@@ -113,9 +143,9 @@ export function SectionAcademicTable({ sections = [], loading = false }) {
       columns={columns}
       data={sections}
       loading={loading}
-      searchPlaceholder="Search sections by name, room, class teacher..."
+      searchPlaceholder="Search sections by name, classroom, class..."
       emptyTitle="No sections found"
-      emptyDescription="Sections are homerooms linked to classes."
+      emptyDescription="Sections represent divisions within a class cohort (e.g. Class 10 — Section A, Class 10 — Section B)."
     />
   )
 }

@@ -40,14 +40,15 @@ export function FacultyAssignmentTable({
       header: 'Faculty Educator',
       accessor: 'facultyName',
       sortable: true,
-      cell: (r) => (
+      className: 'min-w-[220px]',
+      cell: (r: any) => (
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
             <UserCheck className="w-4 h-4" />
           </div>
-          <div>
-            <div className="font-bold text-xs text-slate-900">{r.facultyName}</div>
-            <div className="text-[10px] text-slate-400">{r.department}</div>
+          <div className="min-w-0">
+            <div className="font-bold text-xs text-slate-900 whitespace-nowrap">{r.facultyName}</div>
+            <div className="text-[10px] text-slate-400 whitespace-nowrap">{r.department}</div>
           </div>
         </div>
       ),
@@ -56,8 +57,9 @@ export function FacultyAssignmentTable({
       header: 'Subject',
       accessor: 'subjectName',
       sortable: true,
-      cell: (r) => (
-        <div>
+      className: 'whitespace-nowrap min-w-[170px]',
+      cell: (r: any) => (
+        <div className="whitespace-nowrap">
           <span className="font-semibold text-xs text-slate-800">{r.subjectName}</span>
           <div className="text-[10px] text-slate-400 font-mono">{r.subjectCode || 'SUB-001'}</div>
         </div>
@@ -67,8 +69,9 @@ export function FacultyAssignmentTable({
       header: 'Class & Section',
       accessor: 'className',
       sortable: true,
-      cell: (r) => (
-        <div className="text-xs">
+      className: 'whitespace-nowrap min-w-[160px]',
+      cell: (r: any) => (
+        <div className="text-xs whitespace-nowrap">
           <span className="font-semibold text-slate-800">{r.className}</span>
           <span className="text-slate-400 ml-1">({r.sectionName})</span>
         </div>
@@ -78,8 +81,9 @@ export function FacultyAssignmentTable({
       header: 'Role / Type',
       accessor: 'assignmentType',
       sortable: true,
-      cell: (r) => (
-        <span className="inline-flex px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+      className: 'whitespace-nowrap min-w-[140px]',
+      cell: (r: any) => (
+        <span className="inline-flex px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
           {r.assignmentType || 'Primary Teacher'}
         </span>
       ),
@@ -87,27 +91,31 @@ export function FacultyAssignmentTable({
     {
       header: 'Campus',
       accessor: 'campusName',
-      cell: (r) => <span className="text-xs text-slate-600">{r.campusName || 'Hyderabad Main'}</span>,
+      className: 'whitespace-nowrap min-w-[150px]',
+      cell: (r: any) => <span className="text-xs text-slate-600 whitespace-nowrap">{r.campusName || 'Hyderabad Main'}</span>,
     },
     {
       header: 'Academic Year',
       accessor: 'academicYearName',
-      cell: (r) => <span className="text-xs font-mono text-slate-600">{r.academicYearName || '2026-2027'}</span>,
+      className: 'whitespace-nowrap min-w-[110px]',
+      cell: (r: any) => <span className="text-xs font-mono text-slate-600 whitespace-nowrap">{r.academicYearName || '2026-2027'}</span>,
     },
     {
       header: 'Assigned Date',
       accessor: 'assignedDate',
-      cell: (r) => <span className="text-xs text-slate-500">{r.assignedDate || '2026-06-01'}</span>,
+      className: 'whitespace-nowrap min-w-[110px]',
+      cell: (r: any) => <span className="text-xs text-slate-500 whitespace-nowrap">{r.assignedDate || '2026-06-01'}</span>,
     },
     {
       header: 'Status',
       accessor: 'status',
       sortable: true,
-      cell: (r) => <StatusBadge status={r.status} />,
+      className: 'whitespace-nowrap min-w-[90px]',
+      cell: (r: any) => <StatusBadge status={r.status} />,
     },
     {
       header: 'Actions',
-      className: 'text-right',
+      className: 'text-right whitespace-nowrap min-w-[100px]',
       cell: (r) => (
         <div className="flex items-center justify-end gap-1">
           {r.status !== 'Removed' && (

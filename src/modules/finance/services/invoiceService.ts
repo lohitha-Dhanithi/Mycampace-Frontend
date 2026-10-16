@@ -87,4 +87,40 @@ export const invoiceService = {
     ;(item as any).cancellationReason = reason
     return { ...item }
   },
+
+  syncInvoiceFromAdmissions: (invData: any) => {
+    const existingIndex = invoices.findIndex((i) => i.id === invData.id)
+    const netAmount = Number(invData.netAmount || 0)
+    const invoice = {
+      id: invData.id,
+      studentId: invData.studentId,
+      studentName: invData.studentName,
+      rollNumber: invData.rollNumber || invData.studentId,
+      feeStructureName: invData.feeStructureName || 'Standard Tuition Fee',
+      academicYearName: invData.academicYearName || '2026–27',
+      campusName: invData.campusName || 'Main Campus',
+      grossAmount: Number(invData.grossAmount || 0),
+      discountAmount: Number(invData.discountAmount || 0),
+      taxAmount: Number(invData.taxAmount || 0),
+      netAmount,
+      paidAmount: Number(invData.paidAmount || 0),
+      outstandingAmount: Number(invData.outstandingAmount ?? (netAmount - (invData.paidAmount || 0))),
+      dueDate: invData.dueDate || '2026-11-15',
+      issueDate: invData.issueDate || new Date().toISOString().split('T')[0],
+      status: invData.status || 'Unpaid',
+      installmentName: invData.installmentName || 'Admission & Term 1 Composite Fee',
+      items: [
+        { description: 'Admission Assessment & Registration', amount: Math.round(netAmount * 0.25) },
+        { description: 'Tuition & Academic Facility', amount: Math.round(netAmount * 0.75) },
+      ],
+    }
+
+    if (existingIndex >= 0) {
+      invoices[existingIndex] = { ...invoices[existingIndex], ...invoice }
+    } else {
+      invoices.unshift(invoice as any)
+    }
+
+    return invoice
+  },
 }

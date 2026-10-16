@@ -32,8 +32,12 @@ import {
   Mail,
   Lock,
   ArrowRight,
+  CreditCard,
+  Receipt,
+  X,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { PaymentCollectionModal } from '@/modules/finance/components/PaymentCollectionModal'
 
 export interface StudentDocumentVerificationModalProps {
   open: boolean
@@ -49,6 +53,7 @@ export function StudentDocumentVerificationModal({
   onVerificationUpdated,
 }: StudentDocumentVerificationModalProps) {
   const navigate = useNavigate()
+  const [currentApp, setCurrentApp] = useState<any>(application)
   const [documents, setDocuments] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [rejectModalOpen, setRejectModalOpen] = useState(false)
@@ -61,6 +66,11 @@ export function StudentDocumentVerificationModal({
   const [offerPolicyModalOpen, setOfferPolicyModalOpen] = useState(false)
   const [parentPortalModalOpen, setParentPortalModalOpen] = useState(false)
   const [financeHandoverLoading, setFinanceHandoverLoading] = useState(false)
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+
+  useEffect(() => {
+    setCurrentApp(application)
+  }, [application])
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -68,15 +78,26 @@ export function StudentDocumentVerificationModal({
   }
 
   const handleApproveAllAndSendToFinance = async () => {
-    if (!application?.id) return
+    const targetApp = currentApp || application
+    if (!targetApp?.id) return
+
+    // Strict validation: check all docs verified before dispatch
+    if (!allDocsVerified) {
+      showToast(`Validation Error: All documents must be verified (${verifiedCount}/${totalCount} verified) before sending to Finance.`)
+      return
+    }
+
     setFinanceHandoverLoading(true)
     try {
-      await applicationService.approveAllDocumentsAndSendToFinance(application.id)
-      showToast('All documents approved! Student admitted & dispatched to Finance Management.')
+      const updated = await applicationService.approveAllDocumentsAndSendToFinance(targetApp.id)
+      setCurrentApp(updated)
+      showToast('All documents verified! Candidate dispatched to Finance for payment collection.')
       await loadStudentDocs()
       if (onVerificationUpdated) {
         onVerificationUpdated()
       }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to dispatch candidate to Finance')
     } finally {
       setFinanceHandoverLoading(false)
     }
@@ -190,53 +211,67 @@ export function StudentDocumentVerificationModal({
   }
 
   const handleVerifyAll = async () => {
-    for (const d of documents) {
-      if (d.uploaded && d.verificationStatus !== 'Verified') {
-        await documentService.verifyDocument(d.id, 'Admissions Committee')
-      }
-    }
-    const updated = documents.map((d) =>
-      d.uploaded
-        ? {
-            ...d,
-            verificationStatus: 'Verified',
-            verifiedBy: 'Admissions Committee',
-            verifiedDate: new Date().toISOString().split('T')[0],
-            rejectionReason: null,
-          }
-        : d
+    if (!application?.id) return
+    const updated = await documentService.attachAndVerifyAllDocuments(
+      application.id,
+      'Admissions Committee'
     )
     setDocuments(updated)
     await syncApplicationDocSummary(updated)
-    showToast('All eligible documents verified.')
+    showToast('All credentials (including TC) attached and verified to Success!')
   }
 
-  if (!application) return null
+  const handleAttachAndVerifySingle = async (doc: any) => {
+    if (!application?.id) return
+    await documentService.attachAndVerifyDocument(
+      application.id,
+      doc.id || doc.code,
+      'Admissions Committee'
+    )
+    const updated = await documentService.getApplicationDocuments(application.id)
+    setDocuments(updated)
+    await syncApplicationDocSummary(updated)
+    showToast(`${doc.type} (${doc.code}) attached and verified to Success!`)
+  }
+
+  const activeApp = currentApp || application
+  if (!activeApp) return null
 
   const courseFee = getCourseFeeStructure(
-    application.academicInterest?.courseName || application.academicInterest?.courseId,
-    application.academicInterest?.programName
+    activeApp.academicInterest?.courseName || activeApp.academicInterest?.courseId,
+    activeApp.academicInterest?.programName
   )
 
   const verifiedCount = documents.filter((d) => d.verificationStatus === 'Verified').length
   const totalCount = documents.length
   const progressPercent = totalCount > 0 ? Math.round((verifiedCount / totalCount) * 100) : 0
   const allDocsVerified = verifiedCount === totalCount && totalCount > 0
-  const termsAccepted = Boolean(application.admissionPolicy?.termsAccepted)
-  const policySent = Boolean(application.admissionPolicy?.policySentDate)
-  const isAdmitted = application.status === 'Admitted' || Boolean(application.sentToFinance)
-  const canSendToFinance = allDocsVerified && termsAccepted && !isAdmitted
+  const termsAccepted = Boolean(activeApp.admissionPolicy?.termsAccepted)
+  const policySent = Boolean(activeApp.admissionPolicy?.policySentDate)
+  const isAdmitted = activeApp.status === 'Admitted' || Boolean(activeApp.sentToFinance)
+  const canSendToFinance = allDocsVerified && !isAdmitted
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between gap-2 text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <FileCheck className="h-5 w-5 text-blue-600" />
-                Student Document Verification Portfolio
+      <Dialog open={open} onOpenChange={onOpenChange} side="right">
+        <div className="flex flex-col h-full bg-white select-text">
+          {/* Side Drawer Header */}
+          <div className="px-5 sm:px-6 py-3.5 border-b border-slate-200/90 bg-slate-50/70 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
+                <FileCheck className="h-4.5 w-4.5" />
               </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
+                  Student Document Verification Portfolio
+                </h2>
+                <p className="text-[11px] text-slate-500">
+                  Candidate credential authentication & finance clearance
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
@@ -244,19 +279,31 @@ export function StudentDocumentVerificationModal({
                   onOpenChange(false)
                   navigate(`/admissions/applications/${application.id}`)
                 }}
-                className="text-xs text-blue-600 hover:text-blue-700 h-7 gap-1"
+                className="text-xs text-blue-600 hover:text-blue-700 h-8 gap-1 hidden sm:inline-flex"
               >
                 Full Application Profile <ExternalLink className="h-3 w-3" />
               </Button>
-            </DialogTitle>
-          </DialogHeader>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onOpenChange(false)}
+                className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200/60 transition-colors"
+                title="Close Drawer"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
 
           {toast && (
-            <div className="bg-slate-900 text-white text-xs px-3 py-2 rounded-lg flex items-center gap-2 animate-in fade-in-0">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+            <div className="mx-5 sm:mx-6 mt-3 bg-slate-900 text-white text-xs px-3.5 py-2.5 rounded-lg flex items-center gap-2 animate-in fade-in-0 shadow-md shrink-0">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
               <span>{toast}</span>
             </div>
           )}
+
+          {/* Scrollable Center Body */}
+          <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
 
           {/* Student Profile Card */}
           <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 text-xs">
@@ -413,10 +460,11 @@ export function StudentDocumentVerificationModal({
                 size="sm"
                 variant="outline"
                 onClick={handleVerifyAll}
-                disabled={verifiedCount === totalCount || totalCount === 0}
-                className="h-7 text-xs text-emerald-700 border-emerald-200 hover:bg-emerald-50 gap-1"
+                disabled={verifiedCount === totalCount && totalCount > 0}
+                className="h-7 text-xs text-emerald-700 border-emerald-200 hover:bg-emerald-50 gap-1.5 font-semibold"
+                title="Attach all credentials (including Transfer Certificate) and verify to Success"
               >
-                <CheckCircle2 className="h-3.5 w-3.5" /> Verify All Uploaded
+                <CheckCircle2 className="h-3.5 w-3.5" /> Simulate All Attached (Success)
               </Button>
             </div>
           </div>
@@ -502,16 +550,25 @@ export function StudentDocumentVerificationModal({
 
                         <td className="px-3.5 py-3 text-right align-middle">
                           <div className="flex items-center justify-end gap-1.5">
-                            {doc.uploaded && !isVerified && (
+                            {!doc.uploaded ? (
+                              <Button
+                                size="sm"
+                                onClick={() => handleAttachAndVerifySingle(doc)}
+                                className="h-6 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white px-2 gap-1 font-medium"
+                                title="Attach simulated credential and verify to Success immediately"
+                              >
+                                <CheckCircle2 className="h-3 w-3" /> Attach & Verify
+                              </Button>
+                            ) : !isVerified ? (
                               <Button
                                 size="sm"
                                 onClick={() => handleVerify(doc.id)}
-                                className="h-6 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white px-2 gap-1"
+                                className="h-6 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white px-2 gap-1 font-medium"
                                 title="Approve & Verify"
                               >
                                 <CheckCircle2 className="h-3 w-3" /> Approve
                               </Button>
-                            )}
+                            ) : null}
 
                             {doc.uploaded && !isRejected && (
                               <Button
@@ -544,54 +601,135 @@ export function StudentDocumentVerificationModal({
             )}
           </div>
 
-          {/* Gating Status Alert Banner */}
+          {/* Handover Readiness Banner */}
           {!isAdmitted && (
-            !allDocsVerified || !termsAccepted ? (
-              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 text-[11px] flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <div className="font-semibold text-amber-950">Finance Handover Gating Active (Locked):</div>
-                  <div>In accordance with institution rules, candidate can ONLY be sent to Finance Management upon:</div>
-                  <div className="flex items-center gap-3 mt-1 flex-wrap font-medium">
-                    <span className={termsAccepted ? 'text-emerald-700' : 'text-amber-800'}>
-                      {termsAccepted ? '✓' : '✗'} Parent Acceptance of Terms & Policy
-                    </span>
-                    <span className="text-slate-300">•</span>
-                    <span className={allDocsVerified ? 'text-emerald-700' : 'text-amber-800'}>
-                      {allDocsVerified ? '✓' : '✗'} Approval of All Required Documents ({verifiedCount}/{totalCount || 4} Verified)
-                    </span>
+            allDocsVerified ? (
+              <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl text-emerald-950 text-xs flex items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-7 w-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="h-4 w-4" />
                   </div>
+                  <div>
+                    <div className="font-bold text-xs text-emerald-950">
+                      All Required Documents Verified (100%)
+                    </div>
+                    <div className="text-[11px] text-emerald-800">
+                      Candidate dossier is complete and authenticated. Ready for immediate handover to Finance Department to collect admission payments under <strong>{courseFee.feeStructureName}</strong>.
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right shrink-0 bg-white/70 px-2.5 py-1.5 rounded-lg border border-emerald-100">
+                  <div className="text-[10px] uppercase font-bold tracking-wider text-emerald-800">Assessed Fee</div>
+                  <div className="text-xs font-bold text-emerald-950 font-mono">₹{courseFee.totalFees.toLocaleString('en-IN')}</div>
                 </div>
               </div>
             ) : (
-              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-900 text-[11px] flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                <div>
-                  <strong className="text-emerald-950">All Conditions Met:</strong> Parent terms signed and 100% of credentials verified. Candidate is cleared for immediate Finance Handover under <strong>{courseFee.feeStructureName}</strong>.
+              <div className="p-3 bg-amber-50/90 border border-amber-200 rounded-xl text-amber-950 text-xs flex items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-7 w-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <Lock className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-xs text-amber-950 flex items-center gap-1.5">
+                      <span>Validation Active: Document Verification Required</span>
+                    </div>
+                    <div className="text-[11px] text-amber-900/90 leading-tight">
+                      Handover to Finance is <strong>locked</strong> until all required credentials are authenticated ({verifiedCount} of {totalCount} verified). Verify all documents above to enable sending to Finance.
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right shrink-0 bg-white/85 px-2.5 py-1 rounded-lg border border-amber-200">
+                  <div className="text-[9px] uppercase font-bold tracking-wider text-amber-700">Remaining</div>
+                  <div className="text-xs font-bold text-amber-900 font-mono text-center">{totalCount - verifiedCount} Docs</div>
                 </div>
               </div>
             )
           )}
 
-          <DialogFooter className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-slate-100">
-            <Button size="sm" variant="outline" onClick={() => onOpenChange(false)} className="text-xs">
-              Done Reviewing
+          {/* Post-Handover Finance State Card */}
+          {isAdmitted && (
+            <div className="p-3.5 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-2.5 text-xs">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-emerald-950">Candidate Dispatched to Finance Department</span>
+                    <div className="text-[11px] text-emerald-800">
+                      Admission No: <strong className="font-mono text-emerald-950">{activeApp.admissionDetails?.admissionNumber || 'ADM-2026-081'}</strong> • Student ID: <strong className="font-mono text-emerald-950">{activeApp.studentId || 'STU-2026-9021'}</strong>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                    activeApp.feeDetails?.feeStatus === 'Paid'
+                      ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                      : 'bg-amber-100 text-amber-900 border border-amber-300'
+                  }`}>
+                    {activeApp.feeDetails?.feeStatus === 'Paid' ? 'Fee Cleared • Paid' : 'Awaiting Admission Payment'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px] bg-white/80 p-2.5 rounded-lg border border-emerald-100">
+                <div>
+                  <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">INVOICE NUMBER</div>
+                  <div className="font-mono font-semibold text-slate-900">{activeApp.feeDetails?.invoiceNumber || 'INV-2026-4892'}</div>
+                </div>
+                <div>
+                  <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">FEE SCHEDULE</div>
+                  <div className="font-medium text-slate-800 truncate" title={activeApp.feeDetails?.feeStructureName || courseFee.feeStructureName}>
+                    {activeApp.feeDetails?.feeStructureName || courseFee.feeStructureName}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">TOTAL ASSESSED</div>
+                  <div className="font-bold text-slate-900">₹{(activeApp.feeDetails?.netPayable || courseFee.totalFees || 120000).toLocaleString('en-IN')}</div>
+                </div>
+                <div>
+                  <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">OUTSTANDING</div>
+                  <div className={`font-bold ${activeApp.feeDetails?.outstandingAmount === 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    ₹{(activeApp.feeDetails?.outstandingAmount ?? (courseFee.totalFees || 120000)).toLocaleString('en-IN')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          </div>
+
+          {/* Pinned Sticky Drawer Footer */}
+          <div className="px-5 sm:px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+            <Button size="sm" variant="outline" onClick={() => onOpenChange(false)} className="text-xs text-slate-600">
+              Close Drawer
             </Button>
 
             <div className="flex items-center gap-2">
               {isAdmitted ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                    Admitted & Dispatched to Finance ({courseFee.feeStructureName})
-                  </span>
+                  {activeApp.feeDetails?.feeStatus !== 'Paid' ? (
+                    <Button
+                      size="sm"
+                      onClick={() => setPaymentModalOpen(true)}
+                      className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 shadow-sm"
+                    >
+                      <CreditCard className="h-3.5 w-3.5" /> Collect Payment Now (₹{(activeApp.feeDetails?.outstandingAmount ?? courseFee.totalFees).toLocaleString('en-IN')})
+                    </Button>
+                  ) : (
+                    <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                      Receipt Issued: {activeApp.feeDetails?.receiptNumber}
+                    </span>
+                  )}
                   <Button
                     size="sm"
+                    variant="outline"
                     onClick={() => {
                       onOpenChange(false)
-                      navigate(application.studentId ? `/app/finance/student-fees/${application.studentId}` : '/app/finance/student-fees')
+                      navigate(activeApp.studentId ? `/app/finance/student-fees/${activeApp.studentId}` : '/app/finance/student-fees')
                     }}
-                    className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white gap-1"
+                    className="text-xs border-slate-200 text-slate-700 hover:bg-slate-50 gap-1"
                   >
                     View in Finance Module <ExternalLink className="h-3 w-3" />
                   </Button>
@@ -603,31 +741,31 @@ export function StudentDocumentVerificationModal({
                   onClick={handleApproveAllAndSendToFinance}
                   className={`text-xs gap-1.5 font-bold transition-all shadow-sm ${
                     canSendToFinance
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white ring-2 ring-emerald-300'
-                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                      ? 'bg-slate-900 hover:bg-slate-800 text-white cursor-pointer'
+                      : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-80'
                   }`}
                   title={
                     canSendToFinance
-                      ? 'Approve all credentials and send to Finance Management'
-                      : 'Locked until parent accepts terms and all documents are verified'
+                      ? `Send candidate to Finance Department for collecting admission payment (₹${courseFee.totalFees.toLocaleString('en-IN')})`
+                      : `Validation Locked: Complete document verification (${verifiedCount}/${totalCount} verified) before sending to Finance`
                   }
                 >
                   {financeHandoverLoading ? (
                     'Dispatching to Finance...'
                   ) : canSendToFinance ? (
                     <>
-                      <GraduationCap className="h-3.5 w-3.5" /> Approve Documents & Send to Finance (₹{courseFee.totalFees.toLocaleString('en-IN')})
+                      <ArrowRight className="h-3.5 w-3.5 text-emerald-400" /> Send to Finance for Payment Collection (₹{courseFee.totalFees.toLocaleString('en-IN')})
                     </>
                   ) : (
                     <>
-                      <Lock className="h-3.5 w-3.5" /> Send to Finance (Locked)
+                      <Lock className="h-3.5 w-3.5 text-slate-400" /> Send to Finance (Locked: Verify All Documents First)
                     </>
                   )}
                 </Button>
               )}
             </div>
-          </DialogFooter>
-        </DialogContent>
+          </div>
+        </div>
       </Dialog>
 
       {/* Reject Reason Dialog */}
@@ -717,6 +855,35 @@ export function StudentDocumentVerificationModal({
         onSubmissionComplete={async () => {
           showToast('Parent accepted terms and submitted documents!')
           await loadStudentDocs()
+          if (onVerificationUpdated) onVerificationUpdated()
+        }}
+      />
+
+      {/* Finance Payment Collection Modal */}
+      <PaymentCollectionModal
+        isOpen={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        student={{
+          studentId: activeApp.studentId || 'STU-2026-9021',
+          studentName: activeApp.applicantName,
+          rollNumber: activeApp.admissionDetails?.rollNumber || activeApp.studentId,
+        }}
+        invoice={{
+          id: activeApp.feeDetails?.invoiceNumber || 'INV-2026-4892',
+          outstandingAmount: activeApp.feeDetails?.outstandingAmount ?? courseFee.totalFees,
+          netAmount: activeApp.feeDetails?.netPayable ?? courseFee.totalFees,
+          studentName: activeApp.applicantName,
+        }}
+        onSuccess={async (res) => {
+          const payAmount = res?.receipt?.amount || activeApp.feeDetails?.outstandingAmount || courseFee.totalFees
+          const updated = await applicationService.recordFeePayment(activeApp.id, {
+            amount: payAmount,
+            paymentMode: res?.receipt?.paymentMethod || 'UPI / QR Code',
+            transactionRef: res?.payment?.id || res?.receipt?.transactionId,
+            notes: 'Collected upon Admissions Handover',
+          })
+          setCurrentApp(updated)
+          showToast(`Admission payment of ₹${payAmount.toLocaleString('en-IN')} collected! Receipt: ${updated.feeDetails?.receiptNumber}`)
           if (onVerificationUpdated) onVerificationUpdated()
         }}
       />

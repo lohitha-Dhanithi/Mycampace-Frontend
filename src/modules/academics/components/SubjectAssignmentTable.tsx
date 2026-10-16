@@ -48,13 +48,14 @@ export function SubjectAssignmentTable({
       header: 'Subject',
       accessor: 'subjectName',
       sortable: true,
-      cell: (r) => (
+      className: 'min-w-[240px]',
+      cell: (r: any) => (
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+          <div className="p-2 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
             <Bookmark className="w-4 h-4" />
           </div>
-          <div>
-            <span className="font-bold text-xs text-slate-900">{r.subjectName}</span>
+          <div className="min-w-0">
+            <span className="font-bold text-xs text-slate-900 whitespace-nowrap block">{r.subjectName}</span>
             <div className="text-[10px] text-slate-400 font-mono">{r.subjectCode}</div>
           </div>
         </div>
@@ -64,8 +65,9 @@ export function SubjectAssignmentTable({
       header: 'Class & Section',
       accessor: 'className',
       sortable: true,
-      cell: (r) => (
-        <div className="text-xs">
+      className: 'whitespace-nowrap min-w-[170px]',
+      cell: (r: any) => (
+        <div className="text-xs whitespace-nowrap">
           <span className="font-semibold text-slate-800">{r.className}</span>
           <span className="text-slate-500 ml-1">({r.sectionName})</span>
         </div>
@@ -75,11 +77,12 @@ export function SubjectAssignmentTable({
       header: 'Assigned Faculty Lead',
       accessor: 'facultyName',
       sortable: true,
-      cell: (r) => (
+      className: 'whitespace-nowrap min-w-[180px]',
+      cell: (r: any) => (
         r.facultyName && r.facultyName !== 'Unassigned' ? (
-          <span className="text-xs font-semibold text-slate-800">{r.facultyName}</span>
+          <span className="text-xs font-semibold text-slate-800 whitespace-nowrap">{r.facultyName}</span>
         ) : (
-          <span className="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+          <span className="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 whitespace-nowrap">
             Unassigned
           </span>
         )
@@ -88,22 +91,25 @@ export function SubjectAssignmentTable({
     {
       header: 'Credits',
       accessor: 'credits',
-      cell: (r) => <span className="text-xs font-mono font-bold text-slate-700">{r.credits} Credits</span>,
+      className: 'whitespace-nowrap min-w-[110px]',
+      cell: (r: any) => <span className="text-xs font-mono font-bold text-slate-700 whitespace-nowrap">{r.credits} Credits</span>,
     },
     {
       header: 'Weekly Hours',
       accessor: 'weeklyHours',
-      cell: (r) => <span className="text-xs text-slate-600">{r.weeklyHours || 6} hrs/week</span>,
+      className: 'whitespace-nowrap min-w-[120px]',
+      cell: (r: any) => <span className="text-xs text-slate-600 whitespace-nowrap">{r.weeklyHours || 6} hrs/week</span>,
     },
     {
       header: 'Status',
       accessor: 'status',
       sortable: true,
-      cell: (r) => <StatusBadge status={r.status} />,
+      className: 'whitespace-nowrap min-w-[100px]',
+      cell: (r: any) => <StatusBadge status={r.status} />,
     },
     {
       header: 'Actions',
-      className: 'text-right',
+      className: 'text-right whitespace-nowrap min-w-[130px]',
       cell: (r) => (
         <div className="flex items-center justify-end gap-1">
           <Button

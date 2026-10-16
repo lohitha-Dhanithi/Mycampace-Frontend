@@ -2,21 +2,16 @@
 import React, { useState, useEffect } from 'react'
 import {
   CalendarDays,
-  GraduationCap,
-  BookOpen,
-  Layers,
-  Grid,
-  FileSpreadsheet,
   Plus,
   CheckCircle2,
+  Calendar,
+  Check,
 } from 'lucide-react'
 import { PageHeader } from '@/components/common/PageHeader'
 import { DataTable } from '@/components/tables/DataTable'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Select } from '@/components/ui/select'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
@@ -25,56 +20,26 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { academicService } from '@/services/academicService'
-import { useLocation, useNavigate } from 'react-router-dom'
 
-export function AcademicConfigPage({ defaultTab }) {
-  const location = useLocation()
-  const navigate = useNavigate()
-
-  // Determine active tab from URL or prop
-  const currentTab =
-    defaultTab ||
-    (location.pathname.includes('programs')
-      ? 'programs'
-      : location.pathname.includes('courses')
-      ? 'courses'
-      : location.pathname.includes('classes')
-      ? 'classes'
-      : location.pathname.includes('sections')
-      ? 'sections'
-      : location.pathname.includes('subjects')
-      ? 'subjects'
-      : 'years')
-
-  const [activeTab, setActiveTab] = useState(currentTab)
+export function AcademicConfigPage({ defaultTab }: { defaultTab?: string } = {}) {
   const [academicYears, setAcademicYears] = useState([])
-  const [programs, setPrograms] = useState([])
-  const [courses, setCourses] = useState([])
-  const [classes, setClasses] = useState([])
-  const [sections, setSections] = useState([])
-  const [subjects, setSubjects] = useState([])
   const [loading, setLoading] = useState(true)
 
   // Quick add dialog
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [formData, setFormData] = useState({ name: '', code: '' })
+  const [formData, setFormData] = useState({
+    name: '',
+    startDate: '',
+    endDate: '',
+    admissionStatus: 'Open',
+    status: 'Upcoming',
+    isCurrent: false,
+  })
 
   const loadData = async () => {
     setLoading(true)
-    const [ay, prg, crs, cls, sec, sub] = await Promise.all([
-      academicService.getAcademicYears(),
-      academicService.getPrograms(),
-      academicService.getCourses(),
-      academicService.getClasses(),
-      academicService.getSections(),
-      academicService.getSubjects(),
-    ])
+    const ay = await academicService.getAcademicYears()
     setAcademicYears(ay)
-    setPrograms(prg)
-    setCourses(crs)
-    setClasses(cls)
-    setSections(sec)
-    setSubjects(sub)
     setLoading(false)
   }
 
@@ -84,242 +49,188 @@ export function AcademicConfigPage({ defaultTab }) {
 
   const handleCreate = async (e) => {
     e.preventDefault()
-    if (activeTab === 'years') {
-      await academicService.addAcademicYear({
-        name: formData.name,
-        startDate: '2027-06-01',
-        endDate: '2028-04-30',
-        status: 'Upcoming',
-        admissionStatus: 'Pre-registration',
-      })
-    } else if (activeTab === 'programs') {
-      await academicService.addProgram({
-        name: formData.name,
-        code: formData.code,
-        level: 'Secondary',
-        duration: '3 Years',
-      })
-    } else if (activeTab === 'classes') {
-      await academicService.addClass({
-        name: formData.name,
-        code: formData.code,
-        program: 'Secondary Education',
-      })
-    } else if (activeTab === 'sections') {
-      await academicService.addSection({
-        name: formData.name,
-        className: 'Class 10',
-        room: 'Room 108',
-        classTeacher: 'Faculty TBD',
-        capacity: 40,
-      })
-    } else if (activeTab === 'subjects') {
-      await academicService.addSubject({
-        name: formData.name,
-        code: formData.code,
-        department: 'Science',
-        type: 'Theory',
-        credits: 4,
-      })
-    }
+    await academicService.addAcademicYear({
+      name: formData.name,
+      startDate: formData.startDate || '2027-06-01',
+      endDate: formData.endDate || '2028-04-30',
+      status: formData.status,
+      admissionStatus: formData.admissionStatus,
+      isCurrent: formData.isCurrent,
+    })
     setDialogOpen(false)
-    setFormData({ name: '', code: '' })
+    setFormData({
+      name: '',
+      startDate: '',
+      endDate: '',
+      admissionStatus: 'Open',
+      status: 'Upcoming',
+      isCurrent: false,
+    })
     loadData()
   }
 
   // Columns for Academic Years
   const yearColumns = [
-    { header: 'Academic Year', accessor: 'name', sortable: true },
-    { header: 'Start Date', accessor: 'startDate' },
-    { header: 'End Date', accessor: 'endDate' },
+    {
+      header: 'Academic Year',
+      accessor: 'name',
+      sortable: true,
+      className: 'whitespace-nowrap min-w-[200px]',
+      cell: (row) => (
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+            <CalendarDays className="h-4 w-4" />
+          </div>
+          <div>
+            <span className="font-semibold text-slate-900 block">{row.name}</span>
+            <span className="text-[11px] text-slate-400">Institutional Session</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: 'Start Date',
+      accessor: 'startDate',
+      className: 'whitespace-nowrap min-w-[140px]',
+      cell: (row) => (
+        <span className="text-slate-600 font-medium">
+          {row.startDate ? new Date(row.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+        </span>
+      ),
+    },
+    {
+      header: 'End Date',
+      accessor: 'endDate',
+      className: 'whitespace-nowrap min-w-[140px]',
+      cell: (row) => (
+        <span className="text-slate-600 font-medium">
+          {row.endDate ? new Date(row.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+        </span>
+      ),
+    },
     {
       header: 'Is Current',
+      className: 'whitespace-nowrap min-w-[140px]',
       cell: (row) =>
         row.isCurrent ? (
-          <span className="px-2 py-0.5 rounded-full text-[11px] bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">
-            Active Session
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200 whitespace-nowrap">
+            <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Current Active Session
           </span>
         ) : (
-          <span className="text-slate-400 text-xs">No</span>
+          <span className="text-slate-400 text-xs whitespace-nowrap pl-2">No</span>
         ),
     },
     {
       header: 'Admission Status',
       accessor: 'admissionStatus',
+      className: 'whitespace-nowrap min-w-[150px]',
       cell: (row) => <StatusBadge status={row.admissionStatus} />,
     },
     {
       header: 'Status',
       accessor: 'status',
+      className: 'whitespace-nowrap min-w-[110px]',
       cell: (row) => <StatusBadge status={row.status} />,
     },
-  ]
-
-  // Columns for Programs
-  const programColumns = [
-    { header: 'Program Name', accessor: 'name', sortable: true },
-    { header: 'Code', accessor: 'code', cell: (r) => <span className="font-mono text-xs">{r.code}</span> },
-    { header: 'Academic Level', accessor: 'level' },
-    { header: 'Duration', accessor: 'duration' },
-    { header: 'Status', accessor: 'status', cell: (r) => <StatusBadge status={r.status} /> },
-  ]
-
-  // Columns for Classes
-  const classColumns = [
-    { header: 'Class / Grade', accessor: 'name', sortable: true },
-    { header: 'Class Code', accessor: 'code', cell: (r) => <span className="font-mono text-xs">{r.code}</span> },
-    { header: 'Program', accessor: 'program' },
-    { header: 'Active Sections', accessor: 'sectionsCount' },
-    { header: 'Total Students', accessor: 'totalStudents' },
-    { header: 'Status', accessor: 'status', cell: (r) => <StatusBadge status={r.status} /> },
-  ]
-
-  // Columns for Sections
-  const sectionColumns = [
-    { header: 'Section', accessor: 'name', sortable: true },
-    { header: 'Class', accessor: 'className' },
-    { header: 'Classroom', accessor: 'room' },
-    { header: 'Class Teacher', accessor: 'classTeacher' },
-    {
-      header: 'Occupancy',
-      cell: (r) => (
-        <span className="font-semibold text-xs text-slate-800">
-          {r.currentStrength} / {r.capacity} seats
-        </span>
-      ),
-    },
-    { header: 'Status', accessor: 'status', cell: (r) => <StatusBadge status={r.status} /> },
-  ]
-
-  // Columns for Subjects
-  const subjectColumns = [
-    { header: 'Subject Name', accessor: 'name', sortable: true },
-    { header: 'Code', accessor: 'code', cell: (r) => <span className="font-mono text-xs">{r.code}</span> },
-    { header: 'Department', accessor: 'department' },
-    { header: 'Type', accessor: 'type' },
-    { header: 'Credits / Hours', cell: (r) => `${r.credits} Credits (${r.weeklyHours || 5}h/wk)` },
-    { header: 'Status', accessor: 'status', cell: (r) => <StatusBadge status={r.status} /> },
   ]
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Academic Configuration"
-        subtitle="Manage institutional academic structures: sessions, programs, grades, sections and subject curricula"
+        title="Academic Years"
+        subtitle="Manage institutional academic sessions, admission intake windows, and operational statuses"
         actions={
           <Button size="sm" onClick={() => setDialogOpen(true)} className="text-xs">
-            <Plus className="h-3.5 w-3.5 mr-1.5" /> Add New Item
+            <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Academic Year
           </Button>
         }
       />
 
-      <Tabs
-        value={activeTab}
-        onValueChange={(val) => {
-          setActiveTab(val)
-          navigate(`/academics/${val === 'years' ? 'academic-years' : val}`)
-        }}
-        className="w-full"
-      >
-        <TabsList className="flex flex-wrap h-auto gap-1">
-          <TabsTrigger value="years">Academic Years ({academicYears.length})</TabsTrigger>
-          <TabsTrigger value="programs">Programs ({programs.length})</TabsTrigger>
-          <TabsTrigger value="courses">Courses ({courses.length})</TabsTrigger>
-          <TabsTrigger value="classes">Classes / Grades ({classes.length})</TabsTrigger>
-          <TabsTrigger value="sections">Sections ({sections.length})</TabsTrigger>
-          <TabsTrigger value="subjects">Subjects ({subjects.length})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="years">
-          <DataTable
-            columns={yearColumns}
-            data={academicYears}
-            loading={loading}
-            searchPlaceholder="Search academic year sessions..."
-            searchKey="name"
-          />
-        </TabsContent>
-
-        <TabsContent value="programs">
-          <DataTable
-            columns={programColumns}
-            data={programs}
-            loading={loading}
-            searchPlaceholder="Search programs..."
-            searchKey="name"
-          />
-        </TabsContent>
-
-        <TabsContent value="courses">
-          <DataTable
-            columns={programColumns}
-            data={courses}
-            loading={loading}
-            searchPlaceholder="Search courses..."
-            searchKey="name"
-          />
-        </TabsContent>
-
-        <TabsContent value="classes">
-          <DataTable
-            columns={classColumns}
-            data={classes}
-            loading={loading}
-            searchPlaceholder="Search classes / grades..."
-            searchKey="name"
-          />
-        </TabsContent>
-
-        <TabsContent value="sections">
-          <DataTable
-            columns={sectionColumns}
-            data={sections}
-            loading={loading}
-            searchPlaceholder="Search sections..."
-            searchKey="name"
-          />
-        </TabsContent>
-
-        <TabsContent value="subjects">
-          <DataTable
-            columns={subjectColumns}
-            data={subjects}
-            loading={loading}
-            searchPlaceholder="Search subjects..."
-            searchKey="name"
-          />
-        </TabsContent>
-      </Tabs>
+      <DataTable
+        columns={yearColumns}
+        data={academicYears}
+        loading={loading}
+        searchPlaceholder="Search academic year sessions..."
+        searchKey="name"
+      />
 
       {/* Add Modal */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogHeader>
-          <DialogTitle>Add Academic Entity</DialogTitle>
+          <DialogTitle>Add Academic Year</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleCreate}>
-          <DialogContent className="space-y-3">
+          <DialogContent className="space-y-4">
             <div>
-              <label className="text-xs font-semibold text-slate-700">Title / Name</label>
+              <label className="text-xs font-semibold text-slate-700">Academic Year Label</label>
               <Input
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g. 2027–28 or Class 11"
+                placeholder="e.g. 2027–28"
                 className="h-9 text-xs mt-1"
                 required
               />
             </div>
-            {activeTab !== 'years' && (
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-slate-700">Code</label>
+                <label className="text-xs font-semibold text-slate-700">Start Date</label>
                 <Input
-                  value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                  placeholder="e.g. PROG-01 or BIO-044"
-                  className="h-9 text-xs mt-1 uppercase font-mono"
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  className="h-9 text-xs mt-1"
                   required
                 />
               </div>
-            )}
+              <div>
+                <label className="text-xs font-semibold text-slate-700">End Date</label>
+                <Input
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  className="h-9 text-xs mt-1"
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-700">Admission Status</label>
+                <select
+                  value={formData.admissionStatus}
+                  onChange={(e) => setFormData({ ...formData, admissionStatus: e.target.value })}
+                  className="w-full h-9 mt-1 rounded-md border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Open">Open</option>
+                  <option value="Pre-registration">Pre-registration</option>
+                  <option value="Closed">Closed</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-700">Operational Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="w-full h-9 mt-1 rounded-md border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Upcoming">Upcoming</option>
+                  <option value="Archived">Archived</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                id="isCurrentYear"
+                checked={formData.isCurrent}
+                onChange={(e) => setFormData({ ...formData, isCurrent: e.target.checked })}
+                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
+              />
+              <label htmlFor="isCurrentYear" className="text-xs font-medium text-slate-700 cursor-pointer">
+                Set as Current Academic Session
+              </label>
+            </div>
           </DialogContent>
           <DialogFooter>
             <Button
@@ -331,7 +242,7 @@ export function AcademicConfigPage({ defaultTab }) {
               Cancel
             </Button>
             <Button type="submit" size="sm">
-              Save Record
+              Save Academic Year
             </Button>
           </DialogFooter>
         </form>

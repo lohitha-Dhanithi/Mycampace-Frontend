@@ -42,9 +42,11 @@ import {
   ExternalLink,
   DollarSign,
   ShieldCheck,
+  ArrowRight,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { CandidateFeeClearanceModal } from './CandidateFeeClearanceModal'
+import { StudentDocumentVerificationModal } from './StudentDocumentVerificationModal'
 
 export interface ApplicationProfileProps {
   application: any
@@ -70,6 +72,7 @@ export function ApplicationProfile({
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overview')
   const [feeModalOpen, setFeeModalOpen] = useState(false)
+  const [docVerificationOpen, setDocVerificationOpen] = useState(false)
 
   // Admission confirmation dialog
   const [admissionDialogOpen, setAdmissionDialogOpen] = useState(false)
@@ -157,13 +160,36 @@ export function ApplicationProfile({
             </Button>
           )}
 
+          {['Approved', 'Docs Uploaded', 'Policy Shared', 'Documents Required'].includes(application.status) && (
+            <Button
+              size="sm"
+              onClick={() => setDocVerificationOpen(true)}
+              className={`gap-1.5 text-xs font-semibold shadow-xs ${
+                application.documentVerificationSummary?.status === 'Verified'
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              }`}
+            >
+              {application.documentVerificationSummary?.status === 'Verified' ? (
+                <>
+                  <ArrowRight className="h-3.5 w-3.5" /> Send to Finance
+                </>
+              ) : (
+                <>
+                  <FileCheck className="h-3.5 w-3.5" /> Verify Documents
+                </>
+              )}
+            </Button>
+          )}
+
           {application.status === 'Approved' && (
             <Button
               size="sm"
+              variant="outline"
               onClick={() => setOfferModalOpen(true)}
-              className="gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+              className="gap-1 text-xs text-blue-700 border-blue-200 hover:bg-blue-50 font-semibold"
             >
-              <GraduationCap className="h-3.5 w-3.5" /> Admit / Share Policy Document
+              <GraduationCap className="h-3.5 w-3.5" /> Admit / Share Policy
             </Button>
           )}
 
@@ -178,13 +204,13 @@ export function ApplicationProfile({
             </Button>
           )}
 
-          {application.status === 'Docs Uploaded' && (
+          {application.status === 'Admitted' && (
             <Button
               size="sm"
-              onClick={() => setActiveTab('documents')}
-              className="gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+              onClick={() => setDocVerificationOpen(true)}
+              className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs"
             >
-              <FileCheck className="h-3.5 w-3.5" /> Verify Documents & Handover to Finance
+              <CreditCard className="h-3.5 w-3.5" /> Finance Handover & Payment
             </Button>
           )}
 
@@ -728,7 +754,7 @@ export function ApplicationProfile({
             <CardHeader className="pb-3 border-b border-slate-100">
               <CardTitle className="text-xs font-bold uppercase text-slate-700">Target Academic Structure</CardTitle>
             </CardHeader>
-            <CardContent className="pt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+            <CardContent className="pt-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
               <div className="p-3 bg-slate-50 rounded border border-slate-200">
                 <span className="text-slate-400 text-[11px]">Academic Year</span>
                 <div className="font-bold text-slate-900 mt-0.5">{application.academicInterest?.academicYearName}</div>
@@ -742,8 +768,12 @@ export function ApplicationProfile({
                 <div className="font-bold text-slate-900 mt-0.5">{application.academicInterest?.programName}</div>
               </div>
               <div className="p-3 bg-slate-50 rounded border border-slate-200">
-                <span className="text-slate-400 text-[11px]">Course / Stream</span>
+                <span className="text-slate-400 text-[11px]">Course Offering</span>
                 <div className="font-bold text-slate-900 mt-0.5">{application.academicInterest?.courseName}</div>
+              </div>
+              <div className="p-3 bg-slate-50 rounded border border-slate-200">
+                <span className="text-slate-400 text-[11px]">Class / Level</span>
+                <div className="font-bold text-slate-900 mt-0.5">{application.academicInterest?.className || 'Class 11'}</div>
               </div>
             </CardContent>
           </Card>
@@ -990,6 +1020,16 @@ export function ApplicationProfile({
         onOpenChange={setParentPortalModalOpen}
         application={application}
         onSubmissionComplete={() => {
+          if (onConfirmAdmission) onConfirmAdmission(application.id, application)
+        }}
+      />
+
+      {/* Student Document Verification & Finance Handover (Right-Side Drawer) */}
+      <StudentDocumentVerificationModal
+        open={docVerificationOpen}
+        onOpenChange={setDocVerificationOpen}
+        application={application}
+        onVerificationUpdated={() => {
           if (onConfirmAdmission) onConfirmAdmission(application.id, application)
         }}
       />

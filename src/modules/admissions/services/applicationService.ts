@@ -2,6 +2,9 @@
 import { INITIAL_APPLICATIONS } from '../data/applicationMockData'
 import { APPLICATION_WORKFLOW_TRANSITIONS } from '../config/admissionStatusConfig'
 import { documentService } from './documentService'
+import { studentFeeService } from '@/modules/finance/services/studentFeeService'
+import { invoiceService } from '@/modules/finance/services/invoiceService'
+import { academicService } from '@/services/academicService'
 
 let applications: any[] = [...INITIAL_APPLICATIONS]
 const delay = (ms = 120) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -406,15 +409,21 @@ export const applicationService = {
       digitalSignatureHash: `SIG-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
     }
 
-    // If documents were uploaded in this parent submission, upload them to documentService
+    // If documents were uploaded in this parent submission, upload and verify them in documentService
     if (submissionData.uploadedDocs && Array.isArray(submissionData.uploadedDocs)) {
       for (const d of submissionData.uploadedDocs) {
+        const normalizedType =
+          d.type === 'Transfer Certificate & Migration' ? 'Transfer Certificate' : d.type
         await documentService.uploadDocument(id, {
           id: d.id,
-          type: d.type,
+          type: normalizedType,
           code: d.code || 'DOC',
-          fileName: d.fileName || `${d.type.replace(/\s+/g, '_')}_Parent_Upload.pdf`,
-          fileSize: d.fileSize || '1.8 MB',
+          fileName: d.fileName || `${normalizedType.replace(/\s+/g, '_')}_Signed.pdf`,
+          fileSize: d.fileSize || '1.4 MB',
+          verificationStatus: 'Verified',
+          simulateSuccess: true,
+          verifiedBy: 'Admissions Reviewer',
+          verifiedDate: new Date().toISOString().split('T')[0],
         })
       }
     }
@@ -427,11 +436,15 @@ export const applicationService = {
     app.documentVerificationSummary = {
       totalRequired: total,
       verifiedCount: verified,
-      pendingCount: total - verified,
+      pendingCount: Math.max(0, total - verified),
       rejectedCount: 0,
       status: verified === total && total > 0 ? 'Verified' : 'Pending Verification',
       lastUpdated: new Date().toISOString().split('T')[0],
-      verifiedBy: app.documentVerificationSummary?.verifiedBy || null,
+      verifiedBy: app.documentVerificationSummary?.verifiedBy || 'Admissions Reviewer',
+    }
+
+    if (verified === total && total > 0) {
+      app.documentVerificationStatus = 'Verified'
     }
 
     app.communications = [
@@ -455,15 +468,17 @@ export const applicationService = {
     const app = applications.find((a) => a.id === id)
     if (!app) throw new Error('Application not found')
 
-    // Mark all documents as verified in documentService
+    // Strictly validate that all required documents have been verified
     const docs = await documentService.getApplicationDocuments(id)
-    for (const d of docs) {
-      if (d.verificationStatus !== 'Verified') {
-        await documentService.verifyDocument(d.id, 'Admissions Review Committee')
-      }
+    const total = docs.length
+    const verified = docs.filter((d) => d.verificationStatus === 'Verified').length
+
+    if (total === 0 || verified !== total) {
+      throw new Error(
+        `Validation Error: Candidate cannot be sent to Finance until all required documents are verified (${verified}/${total} verified). Please complete document verification first.`
+      )
     }
 
-    const total = docs.length || 4
     app.documentVerificationSummary = {
       totalRequired: total,
       verifiedCount: total,
@@ -492,7 +507,9 @@ export const applicationService = {
     const invoiceNumber = `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`
     const admissionNumber = app.admissionDetails?.admissionNumber || `ADM-2026-${Math.floor(100 + Math.random() * 900)}`
     const rollNumber = app.admissionDetails?.rollNumber || `ROLL-${Math.floor(10 + Math.random() * 90)}`
+    const studentId = app.studentId || `STU-2026-${Math.floor(1000 + Math.random() * 9000)}`
 
+    app.studentId = studentId
     app.status = 'Admitted'
     app.sentToFinance = true
     app.feeDetails = {
@@ -523,6 +540,31 @@ export const applicationService = {
       admissionNotes:
         reviewerNotes ||
         `All verification documents approved by Admissions. Handed over to Finance under ${courseFee.feeStructureName}.`,
+    }
+
+    // Sync to Finance Module Ledgers
+    try {
+      studentFeeService.syncCandidateFromAdmissions(app)
+      invoiceService.syncInvoiceFromAdmissions({
+        id: invoiceNumber,
+        studentId: app.studentId,
+        studentName: app.applicantName,
+        rollNumber,
+        feeStructureName: courseFee.feeStructureName,
+        academicYearName: '2026–27',
+        campusName: 'Main Campus',
+        grossAmount: courseFee.totalFees,
+        discountAmount: 0,
+        taxAmount: 0,
+        netAmount: courseFee.netPayable,
+        paidAmount: 0,
+        outstandingAmount: courseFee.netPayable,
+        status: 'Unpaid',
+        dueDate: '2026-11-15',
+        installmentName: 'Admission Composite Fee',
+      })
+    } catch (syncErr) {
+      console.warn('Finance sync warning:', syncErr)
     }
 
     app.communications = [
@@ -607,6 +649,17 @@ export const applicationService = {
     const app = applications.find((a) => a.id === id)
     if (!app) throw new Error('Application not found')
 
+    // Strictly validate that all required documents have been verified
+    const docs = await documentService.getApplicationDocuments(id)
+    const total = docs.length
+    const verified = docs.filter((d) => d.verificationStatus === 'Verified').length
+
+    if (total === 0 || verified !== total) {
+      throw new Error(
+        `Validation Error: Candidate cannot be sent to Finance until all required documents are verified (${verified}/${total} verified). Please complete document verification first.`
+      )
+    }
+
     const courseFee = getCourseFeeStructure(
       app.academicInterest?.courseName || app.academicInterest?.courseId,
       app.academicInterest?.programName
@@ -646,26 +699,89 @@ export const applicationService = {
     const app = applications.find((a) => a.id === id)
     if (!app) throw new Error('Application not found')
 
+    // Idempotency check: if student is already enrolled, return existing records to prevent duplicates
+    if (app.status === 'Enrolled' && app.enrolmentRecord && app.studentRecord) {
+      return {
+        application: { ...app },
+        studentRecord: app.studentRecord,
+        enrolmentRecord: app.enrolmentRecord,
+        isExisting: true,
+      }
+    }
+
+    const courseId = app.academicInterest?.courseId || 'crs-1'
+    const classId = app.academicInterest?.classId || 'cls-11'
+
+    // Automatically map compulsory subjects from curriculum configuration
+    let compulsorySubjects: any[] = []
+    try {
+      compulsorySubjects = await academicService.getCompulsorySubjects(courseId, classId)
+    } catch (e) {
+      console.warn('Could not fetch compulsory subjects for enrolment:', e)
+    }
+
+    const studentId = app.studentId || `stu-${Date.now()}`
+    const enrolmentId = `enr-${Date.now()}`
+
     app.status = 'Enrolled'
-    const studentId = `stu-${Date.now()}`
     app.studentId = studentId
+
+    const studentRecord = {
+      id: studentId,
+      studentNumber: app.admissionDetails?.rollNumber || `STU-${Date.now()}`,
+      admissionNumber: app.admissionDetails?.admissionNumber || `ADM-${Date.now()}`,
+      fullName: app.applicantName,
+      email: app.contact?.email,
+      phone: app.contact?.mobile,
+      campus: app.academicInterest?.campusName,
+      programId: app.academicInterest?.programId,
+      program: app.academicInterest?.programName,
+      courseId: courseId,
+      course: app.academicInterest?.courseName,
+      classId: classId,
+      class: app.academicInterest?.className,
+      academicYearId: app.academicInterest?.academicYearId,
+      academicYear: app.academicInterest?.academicYearName,
+      section: app.admissionDetails?.allocatedSection || 'Section A',
+      status: 'Active',
+      createdAt: new Date().toISOString(),
+    }
+
+    const enrolmentRecord = {
+      id: enrolmentId,
+      studentId,
+      academicYearId: app.academicInterest?.academicYearId,
+      academicYear: app.academicInterest?.academicYearName,
+      programId: app.academicInterest?.programId,
+      programName: app.academicInterest?.programName,
+      courseId,
+      courseName: app.academicInterest?.courseName,
+      classId,
+      className: app.academicInterest?.className,
+      section: app.admissionDetails?.allocatedSection || 'Section A',
+      status: 'Active',
+      compulsorySubjects: compulsorySubjects.map((s) => ({
+        subjectId: s.subjectId || s.id,
+        subjectName: s.subjectName || s.name,
+        subjectCode: s.subjectCode || s.code,
+        credits: s.credits || 4,
+        type: 'Compulsory',
+      })),
+      electiveSubjects: (app.academicInterest?.selectedElectives || []).map((id: string) => ({
+        subjectId: id,
+        type: 'Elective',
+      })),
+      enrolledAt: new Date().toISOString(),
+    }
+
+    app.studentRecord = studentRecord
+    app.enrolmentRecord = enrolmentRecord
 
     return {
       application: { ...app },
-      studentRecord: {
-        id: studentId,
-        studentNumber: app.admissionDetails?.rollNumber || `STU-${Date.now()}`,
-        admissionNumber: app.admissionDetails?.admissionNumber,
-        fullName: app.applicantName,
-        email: app.contact?.email,
-        phone: app.contact?.mobile,
-        campus: app.academicInterest?.campusName,
-        program: app.academicInterest?.programName,
-        course: app.academicInterest?.courseName,
-        academicYear: app.academicInterest?.academicYearName,
-        section: app.admissionDetails?.allocatedSection,
-        status: 'Active',
-      },
+      studentRecord,
+      enrolmentRecord,
+      isExisting: false,
     }
   },
 
@@ -731,6 +847,20 @@ export const applicationService = {
       },
       ...(app.communications || []),
     ]
+
+    // Sync back to Finance Module Ledgers
+    try {
+      studentFeeService.syncCandidateFromAdmissions(app)
+      if (app.feeDetails?.invoiceNumber) {
+        if (newOutstanding === 0) {
+          invoiceService.updateInvoiceStatus(app.feeDetails.invoiceNumber, 'Paid')
+        } else if (newPaid > 0) {
+          invoiceService.updateInvoiceStatus(app.feeDetails.invoiceNumber, 'Partially Paid')
+        }
+      }
+    } catch (syncErr) {
+      console.warn('Finance payment sync warning:', syncErr)
+    }
 
     return { ...app }
   },

@@ -9,6 +9,8 @@ import { useNavigate } from 'react-router-dom'
 export interface SubjectAcademicTableProps {
   subjects?: any[]
   loading?: boolean
+  onEdit?: (sub: any) => void
+  onToggleStatus?: (sub: any) => void
   onAssignFaculty?: (sub: any) => void
   onAssignToClass?: (sub: any) => void
 }
@@ -16,6 +18,8 @@ export interface SubjectAcademicTableProps {
 export function SubjectAcademicTable({
   subjects = [],
   loading = false,
+  onEdit,
+  onToggleStatus,
   onAssignFaculty,
   onAssignToClass,
 }: SubjectAcademicTableProps) {
@@ -26,16 +30,17 @@ export function SubjectAcademicTable({
       header: 'Subject',
       accessor: 'name',
       sortable: true,
-      cell: (r) => (
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+      className: 'min-w-[260px]',
+      cell: (r: any) => (
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
             <Bookmark className="w-4 h-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <button
               type="button"
-              onClick={() => navigate(`/academics/subjects/${r.id}`)}
-              className="font-bold text-xs text-slate-900 hover:text-blue-600 text-left transition-colors"
+              onClick={() => navigate(`/app/academics/subjects/${r.id}`)}
+              className="font-bold text-xs text-slate-900 hover:text-blue-600 text-left transition-colors whitespace-nowrap block"
             >
               {r.name}
             </button>
@@ -48,63 +53,84 @@ export function SubjectAcademicTable({
       header: 'Department',
       accessor: 'department',
       sortable: true,
-      cell: (r) => <span className="text-xs text-slate-700 font-medium">{r.department}</span>,
+      className: 'whitespace-nowrap min-w-[150px]',
+      cell: (r: any) => <span className="text-xs text-slate-700 font-medium whitespace-nowrap">{r.department}</span>,
     },
     {
       header: 'Subject Type',
       accessor: 'type',
       sortable: true,
-      cell: (r) => <span className="text-xs text-slate-600">{r.type}</span>,
+      className: 'whitespace-nowrap min-w-[140px]',
+      cell: (r: any) => <span className="text-xs text-slate-600 whitespace-nowrap">{r.type}</span>,
     },
     {
       header: 'Credits',
       accessor: 'credits',
       sortable: true,
-      cell: (r) => <span className="text-xs font-mono font-bold text-slate-700">{r.credits} Credits</span>,
+      className: 'whitespace-nowrap min-w-[110px]',
+      cell: (r: any) => <span className="text-xs font-mono font-bold text-slate-700 whitespace-nowrap">{r.credits} Credits</span>,
     },
     {
-      header: 'Active Classes',
-      accessor: 'classes',
-      cell: () => <span className="text-xs font-semibold text-slate-700">Class 11, 12</span>,
-    },
-    {
-      header: 'Assigned Faculty',
-      accessor: 'faculty',
-      cell: (r) => (
-        <span className="text-xs text-slate-800 font-medium">
-          {r.id === 'sub-phy' ? 'Pooja Iyer, Dr. Suresh' : r.id === 'sub-math' ? 'Arvind Swamy' : 'Kavita Chawla'}
-        </span>
-      ),
+      header: 'Weekly Hours',
+      accessor: 'weeklyHours',
+      sortable: true,
+      className: 'whitespace-nowrap min-w-[120px]',
+      cell: (r: any) => <span className="text-xs text-slate-600 whitespace-nowrap">{r.weeklyHours || 4} hrs/wk</span>,
     },
     {
       header: 'Status',
       accessor: 'status',
       sortable: true,
-      cell: (r) => <StatusBadge status={r.status} />,
+      className: 'whitespace-nowrap min-w-[90px]',
+      cell: (r: any) => <StatusBadge status={r.status} />,
     },
     {
       header: 'Actions',
-      className: 'text-right',
-      cell: (r) => (
+      className: 'text-right whitespace-nowrap min-w-[180px]',
+      cell: (r: any) => (
         <div className="flex items-center justify-end gap-1.5">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate(`/academics/subjects/${r.id}`)}
-            className="h-7 text-xs px-2"
+            onClick={() => navigate(`/app/academics/subjects/${r.id}`)}
+            className="h-7 text-xs px-2 text-slate-700"
           >
             <Eye className="w-3.5 h-3.5 mr-1" /> View
           </Button>
 
+          {onEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(r)}
+              className="h-7 text-xs px-2 text-slate-700 hover:bg-slate-50"
+              title="Edit Subject Details"
+            >
+              Edit
+            </Button>
+          )}
+
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate('/academics/faculty-assignments')}
+            onClick={() => navigate('/app/academics/faculty-assignments')}
             className="h-7 text-xs px-2 text-blue-600"
             title="Assign Faculty to this Subject"
           >
             <UserPlus className="w-3.5 h-3.5 mr-1" /> Assign Faculty
           </Button>
+
+          {onToggleStatus && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onToggleStatus(r)}
+              className={`h-7 text-xs px-2 ${r.status === 'Active' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
+              title={r.status === 'Active' ? 'Deactivate Subject' : 'Activate Subject'}
+            >
+              {r.status === 'Active' ? 'Deactivate' : 'Activate'}
+            </Button>
+          )}
         </div>
       ),
     },

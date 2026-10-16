@@ -538,17 +538,46 @@ export function ApplicationTable({
                             </Button>
                           )}
 
-                          {/* Step 4: Approved -> Send Policy */}
+                          {/* Step 4: Approved -> Verify Documents & Send to Finance */}
                           {app.status === 'Approved' && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleOpenOfferModal(app)}
-                              className="h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white px-2.5 gap-1 font-semibold shadow-none"
-                              title="Next Step: Email official Admission Offer & Policy Terms to parent"
-                            >
-                              <GraduationCap className="h-3 w-3" />
-                              <span>Admit / Policy</span>
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => handleOpenDocModal(app)}
+                                className={`h-7 text-xs px-2.5 gap-1 font-semibold shadow-none ${
+                                  app.documentVerificationSummary?.status === 'Verified'
+                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                }`}
+                                title={
+                                  app.documentVerificationSummary?.status === 'Verified'
+                                    ? 'All documents verified. Ready to send to Finance to collect admission payments'
+                                    : 'Verify required student documents to enable sending to Finance'
+                                }
+                              >
+                                {app.documentVerificationSummary?.status === 'Verified' ? (
+                                  <>
+                                    <ArrowRight className="h-3 w-3 text-emerald-200" />
+                                    <span>Send to Finance</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <FileCheck className="h-3 w-3 text-blue-200" />
+                                    <span>Verify Documents</span>
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenOfferModal(app)}
+                                className="h-7 text-xs text-blue-700 border-blue-200 hover:bg-blue-50 px-2 gap-1 font-medium shadow-none"
+                                title="Email official Admission Offer & Policy Terms to parent"
+                              >
+                                <GraduationCap className="h-3 w-3" />
+                                <span>Policy</span>
+                              </Button>
+                            </>
                           )}
 
                           {/* Step 5: Policy Shared -> Parent Portal */}
