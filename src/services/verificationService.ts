@@ -1,6 +1,6 @@
 // src/services/verificationService.ts
 // Typed wrappers for institution verification: applicant side and superadmin side.
-import { apiClient, API_BASE_URL, ApiError, CSRF_HEADER_NAME } from './apiClient'
+import { apiClient, API_BASE_URL, ApiError, CSRF_HEADER_NAME, notifyUnauthorized, refreshSession } from './apiClient'
 import type {
   DecisionResponse,
   DocumentMeta,
@@ -11,8 +11,8 @@ import type {
   VerificationStatusView,
 } from '../types/verification'
 
-/** multipart upload with progress (fetch cannot report upload progress). Session cookie is attached by the browser. */
-function uploadWithProgress<T>(path: string, form: FormData, onProgress: (pct: number) => void): Promise<T> {
+/** One XHR upload attempt (used for progress reporting; fetch cannot do upload progress). */
+function uploadOnce<T>(path: string, form: FormData, onProgress: (pct: number) => void): Promise<T> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     xhr.open('POST', `${API_BASE_URL}${path}`)
@@ -35,6 +35,26 @@ function uploadWithProgress<T>(path: string, form: FormData, onProgress: (pct: n
     xhr.onerror = () => reject(new ApiError('Network error during upload. Please try again.', 0))
     xhr.send(form)
   })
+}
+
+/** multipart upload with progress. Mirrors apiClient 401 → refresh → retry (XHR bypasses fetch). */
+async function uploadWithProgress<T>(
+  path: string,
+  form: FormData,
+  onProgress: (pct: number) => void,
+  retried = false,
+): Promise<T> {
+  try {
+    return await uploadOnce<T>(path, form, onProgress)
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 401 && !retried) {
+      if (await refreshSession()) {
+        return uploadWithProgress(path, form, onProgress, true)
+      }
+      notifyUnauthorized()
+    }
+    throw err
+  }
 }
 
 export const verificationService = {

@@ -42,6 +42,11 @@ export function setUnauthorizedHandler(fn: (() => void) | null) {
   onUnauthorized = fn
 }
 
+/** Called when refresh fails after a 401 (same behaviour as fetch-based apiClient). */
+export function notifyUnauthorized() {
+  onUnauthorized?.()
+}
+
 export interface RequestOptions extends Omit<RequestInit, 'body'> {
   headers?: Record<string, string>;
   body?: any;
@@ -54,10 +59,12 @@ export const CSRF_HEADER_NAME = 'X-Mycampace-CSRF'
 
 // Auth endpoints never trigger a refresh-and-retry (it would loop or mask bad credentials).
 const NO_REFRESH = ['/auth/signin', '/auth/signup', '/auth/refresh', '/auth/logout']
+/** Session probe: a 401 here means "not signed in", not "drop an active session" (avoids racing signup). */
+const SESSION_PROBE = '/auth/me'
 
 let refreshInFlight: Promise<boolean> | null = null
 /** Rotates the session via the HttpOnly refresh cookie. Concurrent callers share one request. */
-function refreshSession(): Promise<boolean> {
+export function refreshSession(): Promise<boolean> {
   if (!refreshInFlight) {
     refreshInFlight = fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
@@ -105,7 +112,7 @@ async function request<T = any>(endpoint: string, options: RequestOptions = {}, 
     if (response.status === 401 && !NO_REFRESH.some((p) => endpoint.includes(p))) {
       // Access cookie expired: try one silent refresh, then replay the request.
       if (!retried && (await refreshSession())) return request<T>(endpoint, options, true)
-      onUnauthorized?.()
+      if (!endpoint.includes(SESSION_PROBE)) onUnauthorized?.()
     }
     let errorData: any = null
     try {

@@ -17,6 +17,7 @@ import { slotKey, type RequirementItem } from '@/types/verification'
 import {
   ActionDialog, DocumentPreviewModal, InlineError, RequiredBadge, ReviewBadge, formatBytes, formatDateTime,
 } from '@/platform/verification/shared'
+import { OnboardingProgress } from './OnboardingChrome'
 
 const MIME_BY_EXT: Record<string, string> = { PDF: '.pdf', JPG: '.jpg,.jpeg', PNG: '.png' }
 
@@ -212,20 +213,11 @@ export function DocumentUploadPage() {
   )
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-slate-50 px-4 py-12 text-slate-800 sm:px-6">
+    <div className="flex min-h-screen flex-col items-center bg-slate-50 px-4 py-6 text-slate-800 sm:px-6 sm:py-12">
       <div className="w-full max-w-4xl">
-        {/* Stepper */}
-        <div className="mb-8">
-          <div className="mb-4 flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Step 4 of 5: Upload Documents</span>
-            <span className="text-xs font-medium text-slate-500">Next: Review &amp; Send for Verification</span>
-          </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
-            <div className="h-full w-4/5 rounded-full bg-blue-600 transition-all duration-300" />
-          </div>
-        </div>
+        <OnboardingProgress step={4} title="Upload Documents" next="Review & Send for Verification" />
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70 sm:p-10">
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-6 shadow-xl shadow-slate-200/70 sm:p-10">
           <div className="mb-6">
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Upload Documents for Your Organization</h1>
             <p className="mt-2 text-sm text-slate-500">
@@ -292,17 +284,17 @@ export function DocumentUploadPage() {
           )}
 
           {/* Actions */}
-          <div className="mt-8 flex items-center justify-between border-t border-slate-200 pt-4">
-            <button type="button" onClick={() => navigate('/onboarding/products')} className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800">
+          <div className="mt-8 flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <button type="button" onClick={() => navigate('/onboarding/products')} className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 sm:py-0">
               <ArrowLeft className="h-3.5 w-3.5" /> Back
             </button>
-            <div className="flex items-center gap-3">
-              {remaining > 0 && <span className="text-[11px] text-slate-500">{remaining} required {remaining === 1 ? 'document' : 'documents'} remaining</span>}
+            <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-3">
+              {remaining > 0 && <span className="text-center text-[11px] text-slate-500">{remaining} required {remaining === 1 ? 'document' : 'documents'} remaining</span>}
               <button
                 type="button"
                 disabled={!summary || remaining > 0 || (summary?.rejected.length ?? 0) > 0}
                 onClick={() => navigate('/onboarding/products/confirmation')}
-                className="flex h-11 items-center gap-2 rounded-xl bg-blue-600 px-6 text-xs font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
+                className="flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 text-xs font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
               >
                 <span>Save &amp; Review Application</span>
                 <ArrowRight className="h-4 w-4" />

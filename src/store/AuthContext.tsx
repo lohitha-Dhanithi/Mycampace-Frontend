@@ -8,6 +8,8 @@ import { useAppDispatch, useAppSelector } from './hooks'
 import { loginThunk, logoutThunk, refreshProfileThunk, sessionAdopted, sessionExpired } from './slices/authSlice'
 import { setUnauthorizedHandler } from '../services/apiClient'
 import { authService } from '../services/authService'
+import { endTabSession, shouldResumeSession, startTabSession } from '../services/tabSessionLifecycle'
+import { usePlatformApi as isPlatformApi } from '../services/onboardingService'
 import type { AuthUser, LoginCredentials } from '../types/auth'
 
 export interface AuthContextType {
@@ -23,21 +25,40 @@ export interface AuthContextType {
 
 function SessionBootstrap({ children }: { children: ReactNode }) {
   const dispatch = useAppDispatch()
+  const user = useAppSelector((s) => s.auth.user)
   useEffect(() => {
     // Any 401 from the API drops every screen to signed-out.
     setUnauthorizedHandler(() => {
       authService.clearLocal()
+      endTabSession()
       dispatch(sessionExpired())
     })
     // Keep Redux in step when authService changes the profile itself (e.g. onboarding's refreshProfile()).
     const unsubscribe = authService.subscribe(() => dispatch(sessionAdopted()))
-    // The cookie is HttpOnly: ask the server who (if anyone) is signed in.
-    dispatch(refreshProfileThunk())
+    let cancelled = false
+    shouldResumeSession().then(async (resume) => {
+      if (cancelled) return
+      if (resume) {
+        // The cookie is HttpOnly: ask the server who (if anyone) is signed in.
+        dispatch(refreshProfileThunk())
+        return
+      }
+      // Every tab of the previous session was closed: end it instead of restoring it.
+      await authService.signOut()
+      if (!cancelled) dispatch(sessionExpired())
+    })
     return () => {
+      cancelled = true
       unsubscribe()
       setUnauthorizedHandler(null)
     }
   }, [dispatch])
+
+  useEffect(() => {
+    if (!isPlatformApi() || !user?.id) return
+    return startTabSession()
+  }, [user?.id])
+
   return <>{children}</>
 }
 
@@ -62,6 +83,7 @@ export const useAuth = (): AuthContextType => {
     login: (credentials) => dispatch(loginThunk(credentials)).unwrap(),
     logout: async () => {
       await dispatch(logoutThunk()).unwrap()
+      endTabSession()
     },
     adoptSession: () => {
       dispatch(sessionAdopted())

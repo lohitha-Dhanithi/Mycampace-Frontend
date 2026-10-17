@@ -8,9 +8,8 @@ import { ProductShell } from '@/platform/shell/ProductShell'
 
 // Platform Auth & Onboarding
 import { PlatformAuthPage } from '@/platform/auth/PlatformAuthPage'
-import { PlatformSignUpPage } from '@/platform/auth/PlatformSignUpPage'
 import { ForgotPasswordPage } from '@/modules/auth/ForgotPasswordPage'
-import { ResetPasswordPage } from '@/modules/auth/ResetPasswordPage'
+import { AuthLayout } from '@/layouts/AuthLayout'
 
 import { OrganizationSetupPage } from '@/platform/onboarding/OrganizationSetupPage'
 import { InstitutionsSetupPage } from '@/platform/onboarding/InstitutionsSetupPage'
@@ -21,7 +20,14 @@ import { DocumentUploadPage } from '@/platform/onboarding/DocumentUploadPage'
 import { VerificationStatusPage } from '@/platform/onboarding/VerificationStatusPage'
 import { VerificationQueuePage } from '@/platform/superadmin/VerificationQueuePage'
 import { VerificationDetailPage } from '@/platform/superadmin/VerificationDetailPage'
-import { RequireSuperadmin, gateRoutes } from '@/routes/guards'
+import {
+  HomeRedirect,
+  OnboardingResume,
+  RedirectIfAuthenticated,
+  RequireApplicant,
+  RequireSuperadmin,
+  gateRoutes,
+} from '@/routes/guards'
 
 // Platform Central Pages
 import { ProductHubPage } from '@/platform/hub/ProductHubPage'
@@ -157,56 +163,63 @@ function AdmissionsLegacyRedirect() {
 }
 
 export const router = createBrowserRouter(gateRoutes([
-  // 1. Authentication Experience
+  // 1. Authentication Experience (signed-in users are sent on to their area)
   {
     path: '/auth',
-    element: <PlatformAuthPage />,
+    element: <RedirectIfAuthenticated><PlatformAuthPage mode="signin" /></RedirectIfAuthenticated>,
   },
   {
     path: '/auth/signup',
-    element: <Navigate to="/auth?mode=signup" replace />,
+    element: <RedirectIfAuthenticated><PlatformAuthPage mode="signup" /></RedirectIfAuthenticated>,
   },
   {
-    path: '/auth/forgot-password',
-    element: <ForgotPasswordPage />,
+    element: <AuthLayout />,
+    children: [
+      {
+        path: '/auth/forgot-password',
+        element: <RedirectIfAuthenticated><ForgotPasswordPage /></RedirectIfAuthenticated>,
+      },
+    ],
   },
-  {
-    path: '/auth/reset-password',
-    element: <ResetPasswordPage />,
-  },
-  {
-    path: '/login',
-    element: <Navigate to="/auth" replace />,
-  },
+  // The backend has no password-reset endpoint yet, so reset links go to the recovery help page.
+  { path: '/auth/reset-password', element: <Navigate to="/auth/forgot-password" replace /> },
+  { path: '/auth/signin', element: <Navigate to="/auth" replace /> },
+  { path: '/login', element: <Navigate to="/auth" replace /> },
+  { path: '/signup', element: <Navigate to="/auth/signup" replace /> },
 
-  // 2. Organization Onboarding Experience
+  // 2. Organization Onboarding Experience (signed-in applicants only; later steps need earlier ones saved)
+  {
+    path: '/onboarding',
+    element: <RequireApplicant><OnboardingResume /></RequireApplicant>,
+  },
   {
     path: '/onboarding/organization',
-    element: <OrganizationSetupPage />,
+    element: <RequireApplicant step={1}><OrganizationSetupPage /></RequireApplicant>,
   },
   {
     path: '/onboarding/institutions',
-    element: <InstitutionsSetupPage />,
+    element: <RequireApplicant step={2}><InstitutionsSetupPage /></RequireApplicant>,
   },
   {
     path: '/onboarding/products',
-    element: <ProductSelectionPage />,
+    element: <RequireApplicant step={3}><ProductSelectionPage /></RequireApplicant>,
   },
   {
     path: '/onboarding/team',
-    element: <TeamInvitePage />,
+    element: <RequireApplicant step={4}><TeamInvitePage /></RequireApplicant>,
   },
   {
+    // Review is reachable once documents are open (the server only records step 4 at that point).
     path: '/onboarding/products/confirmation',
-    element: <WorkspaceConfirmationPage />,
+    element: <RequireApplicant step={4}><WorkspaceConfirmationPage /></RequireApplicant>,
   },
   {
     path: '/onboarding/documents',
-    element: <DocumentUploadPage />,
+    element: <RequireApplicant step={4}><DocumentUploadPage /></RequireApplicant>,
   },
   {
     path: '/onboarding/verification-status',
-    element: <VerificationStatusPage />,
+    element: <RequireApplicant><VerificationStatusPage /></RequireApplicant>,
   },
 
   // 2b. Superadmin verification console (SuperAdmin role only; enforced by the backend)
@@ -417,8 +430,8 @@ export const router = createBrowserRouter(gateRoutes([
   },
 
   // 5. Backwards Compatibility & Permalinks
-  { path: '/', element: <Navigate to="/app" replace /> },
-  { path: '/dashboard', element: <Navigate to="/app" replace /> },
+  { path: '/', element: <HomeRedirect /> },
+  { path: '/dashboard', element: <HomeRedirect /> },
   { path: '/academics/*', element: <AcademicsLegacyRedirect /> },
   { path: '/lms/*', element: <Navigate to="/app/lms" replace /> },
   { path: '/finance/*', element: <Navigate to="/app/finance" replace /> },
@@ -431,5 +444,5 @@ export const router = createBrowserRouter(gateRoutes([
   { path: '/settings', element: <Navigate to="/app/settings" replace /> },
 
   // Catch-all
-  { path: '*', element: <Navigate to="/app" replace /> },
+  { path: '*', element: <HomeRedirect /> },
 ]))

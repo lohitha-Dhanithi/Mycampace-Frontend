@@ -4,6 +4,9 @@ export const usePlatformApi = () =>
   process.env.NEXT_PUBLIC_USE_PLATFORM_API === 'true' ||
   (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_USE_PLATFORM_API === 'true')
 
+/** Products POST /onboarding/products accepts (the backend ProductCatalogService ids); others are rejected with 400. */
+export const ONBOARDING_PRODUCT_IDS = ['academics', 'lms', 'finance', 'admissions', 'hrms', 'students']
+
 export const onboardingService = {
   async getStatus() {
     return apiClient.get('/onboarding/status')

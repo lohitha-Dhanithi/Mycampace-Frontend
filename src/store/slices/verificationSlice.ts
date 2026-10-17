@@ -5,6 +5,7 @@ import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/tool
 import { verificationService } from '../../services/verificationService'
 import {
   slotKey,
+  type DocumentMeta,
   type RequirementItem,
   type RequirementsResponse,
   type ReviewPack,
@@ -12,6 +13,7 @@ import {
   type VerificationStatusView,
 } from '../../types/verification'
 import { toErrorInfo, type ErrorInfo } from '../errors'
+import { patchRequirementsAfterRemove, patchRequirementsAfterUpload } from '../verificationRequirementsPatch'
 
 type Async = 'idle' | 'loading' | 'succeeded' | 'failed'
 
@@ -69,23 +71,24 @@ export const fetchStatus = createAsyncThunk<VerificationStatusView, void, Cfg>('
 })
 
 /** The File is passed as a thunk argument only; it is never stored in Redux. */
-export const uploadDocument = createAsyncThunk<void, { file: File; item: RequirementItem }, Cfg>(
+export const uploadDocument = createAsyncThunk<DocumentMeta, { file: File; item: RequirementItem }, Cfg>(
   'verification/upload',
   async ({ file, item }, { dispatch, rejectWithValue }) => {
     const key = slotKey(item.key, item.campusId)
     try {
-      await verificationService.upload(file, item.key, item.campusId, (pct) => dispatch(uploadProgressed({ key, progress: pct })))
-      await dispatch(fetchRequirements()) // the server recomputes what is still missing
+      return await verificationService.upload(file, item.key, item.campusId, (pct) =>
+        dispatch(uploadProgressed({ key, progress: pct })),
+      )
     } catch (e) {
       return rejectWithValue(toErrorInfo(e))
     }
   },
 )
 
-export const removeDocument = createAsyncThunk<void, string, Cfg>('verification/remove', async (id, { dispatch, rejectWithValue }) => {
+export const removeDocument = createAsyncThunk<string, string, Cfg>('verification/remove', async (id, { rejectWithValue }) => {
   try {
     await verificationService.remove(id)
-    await dispatch(fetchRequirements())
+    return id
   } catch (e) {
     return rejectWithValue(toErrorInfo(e))
   }
@@ -157,13 +160,24 @@ const slice = createSlice({
         s.uploads[slotKey(a.meta.arg.item.key, a.meta.arg.item.campusId)] = { progress: 0, status: 'uploading' }
       })
       .addCase(uploadDocument.fulfilled, (s, a) => {
-        s.uploads[slotKey(a.meta.arg.item.key, a.meta.arg.item.campusId)] = { progress: 100, status: 'done' }
+        const { item } = a.meta.arg
+        s.uploads[slotKey(item.key, item.campusId)] = { progress: 100, status: 'done' }
+        if (s.requirements) {
+          s.requirements = patchRequirementsAfterUpload(s.requirements, item.key, item.campusId, a.payload)
+          s.status = s.requirements.status
+        }
       })
       .addCase(uploadDocument.rejected, (s, a) => {
         s.uploads[slotKey(a.meta.arg.item.key, a.meta.arg.item.campusId)] = {
           progress: 0,
           status: 'failed',
           error: a.payload?.message ?? 'Upload failed',
+        }
+      })
+      .addCase(removeDocument.fulfilled, (s, a) => {
+        if (s.requirements) {
+          s.requirements = patchRequirementsAfterRemove(s.requirements, a.payload)
+          s.status = s.requirements.status
         }
       })
       .addCase(removeDocument.rejected, (s, a) => {

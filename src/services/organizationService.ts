@@ -36,21 +36,32 @@ const DEFAULT_ORG_PROFILE = {
 
 class OrganizationService {
   storageKey: string
+  /** Scopes demo-mode localStorage to the signed-in user so accounts never share onboarding data. */
+  scopeId = 'guest'
 
   constructor() {
     this.storageKey = 'mycampace_organization'
     this.init()
   }
 
+  setStorageScope(userId: string | null) {
+    this.scopeId = userId || 'guest'
+  }
+
+  scopedKey(base: string) {
+    return `${base}:${this.scopeId}`
+  }
+
   init() {
-    if (!localStorage.getItem(this.storageKey)) {
-      localStorage.setItem(this.storageKey, JSON.stringify(DEFAULT_ORG_PROFILE))
+    const key = this.scopedKey(this.storageKey)
+    if (!localStorage.getItem(key)) {
+      localStorage.setItem(key, JSON.stringify(DEFAULT_ORG_PROFILE))
     }
   }
 
   getOrganization() {
     try {
-      const stored = localStorage.getItem(this.storageKey)
+      const stored = localStorage.getItem(this.scopedKey(this.storageKey))
       return stored ? JSON.parse(stored) : DEFAULT_ORG_PROFILE
     } catch (e) {
       return DEFAULT_ORG_PROFILE
@@ -60,7 +71,7 @@ class OrganizationService {
   updateOrganization(updated) {
     const current = this.getOrganization()
     const merged = { ...current, ...updated }
-    localStorage.setItem(this.storageKey, JSON.stringify(merged))
+    localStorage.setItem(this.scopedKey(this.storageKey), JSON.stringify(merged))
     return merged
   }
 
@@ -69,7 +80,7 @@ class OrganizationService {
   teamKey = 'mycampace_team_invites'
 
   readList(key, fallback) {
-    const raw = localStorage.getItem(key)
+    const raw = localStorage.getItem(this.scopedKey(key))
     if (!raw) return fallback
     try {
       const parsed = JSON.parse(raw)
@@ -80,7 +91,7 @@ class OrganizationService {
   }
 
   hasCustomDirectory() {
-    return localStorage.getItem(this.institutionsKey) !== null
+    return localStorage.getItem(this.scopedKey(this.institutionsKey)) !== null
   }
 
   getInstitutions() {
@@ -92,12 +103,12 @@ class OrganizationService {
   }
 
   saveInstitutions(institutions) {
-    localStorage.setItem(this.institutionsKey, JSON.stringify(institutions))
+    localStorage.setItem(this.scopedKey(this.institutionsKey), JSON.stringify(institutions))
     return institutions
   }
 
   saveCampuses(campuses) {
-    localStorage.setItem(this.campusesKey, JSON.stringify(campuses))
+    localStorage.setItem(this.scopedKey(this.campusesKey), JSON.stringify(campuses))
     return campuses
   }
 
@@ -106,7 +117,7 @@ class OrganizationService {
   }
 
   saveTeamInvites(invites) {
-    localStorage.setItem(this.teamKey, JSON.stringify(invites))
+    localStorage.setItem(this.scopedKey(this.teamKey), JSON.stringify(invites))
     return invites
   }
 }

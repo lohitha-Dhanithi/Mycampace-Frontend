@@ -1,7 +1,7 @@
 // src/modules/auth/LoginPage.jsx
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Mail, Lock, LogIn, AlertCircle, ArrowRight, Shield } from 'lucide-react'
+import { Mail, Lock, LogIn, AlertCircle, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -12,8 +12,8 @@ export function LoginPage() {
   const navigate = useNavigate()
   const { login, loading } = useAuth()
 
-  const [email, setEmail] = useState('vikram.aditya@abcschool.edu.in')
-  const [password, setPassword] = useState('MyCampace@2026')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(true)
   const [error, setError] = useState('')
 
@@ -106,14 +106,6 @@ export function LoginPage() {
             {loading ? 'Authenticating...' : 'Sign In to MyCampace'}
             <ArrowRight className="h-4 w-4 ml-1.5" />
           </Button>
-
-          {/* Quick Demo Credential Pill */}
-          <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-md text-[11px] text-slate-600">
-            <div className="flex items-center gap-1.5 font-semibold text-slate-800 mb-1">
-              <Shield className="h-3.5 w-3.5 text-blue-600" /> Pre-filled Demo Super Admin:
-            </div>
-            <p className="font-mono text-slate-700 truncate">vikram.aditya@abcschool.edu.in</p>
-          </div>
         </form>
       </CardContent>
 

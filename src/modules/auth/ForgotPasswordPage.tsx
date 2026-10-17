@@ -1,83 +1,66 @@
-// src/modules/auth/ForgotPasswordPage.jsx
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Mail, ArrowLeft, CheckCircle2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
-import { authService } from '@/services/authService'
+// src/modules/auth/ForgotPasswordPage.tsx
+// Password recovery help. The platform API has no self-service reset endpoint yet, so this page
+// explains how to regain access instead of pretending a reset email was sent.
+import React from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { ArrowLeft, KeyRound, LifeBuoy, Mail, Users } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { AUTH_ROUTES } from '@/platform/auth/landing'
+
+const SUPPORT_EMAIL = 'support@mycampace.com'
 
 export function ForgotPasswordPage() {
-  const [email, setEmail] = useState('')
-  const [submitted, setSubmitted] = useState(false)
-  const [loading, setLoading] = useState(false)
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!email) return
-    setLoading(true)
-    await authService.requestPasswordReset(email)
-    setLoading(false)
-    setSubmitted(true)
-  }
+  const location = useLocation()
+  const mailto = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Password reset request')}&body=${encodeURIComponent(
+    'Hello MyCampace Support,\n\nPlease help me reset the password for my account.\n\nRegistered email:\nOrganization name:\n',
+  )}`
 
   return (
-    <Card className="border-slate-200 shadow-lg bg-white">
+    <Card className="border-slate-200 bg-white shadow-lg">
       <CardHeader className="space-y-1.5 pb-4">
-        <CardTitle className="text-xl font-bold text-slate-900">Reset Password</CardTitle>
-        <CardDescription className="text-xs text-slate-500">
-          Enter your registered institutional email to receive a secure password recovery authorization code.
+        <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600">
+          <KeyRound className="h-5 w-5" aria-hidden="true" />
+        </div>
+        <CardTitle className="text-xl font-bold text-slate-900">Forgot your password?</CardTitle>
+        <CardDescription className="text-sm text-slate-500">
+          Self-service password reset isn’t available yet. Here’s how to get back into your account.
         </CardDescription>
       </CardHeader>
 
-      <CardContent>
-        {submitted ? (
-          <div className="py-4 text-center space-y-3">
-            <div className="h-12 w-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="h-6 w-6" />
-            </div>
-            <h4 className="text-sm font-semibold text-slate-900">Recovery Instructions Sent</h4>
-            <p className="text-xs text-slate-500">
-              We have dispatched a password reset link to <strong className="text-slate-700">{email}</strong>. Please check your inbox and spam folder.
+      <CardContent className="space-y-3">
+        <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+          <LifeBuoy className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" aria-hidden="true" />
+          <div className="text-xs text-slate-600">
+            <p className="font-semibold text-slate-800">You registered your organization</p>
+            <p className="mt-0.5">
+              Email our support team from your registered email address. We’ll verify your identity and reset your password.
             </p>
-            <div className="pt-2">
-              <Link to="/reset-password">
-                <Button variant="outline" size="sm" className="w-full text-xs">
-                  Proceed to Enter New Password
-                </Button>
-              </Link>
-            </div>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700">Institutional Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <Input
-                  type="email"
-                  placeholder="name@institution.edu.in"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-9 h-10 text-xs"
-                  required
-                />
-              </div>
-            </div>
+        </div>
+        <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+          <Users className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" aria-hidden="true" />
+          <div className="text-xs text-slate-600">
+            <p className="font-semibold text-slate-800">You were added by your institution</p>
+            <p className="mt-0.5">Ask your institution’s MyCampace administrator to reset your access.</p>
+          </div>
+        </div>
 
-            <Button type="submit" className="w-full h-10 text-xs font-semibold" disabled={loading}>
-              {loading ? 'Transmitting link...' : 'Send Recovery Link'}
-            </Button>
-          </form>
-        )}
+        <a
+          href={mailto}
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-colors hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+        >
+          <Mail className="h-4 w-4" aria-hidden="true" />
+          Email {SUPPORT_EMAIL}
+        </a>
       </CardContent>
 
-      <CardFooter className="pt-0 border-t border-slate-100 flex items-center justify-center p-4">
+      <CardFooter className="flex items-center justify-center border-t border-slate-100 p-4">
         <Link
-          to="/login"
-          className="inline-flex items-center text-xs font-medium text-blue-600 hover:underline"
+          to={AUTH_ROUTES.signIn}
+          state={location.state}
+          className="inline-flex items-center text-xs font-semibold text-blue-600 hover:underline"
         >
-          <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> Return to Login
+          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" /> Back to sign in
         </Link>
       </CardFooter>
     </Card>

@@ -4,6 +4,7 @@
 // re-established from GET /auth/me on every page load.
 import { apiClient, ApiError } from './apiClient'
 import { usePlatformApi as isPlatformApi } from './onboardingService'
+import { organizationService } from './organizationService'
 
 const DEFAULT_USER = {
   id: 'usr-1',
@@ -26,32 +27,22 @@ const DEFAULT_USER = {
 // In-memory profile (not persisted). Mock mode (no platform API) starts as the demo user.
 let currentUser: Record<string, any> | null = isPlatformApi() ? null : { ...DEFAULT_USER }
 
+const PROFILE_RETRY_DELAYS_MS = [500, 1000, 2000]
+
 type Listener = () => void
 const listeners = new Set<Listener>()
 const notify = () => listeners.forEach((fn) => fn())
 
 function setUser(user: Record<string, any> | null) {
   currentUser = user
+  organizationService.setStorageScope(user?.id ?? null)
   notify()
 }
 
 /** Build the profile from a server response. Any token-like field is dropped. */
 function toProfile(raw: Record<string, any>) {
   const { token: _t, accessToken: _a, refreshToken: _r, ...rest } = raw
-  const user: Record<string, any> = {
-    ...DEFAULT_USER,
-    ...rest,
-    avatar: rest.avatar || rest.avatarUrl || DEFAULT_USER.avatar,
-  }
-  // Non-sensitive routing hint read by the onboarding screens.
-  const onboarding = user.onboarding as { required?: boolean } | undefined
-  try {
-    if (onboarding?.required) localStorage.setItem('mycampace_pending_onboarding', 'true')
-    else localStorage.removeItem('mycampace_pending_onboarding')
-  } catch {
-    /* storage unavailable */
-  }
-  return user
+  return { ...rest, avatar: rest.avatar || rest.avatarUrl }
 }
 
 /** Backend responds `{ user, expiresIn, ... }` and sets the cookies; tolerate a bare user object too. */
@@ -97,7 +88,7 @@ export const authService = {
 
     try {
       return adoptResponse(
-        await apiClient.post('/auth/signin/email', { email, password: password || 'SecurePassword123!' }),
+        await apiClient.post('/auth/signin/email', { email, password: password || '' }),
       )
     } catch {
       const user = mockUser({
@@ -127,11 +118,6 @@ export const authService = {
       organizationId: 'org-new',
       productRoles: { academics: 'Administrator', lms: 'Administrator', finance: 'Administrator' },
     }
-    try {
-      localStorage.setItem('mycampace_pending_onboarding', 'true')
-    } catch {
-      /* storage unavailable */
-    }
     setUser(user)
     return user
   },
@@ -157,24 +143,21 @@ export const authService = {
   /** Re-reads the profile from the server using the session cookie. */
   refreshProfile: async () => {
     if (!isPlatformApi()) return authService.getCurrentUser()
-    try {
-      return adoptResponse(await apiClient.get('/auth/me'))
-    } catch (e) {
-      // 401 = no valid session (apiClient already tried a refresh). Other errors keep the current profile.
-      if (e instanceof ApiError && e.status === 401) setUser(null)
-      return authService.getCurrentUser()
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return adoptResponse(await apiClient.get('/auth/me'))
+      } catch (e) {
+        // Server/network errors say nothing about the session: retry before treating the user as signed out.
+        const transient = !(e instanceof ApiError) || e.status >= 500
+        if (transient && attempt < PROFILE_RETRY_DELAYS_MS.length) {
+          await new Promise((r) => setTimeout(r, PROFILE_RETRY_DELAYS_MS[attempt]))
+          continue
+        }
+        // 401 on /auth/me means no cookie session yet; do not wipe a profile set by signup/sign-in in flight.
+        return authService.getCurrentUser()
+      }
     }
   },
 
   getCurrentUser: () => currentUser,
-
-  requestPasswordReset: async (email: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    return { success: true, message: `Password reset instructions sent to ${email}` }
-  },
-
-  resetPassword: async (_token: string, _newPassword: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    return { success: true, message: 'Password has been updated successfully.' }
-  },
 }

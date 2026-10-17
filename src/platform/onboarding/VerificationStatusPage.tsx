@@ -53,7 +53,7 @@ export function VerificationStatusPage() {
   const rejectedDocs = requirements?.summary.rejected ?? []
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-12 text-slate-800">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-6 text-slate-800 sm:py-12">
       <div className="w-full max-w-xl">
         <div className="mb-4 flex items-center justify-between text-xs text-slate-500">
           <span>{user?.email}</span>

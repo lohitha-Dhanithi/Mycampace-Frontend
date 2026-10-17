@@ -11,6 +11,8 @@ import { fetchReview, submitApplication, verificationErrorCleared } from '@/stor
 import { useAuth } from '@/store/AuthContext'
 import type { RequirementItem } from '@/types/verification'
 import { ActionDialog, CopyButton, DocumentPreviewModal, InlineError, ReviewBadge, formatBytes } from '@/platform/verification/shared'
+import { ONBOARDING_REVIEW_PATH } from '@/platform/auth/landing'
+import { OnboardingProgress } from './OnboardingChrome'
 
 function Section({ title, icon, editTo, children }: { title: string; icon: React.ReactNode; editTo: string; children: React.ReactNode }) {
   const navigate = useNavigate()
@@ -18,7 +20,11 @@ function Section({ title, icon, editTo, children }: { title: string; icon: React
     <section className="rounded-xl border border-slate-200 bg-slate-50 p-4">
       <div className="mb-2 flex items-center justify-between">
         <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">{icon}{title}</h3>
-        <button type="button" onClick={() => navigate(editTo)} className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-500">
+        <button
+          type="button"
+          onClick={() => navigate(editTo, { state: { returnTo: ONBOARDING_REVIEW_PATH } })}
+          className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-500"
+        >
           <Pencil className="h-3 w-3" /> Edit
         </button>
       </div>
@@ -95,17 +101,11 @@ export function WorkspaceConfirmationPage() {
   const canSend = !!review?.summary.canSubmit && agreed && !submitting
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-slate-50 px-4 py-12 text-slate-800 sm:px-6">
+    <div className="flex min-h-screen flex-col items-center bg-slate-50 px-4 py-6 text-slate-800 sm:px-6 sm:py-12">
       <div className="w-full max-w-3xl">
-        <div className="mb-8">
-          <div className="mb-4 flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Step 5 of 5: Review &amp; Send for Verification</span>
-            <span className="text-xs font-medium text-slate-500">Final step</span>
-          </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200"><div className="h-full w-full rounded-full bg-blue-600" /></div>
-        </div>
+        <OnboardingProgress step={5} title="Review & Send for Verification" next="Verification by our team" />
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/70 sm:p-10">
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-6 shadow-xl shadow-slate-200/70 sm:p-10">
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Review your application</h1>
           <p className="mt-2 text-sm text-slate-500">
             Please check the details you provided in every step. After you send it, our verification team reviews your organization and documents.
@@ -128,10 +128,9 @@ export function WorkspaceConfirmationPage() {
 
               <Section title="Organization" icon={<Building2 className="h-3.5 w-3.5" />} editTo="/onboarding/organization">
                 <Field label="Name" value={org.name} />
-                <Field label="Legal name" value={org.legalName} />
                 <Field label="Type" value={org.type} />
                 <Field label="Address" value={[org.address, org.city, org.state, org.postalCode, org.country].filter(Boolean).join(', ')} />
-                <Field label="Tax ID" value={org.taxId} />
+                <Field label="GST Number" value={org.taxId} />
                 <Field label="Primary contact" value={[org.primaryContact?.name, org.primaryContact?.email, org.primaryContact?.phone].filter(Boolean).join(' · ')} />
               </Section>
 
@@ -186,21 +185,21 @@ export function WorkspaceConfirmationPage() {
             </div>
           )}
 
-          <div className="mt-8 flex items-center justify-between border-t border-slate-200 pt-4">
-            <button type="button" onClick={() => navigate('/onboarding/team')} className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800">
+          <div className="mt-8 flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <button type="button" onClick={() => navigate('/onboarding/team')} className="flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 sm:py-0">
               <ArrowLeft className="h-3.5 w-3.5" /> Back to documents
             </button>
             <button
               type="button"
               disabled={!canSend}
               onClick={() => setConfirmOpen(true)}
-              className="flex h-12 items-center gap-2 rounded-xl bg-blue-600 px-6 text-sm font-bold text-white shadow-xl shadow-blue-600/20 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 text-sm font-bold sm:w-auto text-white shadow-xl shadow-blue-600/20 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               <span>Send for Verification</span>
             </button>
           </div>
-          <p className="mt-3 flex items-center justify-end gap-1.5 text-[11px] text-slate-400"><ShieldCheck className="h-3.5 w-3.5" /> Documents are stored privately and used only for verification.</p>
+          <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[11px] text-slate-400 sm:justify-end sm:text-right"><ShieldCheck className="h-3.5 w-3.5" /> Documents are stored privately and used only for verification.</p>
         </div>
       </div>
 
